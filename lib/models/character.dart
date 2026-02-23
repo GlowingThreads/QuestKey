@@ -1,5 +1,8 @@
 // character model
 import 'package:quest_key/models/classes.dart';
+import 'package:quest_key/models/character_background.dart';
+import 'package:quest_key/models/character_skill.dart';
+import 'package:quest_key/models/character_achievement.dart';
 import 'package:quest_key/state/app_state.dart';
 
 //hero character model
@@ -10,6 +13,14 @@ class HeroCharacter {
   final String description;
   final String imageUrl;
   final LevelUp levelUp;
+
+  // New character features
+  CharacterBackground? background;
+  String biography; // Character's personal story/notes
+  List<LearnedSkill> learnedSkills;
+  List<UnlockedAchievement> unlockedAchievements;
+  DateTime createdDate;
+  int questsCompleted;
 
   int strength;
   int dexterity;
@@ -41,7 +52,18 @@ class HeroCharacter {
     this.health = 0,
     this.mana = 0,
     this.stamina = 0,
-  });
+
+    // New parameters
+    this.background,
+    this.biography = '',
+    List<LearnedSkill>? learnedSkills,
+    List<UnlockedAchievement>? unlockedAchievements,
+    DateTime? createdDate,
+    this.questsCompleted = 0,
+  })
+      : learnedSkills = learnedSkills ?? [],
+        unlockedAchievements = unlockedAchievements ?? [],
+        createdDate = createdDate ?? DateTime.now();
 
   factory HeroCharacter.fromClasses(Classes classes) {
     return HeroCharacter(
@@ -63,7 +85,7 @@ class HeroCharacter {
       stamina: 50,
     );
   }
-  // add mapping
+  // Serialization with all character data
   Map<String, dynamic> toJson() {
     return {
       'name': name,
@@ -82,10 +104,36 @@ class HeroCharacter {
       'health': health,
       'mana': mana,
       'stamina': stamina,
+      'background': background?.toJson(),
+      'biography': biography,
+      'learnedSkills': learnedSkills.map((s) => s.toJson()).toList(),
+      'unlockedAchievements':
+          unlockedAchievements.map((a) => a.toJson()).toList(),
+      'createdDate': createdDate.toIso8601String(),
+      'questsCompleted': questsCompleted,
     };
   }
 
   factory HeroCharacter.fromJson(Map<String, dynamic> json) {
+    CharacterBackground? background;
+    if (json['background'] != null) {
+      background = CharacterBackground.fromJson(json['background']);
+    }
+
+    List<LearnedSkill> learnedSkills = [];
+    if (json['learnedSkills'] != null) {
+      learnedSkills = (json['learnedSkills'] as List)
+          .map((s) => LearnedSkill.fromJson(s))
+          .toList();
+    }
+
+    List<UnlockedAchievement> unlockedAchievements = [];
+    if (json['unlockedAchievements'] != null) {
+      unlockedAchievements = (json['unlockedAchievements'] as List)
+          .map((a) => UnlockedAchievement.fromJson(a, allAchievements))
+          .toList();
+    }
+
     return HeroCharacter(
       name: json['name'],
       motto: json['motto'],
@@ -103,6 +151,15 @@ class HeroCharacter {
       health: json['health'],
       mana: json['mana'],
       stamina: json['stamina'],
+      background: background,
+      biography: json['biography'] ?? '',
+      learnedSkills: learnedSkills,
+      unlockedAchievements: unlockedAchievements,
+      createdDate:
+          json['createdDate'] != null
+              ? DateTime.parse(json['createdDate'])
+              : DateTime.now(),
+      questsCompleted: json['questsCompleted'] ?? 0,
     );
   }
 
@@ -172,6 +229,11 @@ class HeroCharacter {
     int? health,
     int? mana,
     int? stamina,
+    CharacterBackground? background,
+    String? biography,
+    List<LearnedSkill>? learnedSkills,
+    List<UnlockedAchievement>? unlockedAchievements,
+    int? questsCompleted,
   }) {
     return HeroCharacter(
       name: name ?? this.name,
@@ -190,6 +252,81 @@ class HeroCharacter {
       health: health ?? this.health,
       mana: mana ?? this.mana,
       stamina: stamina ?? this.stamina,
+      background: background ?? this.background,
+      biography: biography ?? this.biography,
+      learnedSkills: learnedSkills ?? this.learnedSkills,
+      unlockedAchievements: unlockedAchievements ?? this.unlockedAchievements,
+      questsCompleted: questsCompleted ?? this.questsCompleted,
     );
+  }
+
+  /// Learn a new skill if requirements are met
+  bool learnSkill(CharacterSkill skill) {
+    // Check if already learned
+    if (learnedSkills.any((s) => s.skill.id == skill.id)) {
+      return false;
+    }
+
+    // Check level requirement
+    if (levelUp.level < skill.levelRequired) {
+      return false;
+    }
+
+    // Check stat requirements
+    for (final req in skill.requirements) {
+      final parts = req.split(':');
+      if (parts.length == 2) {
+        final statName = parts[0];
+        final requiredValue = int.tryParse(parts[1]) ?? 0;
+        final actualValue = _getStatValue(statName);
+        if (actualValue < requiredValue) {
+          return false;
+        }
+      }
+    }
+
+    learnedSkills.add(LearnedSkill(skill: skill));
+    return true;
+  }
+
+  /// Get a stat value by name
+  int _getStatValue(String statName) {
+    switch (statName) {
+      case 'strength':
+        return strength;
+      case 'dexterity':
+        return dexterity;
+      case 'intelligence':
+        return intelligence;
+      case 'wisdom':
+        return wisdom;
+      case 'charisma':
+        return charisma;
+      case 'constitution':
+        return constitution;
+      case 'luck':
+        return luck;
+      default:
+        return 0;
+    }
+  }
+
+  /// Unlock an achievement
+  bool unlockAchievement(CharacterAchievement achievement) {
+    if (unlockedAchievements.any((a) => a.achievement.id == achievement.id)) {
+      return false; // Already unlocked
+    }
+    unlockedAchievements.add(UnlockedAchievement(achievement: achievement));
+    return true;
+  }
+
+  /// Check if character has learned a skill
+  bool hasSkill(String skillId) {
+    return learnedSkills.any((s) => s.skill.id == skillId);
+  }
+
+  /// Check if character has achievement
+  bool hasAchievement(String achievementId) {
+    return unlockedAchievements.any((a) => a.achievement.id == achievementId);
   }
 }
