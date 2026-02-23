@@ -53,102 +53,106 @@ class _CreateQuestPageState extends State<CreateQuestPage> {
             fit: BoxFit.cover,
           ),
         ),
-        padding: const EdgeInsets.all(24),
-        child: Center(
-          child: Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: const Color.fromARGB(225, 0, 0, 0),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.white24, width: 2),
-            ),
-            child: Form(
-              key: _formKey,
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Center(
               child: SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Create a New Quest',
-                      style: TextStyle(
-                        fontSize: 26,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    TextFormField(
-                      controller: _titleController,
-                      decoration: _inputDecoration('Quest Name'),
-                      validator: (value) {
-                        if (value == null || value.trim().isEmpty) {
-                          return 'Every good quest needs a name!';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 20),
-                    TextFormField(
-                      controller: _descriptionController,
-                      decoration: _inputDecoration(
-                        'Quest Description',
-                      ).copyWith(errorMaxLines: 3),
-                      maxLines: 6,
-                      validator: (value) {
-                        if (value == null || value.trim().isEmpty) {
-                          return 'Write an objective to complete the quest!';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 22),
-                    ElevatedButton(
-                      onPressed: _pickDateTime,
-                      style: _buttonStyle(),
-                      child: const Text('Pick Due Date & Time'),
-                    ),
-                    const SizedBox(height: 12),
-                    if (_selectedDate != null && _selectedTime != null)
-                      Text(
-                        'Due: ${DateFormat('yyyy-MM-dd – HH:mm').format(DateTime(_selectedDate!.year, _selectedDate!.month, _selectedDate!.day, _selectedTime!.hour, _selectedTime!.minute))}',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          color: Colors.white,
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: const Color.fromARGB(225, 0, 0, 0),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.white24, width: 2),
+                  ),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Create a New Quest',
+                          style: TextStyle(
+                            fontSize: 26,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
                         ),
-                      ),
-                    const SizedBox(height: 30),
-                    ElevatedButton(
-                      onPressed: _submitForm,
-                      style: _buttonStyle(primary: Colors.deepPurple),
-                      child: Text(
-                        _editingQuest == null ? 'Create Quest' : 'Update Quest',
-                      ),
+                        const SizedBox(height: 20),
+                        TextFormField(
+                          controller: _titleController,
+                          decoration: _inputDecoration('Quest Name'),
+                          validator: (value) {
+                            if (value == null || value.trim().isEmpty) {
+                              return 'Every good quest needs a name!';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 20),
+                        TextFormField(
+                          controller: _descriptionController,
+                          decoration: _inputDecoration(
+                            'Quest Description',
+                          ).copyWith(errorMaxLines: 3),
+                          maxLines: 6,
+                          validator: (value) {
+                            if (value == null || value.trim().isEmpty) {
+                              return 'Write an objective to complete the quest!';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 22),
+                        ElevatedButton(
+                          onPressed: _pickDateTime,
+                          style: _buttonStyle(),
+                          child: const Text('Pick Due Date & Time'),
+                        ),
+                        const SizedBox(height: 12),
+                        if (_selectedDate != null && _selectedTime != null)
+                          Text(
+                            'Due: ${DateFormat('yyyy-MM-dd – HH:mm').format(DateTime(_selectedDate!.year, _selectedDate!.month, _selectedDate!.day, _selectedTime!.hour, _selectedTime!.minute))}',
+                            style: const TextStyle(
+                              fontSize: 16,
+                              color: Colors.white,
+                            ),
+                          ),
+                        const SizedBox(height: 30),
+                        ElevatedButton(
+                          onPressed: _submitForm,
+                          style: _buttonStyle(primary: Colors.deepPurple),
+                          child: Text(
+                            _editingQuest == null ? 'Create Quest' : 'Update Quest',
+                          ),
+                        ),
+                        Slider(
+                          value: _difficulty,
+                          min: 1,
+                          max: 5,
+                          divisions: 4,
+                          label: 'Difficulty: ${_difficulty.round()}',
+                          activeColor: Colors.deepPurple,
+                          onChanged: (value) {
+                            setState(() {
+                              _difficulty = value;
+                            });
+                          },
+                        ),
+                        CheckboxListTile(
+                          value: _remindMe,
+                          onChanged: (value) => setState(() => _remindMe = value!),
+                          title: const Text(
+                            'Remind me when due',
+                            style: TextStyle(color: Colors.white),
+                          ),
+                          controlAffinity: ListTileControlAffinity.leading,
+                          activeColor: Colors.deepPurple,
+                        ),
+                      ],
                     ),
-                    Slider(
-                      value: _difficulty,
-                      min: 1,
-                      max: 5,
-                      divisions: 4,
-                      label: 'Difficulty: ${_difficulty.round()}',
-                      activeColor: Colors.deepPurple,
-                      onChanged: (value) {
-                        setState(() {
-                          _difficulty = value;
-                        });
-                      },
-                    ),
-                    CheckboxListTile(
-                      value: _remindMe,
-                      onChanged: (value) => setState(() => _remindMe = value!),
-                      title: const Text(
-                        'Remind me when due',
-                        style: TextStyle(color: Colors.white),
-                      ),
-                      controlAffinity: ListTileControlAffinity.leading,
-                      activeColor: Colors.deepPurple,
-                    ),
-                  ],
+                  ),
                 ),
               ),
             ),

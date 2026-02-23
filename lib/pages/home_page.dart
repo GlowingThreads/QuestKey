@@ -43,34 +43,40 @@ class _HomePageState extends State<HomePage> {
       );
     }
 
-    return Container(
-      padding: const EdgeInsets.all(24.0),
-      height: double.infinity,
-      decoration: const BoxDecoration(
-        image: DecorationImage(
-          image: AssetImage('assets/images/app_assets/home_bkg.png'),
-          fit: BoxFit.cover,
+    return Scaffold(
+      body: Container(
+        decoration: const BoxDecoration(
+          image: DecorationImage(
+            image: AssetImage('assets/images/app_assets/home_bkg.png'),
+            fit: BoxFit.cover,
+          ),
         ),
-      ),
-      child: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (hero != null)
-              HeroProfileCard(hero: hero)
-            else
-              const Text(
-                'Hero not found.',
-                style: TextStyle(color: Colors.white),
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (hero != null)
+                    HeroProfileCard(hero: hero)
+                  else
+                    const Text(
+                      'Hero not found.',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  const SizedBox(height: 20),
+                  QuestList(filterStatus: 'In Progress'),
+                  const SizedBox(height: 20),
+                  if (hero != null)
+                    XpBar(
+                      currentXp: hero.levelUp.exp,
+                      maxXp: hero.levelUp.maxExp,
+                    ),
+                ],
               ),
-
-            const SizedBox(height: 20),
-            QuestList(filterStatus: 'In Progress'),
-            const SizedBox(height: 20),
-
-            if (hero != null)
-              XpBar(currentXp: hero.levelUp.exp, maxXp: hero.levelUp.maxExp),
-          ],
+            ),
+          ),
         ),
       ),
     );

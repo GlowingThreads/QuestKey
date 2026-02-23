@@ -92,7 +92,16 @@ class _MainScreenState extends State<MainScreen> {
 
     return Scaffold(
       extendBody: true,
-      body: _pages[index],
+      body: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 300),
+        transitionBuilder: (child, animation) {
+          return FadeTransition(opacity: animation, child: child);
+        },
+        child: KeyedSubtree(
+          key: ValueKey<int>(index),
+          child: _pages[index],
+        ),
+      ),
       bottomNavigationBar: CustomNavBar(
         currentIndex: index,
         onTap: (newIndex) {
