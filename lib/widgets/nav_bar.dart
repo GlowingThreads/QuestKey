@@ -1,4 +1,3 @@
-//navigation
 import 'package:flutter/material.dart';
 
 class CustomNavBar extends StatefulWidget {
@@ -15,7 +14,6 @@ class CustomNavBar extends StatefulWidget {
   State<CustomNavBar> createState() => _CustomNavBarState();
 }
 
-// assets
 class _CustomNavBarState extends State<CustomNavBar> {
   final List<String> navIcons = [
     'assets/images/app_assets/home.png',
@@ -25,22 +23,56 @@ class _CustomNavBarState extends State<CustomNavBar> {
     'assets/images/app_assets/info.png',
   ];
 
+  final List<String> navLabels = ['Home', 'Quests', 'Create', 'Hero', 'Info'];
+
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 6),
+      padding: const EdgeInsets.symmetric(vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.transparent,
-        border: const Border(top: BorderSide(color: Colors.white24)),
+        color: Colors.black26,
+        border: const Border(top: BorderSide(color: Colors.white24, width: 1)),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: List.generate(navIcons.length, (index) {
+          final isSelected = widget.currentIndex == index;
           return GestureDetector(
             onTap: () => widget.onTap(index),
-            child: Opacity(
-              opacity: widget.currentIndex == index ? 1.0 : 0.5,
-              child: Image.asset(navIcons[index], height: 78, width: 78),
+            child: AnimatedOpacity(
+              opacity: isSelected ? 1.0 : 0.6,
+              duration: const Duration(milliseconds: 200),
+              child: Tooltip(
+                message: navLabels[index],
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: isSelected
+                            ? Colors.deepPurple.withOpacity(0.3)
+                            : Colors.transparent,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Image.asset(
+                        navIcons[index],
+                        height: 32,
+                        width: 32,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      navLabels[index],
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                        color: isSelected ? Colors.white : Colors.white70,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
           );
         }),

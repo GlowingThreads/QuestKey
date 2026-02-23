@@ -21,59 +21,65 @@ class _QuestsPageState extends State<QuestsPage> {
             fit: BoxFit.cover,
           ),
         ),
-        padding: const EdgeInsets.all(24.0),
-        child: Container(
-          decoration: BoxDecoration(
-            color: const Color.fromARGB(200, 0, 0, 0),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: const Color.fromARGB(100, 255, 255, 255),
-              width: 2,
-            ),
-          ),
-          padding: const EdgeInsets.all(16.0),
-          margin: const EdgeInsets.only(bottom: 90),
-          height: double.infinity,
-          child: Column(
-            children: [
-              // filter bar
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: const Color.fromARGB(255, 35, 9, 80).withAlpha(200),
-                  border: Border.all(
-                    color: const Color.fromARGB(99, 255, 255, 255),
-                    width: 2,
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Container(
+              decoration: BoxDecoration(
+                color: const Color.fromARGB(200, 0, 0, 0),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: const Color.fromARGB(100, 255, 255, 255),
+                  width: 2,
+                ),
+              ),
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                children: [
+                  // Filter bar
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: const Color.fromARGB(255, 35, 9, 80).withAlpha(200),
+                      border: Border.all(
+                        color: const Color.fromARGB(99, 255, 255, 255),
+                        width: 2,
+                      ),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          _filterIcon('todo.png', 'In Progress'),
+                          const SizedBox(width: 12),
+                          _filterIcon('all.png', 'All'),
+                          const SizedBox(width: 12),
+                          _filterIcon('finished.png', 'Completed'),
+                        ],
+                      ),
+                    ),
                   ),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    _filterIcon('todo.png', 'In Progress'),
-                    _filterIcon('all.png', 'All'),
-                    _filterIcon('finished.png', 'Completed'),
-                  ],
-                ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Quest Log',
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: Color.fromARGB(255, 255, 255, 255),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  // Quest list
+                  Expanded(
+                    child: QuestList(
+                      filterStatus: _filter == 'All' ? null : _filter,
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 16),
-
-              const Text(
-                'Quest Log',
-                style: TextStyle(
-                  fontSize: 24,
-                  color: Color.fromARGB(255, 255, 255, 255),
-                ),
-              ),
-              const SizedBox(height: 10),
-
-              // quest list
-              Expanded(
-                child: QuestList(
-                  filterStatus: _filter == 'All' ? null : _filter,
-                ),
-              ),
-            ],
+            ),
           ),
         ),
       ),
