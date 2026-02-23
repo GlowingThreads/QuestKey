@@ -1,68 +1,135 @@
-// xp bar in another color - wider
 import 'package:flutter/material.dart';
+import 'package:quest_key/constants/app_colors.dart';
+import 'package:quest_key/constants/app_dimens.dart';
 
-class XpBar extends StatelessWidget {
+class XpBar extends StatefulWidget {
   final int currentXp;
   final int maxXp;
 
-  const XpBar({super.key, required this.currentXp, required this.maxXp});
+  const XpBar({
+    super.key,
+    required this.currentXp,
+    required this.maxXp,
+  });
+
+  @override
+  State<XpBar> createState() => _XpBarState();
+}
+
+class _XpBarState extends State<XpBar> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _progressAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(duration: AppDurations.long, vsync: this);
+    _setupAnimation();
+    _controller.forward();
+  }
+
+  @override
+  void didUpdateWidget(XpBar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.currentXp != widget.currentXp) {
+      _setupAnimation();
+      _controller.forward(from: 0.0);
+    }
+  }
+
+  void _setupAnimation() {
+    final progress = (widget.currentXp / widget.maxXp).clamp(0.0, 1.0);
+    _progressAnimation = Tween<double>(
+      begin: 0.0,
+      end: progress,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    double progress = (currentXp / maxXp).clamp(0.0, 1.0);
+    final progress = (widget.currentXp / widget.maxXp).clamp(0.0, 1.0);
+    final percentage = (progress * 100).toStringAsFixed(1);
 
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(AppPadding.xl),
       width: double.infinity,
       decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.5),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white24, width: 1.5),
+        color: AppColors.bgDark,
+        borderRadius: BorderRadius.circular(AppRadius.xl),
+        border: Border.all(color: AppColors.borderLight, width: AppBorders.medium),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'XP: $currentXp / $maxXp',
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Stack(
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Container(
-                height: 30,
-                decoration: BoxDecoration(
-                  color: Colors.black,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              Container(
-                height: 30,
-                width: MediaQuery.of(context).size.width * progress * 0.6,
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [
-                      Color.fromARGB(255, 98, 0, 234),
-                      Color.fromARGB(255, 186, 104, 200),
-                      Color.fromARGB(255, 255, 171, 255),
-                      Color.fromARGB(255, 255, 255, 255),
-                    ],
-                  ),
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color.fromARGB(225, 230, 112, 251),
-                      blurRadius: 8,
-                      spreadRadius: 1,
+              Text(
+                'Experience Points',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      color: AppColors.textPrimary,
+                      fontWeight: FontWeight.bold,
                     ),
-                  ],
-                ),
+              ),
+              Text(
+                '$percentage%',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: AppColors.textSecondary,
+                      fontSize: AppFontSizes.sm,
+                    ),
               ),
             ],
+          ),
+          const SizedBox(height: AppPadding.sm),
+          Text(
+            '${widget.currentXp} / ${widget.maxXp} XP',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: AppColors.textSecondary,
+                ),
+          ),
+          const SizedBox(height: AppPadding.lg),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(AppRadius.md),
+            child: Container(
+              height: AppHeights.xpBar,
+              decoration: BoxDecoration(
+                color: AppColors.primaryDarker,
+                borderRadius: BorderRadius.circular(AppRadius.md),
+              ),
+              child: Stack(
+                children: [
+                  // Animated progress bar
+                  AnimatedBuilder(
+                    animation: _progressAnimation,
+                    builder: (context, child) {
+                      return Container(
+                        height: AppHeights.xpBar,
+                        width: _progressAnimation.value * (MediaQuery.of(context).size.width - AppPadding.xxl * 2),
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: AppColors.xpGradient,
+                          ),
+                          borderRadius: BorderRadius.circular(AppRadius.md),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppColors.shadowPurple,
+                              blurRadius: 8,
+                              spreadRadius: 1,
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ),
           ),
         ],
       ),

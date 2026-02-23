@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:quest_key/constants/app_colors.dart';
+import 'package:quest_key/constants/app_dimens.dart';
 
 class CustomNavBar extends StatefulWidget {
   final int currentIndex;
@@ -28,10 +30,12 @@ class _CustomNavBarState extends State<CustomNavBar> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.symmetric(vertical: AppPadding.sm),
       decoration: BoxDecoration(
         color: Colors.black26,
-        border: const Border(top: BorderSide(color: Colors.white24, width: 1)),
+        border: Border(
+          top: BorderSide(color: AppColors.borderLight, width: AppBorders.thin),
+        ),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -40,34 +44,37 @@ class _CustomNavBarState extends State<CustomNavBar> {
           return GestureDetector(
             onTap: () => widget.onTap(index),
             child: AnimatedOpacity(
-              opacity: isSelected ? 1.0 : 0.6,
-              duration: const Duration(milliseconds: 200),
+              opacity: isSelected ? AppOpacity.full : AppOpacity.disabled,
+              duration: AppDurations.short,
               child: Tooltip(
                 message: navLabels[index],
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Container(
-                      padding: const EdgeInsets.all(8),
+                      padding: const EdgeInsets.all(AppPadding.sm),
                       decoration: BoxDecoration(
                         color: isSelected
-                            ? Colors.deepPurple.withOpacity(0.3)
+                            ? AppColors.accentPurple.withOpacity(0.3)
                             : Colors.transparent,
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(AppRadius.md),
                       ),
                       child: Image.asset(
                         navIcons[index],
-                        height: 32,
-                        width: 32,
+                        height: AppIconSizes.md,
+                        width: AppIconSizes.md,
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: AppPadding.xs),
                     Text(
                       navLabels[index],
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                        color: isSelected ? Colors.white : Colors.white70,
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        fontWeight: isSelected
+                            ? FontWeight.bold
+                            : FontWeight.normal,
+                        color: isSelected
+                            ? AppColors.textPrimary
+                            : AppColors.textSecondary,
                       ),
                     ),
                   ],
