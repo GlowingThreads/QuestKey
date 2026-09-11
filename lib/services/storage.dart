@@ -17,6 +17,13 @@ class QuestListProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  /// Returns the next free quest id: (highest existing id) + 1, or 1 when
+  /// the list is empty. Derived from the loaded list; nothing extra is stored.
+  int nextQuestId() {
+    if (_quests.isEmpty) return 1;
+    return _quests.map((q) => q.id).reduce((a, b) => a > b ? a : b) + 1;
+  }
+
   void addQuest(Quest quest) {
     _quests.add(quest);
     saveQuestsToStorage();
@@ -30,7 +37,7 @@ class QuestListProvider with ChangeNotifier {
   }
 
   void updateQuest(Quest quest) {
-    final index = _quests.indexWhere((quest) => quest.id == quest.id);
+    final index = _quests.indexWhere((q) => q.id == quest.id);
     if (index != -1) {
       _quests[index] = quest;
       saveQuestsToStorage();
@@ -96,7 +103,7 @@ class StorageService {
 
   static Future<void> deleteQuest(Quest quest) async {
     final currentQuests = await loadQuests();
-    currentQuests.removeWhere((quest) => quest.id == quest.id);
+    currentQuests.removeWhere((q) => q.id == quest.id);
     await saveQuests(currentQuests);
   }
 

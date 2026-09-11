@@ -2,9 +2,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:quest_key/models/class_values.dart';
 import 'package:quest_key/state/app_state.dart';
 import 'package:quest_key/models/character.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  SharedPreferences.setMockInitialValues({});
   test('Creating and saving hero should update AppState', () {
     final appState = AppState();
 

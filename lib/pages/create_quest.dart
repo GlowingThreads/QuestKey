@@ -41,6 +41,7 @@ class _CreateQuestPageState extends State<CreateQuestPage> {
           _selectedTime = TimeOfDay.fromDateTime(_selectedDate!);
         }
       }
+      _difficulty = (selectedQuest.xpReward / 50).clamp(1, 5).toDouble();
 
       _initialized = true;
     }
@@ -190,14 +191,12 @@ class _CreateQuestPageState extends State<CreateQuestPage> {
     );
 
     final quest = Quest(
-      id:
-          _editingQuest?.id ??
-          (DateTime.now().millisecondsSinceEpoch % (2 ^ 31)),
+      id: _editingQuest?.id ?? questProvider.nextQuestId(),
       title: _titleController.text.trim(),
       description: _descriptionController.text.trim(),
       questImageUrl: 'assets/images/app_assets/todo.png',
       status: _editingQuest?.status ?? 'In Progress',
-      xpReward: (_editingQuest?.xpReward ?? (50 * _difficulty)).round(),
+      xpReward: (50 * _difficulty).round(),
       startDate: dueDateTime.toString(),
       endDate: dueDateTime.toString(),
       timeRemaining: calculateTimeRemaining(dueDateTime),
@@ -209,8 +208,6 @@ class _CreateQuestPageState extends State<CreateQuestPage> {
       questProvider.addQuest(quest);
     }
 
-    await questProvider.saveQuestsToStorage();
-    await StorageService.saveQuests(questProvider.quests);
     questProvider.setSelectedQuest(null);
 
     if (_remindMe) {
@@ -227,6 +224,8 @@ class _CreateQuestPageState extends State<CreateQuestPage> {
         scheduledDate: tzDateTime, // Schedule reminder 30 mins before due date
       );
     }
+
+    if (!mounted) return;
 
     _titleController.clear();
     _descriptionController.clear();
@@ -272,7 +271,7 @@ class _CreateQuestPageState extends State<CreateQuestPage> {
       lastDate: DateTime(2100),
     );
 
-    if (pickedDate == null) return; // User canceled the date picker
+    if (pickedDate == null || !mounted) return; // User canceled the date picker
 
     // Pick a time
     final pickedTime = await showTimePicker(
