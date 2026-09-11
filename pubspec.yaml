@@ -1,7 +1,9 @@
 name: quest_key
 description: "A new Flutter project."
 publish_to: 'none'
-version: 0.1.0
+# Play release versioning: versionName+versionCode. Bump the +N for every
+# upload to the Play Console (it must strictly increase).
+version: 1.0.0+1
 
 environment:
   sdk: ^3.7.0
@@ -22,6 +24,21 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^5.0.0
+  flutter_launcher_icons: ^0.14.4
+
+# Launcher icon generation. Run `dart run flutter_launcher_icons` ONLY after
+# the source images exist (see assets/icon/README.md):
+#   assets/icon/app_icon.png            1024x1024, full-bleed legacy icon
+#   assets/icon/app_icon_foreground.png 1024x1024, transparent background,
+#                                       artwork inside the centre 66% safe zone
+flutter_launcher_icons:
+  android: true
+  ios: false
+  image_path: "assets/icon/app_icon.png"
+  min_sdk_android: 21
+  adaptive_icon_background: "#1D113E"
+  adaptive_icon_foreground: "assets/icon/app_icon_foreground.png"
+  remove_alpha_ios: true
 
 flutter:
   uses-material-design: true
