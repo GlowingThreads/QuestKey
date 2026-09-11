@@ -55,8 +55,7 @@ void main() {
       expect((await storage.loadQuests()).single.remindMe, isTrue);
     });
 
-    test('does not schedule when the reminder time is already past',
-        () async {
+    test('does not schedule when the reminder time is already past', () async {
       // Due in 10 minutes → reminder would be 20 minutes ago.
       final due = now.add(const Duration(minutes: 10));
 
@@ -70,8 +69,7 @@ void main() {
       expect((await storage.loadQuests()).single.remindMe, isFalse);
     });
 
-    test('does not schedule when the due date itself is in the past',
-        () async {
+    test('does not schedule when the due date itself is in the past', () async {
       final outcome = await provider.saveQuest(
         quest(dueDate: now.subtract(const Duration(days: 1))),
       );
@@ -86,21 +84,23 @@ void main() {
       expect(outcome, QuestSaveOutcome.reminderInPast);
     });
 
-    test('unticked reminder cancels any previous one and schedules nothing',
-        () async {
-      final due = now.add(const Duration(days: 1));
-      await provider.saveQuest(quest(dueDate: due));
-      expect(scheduler.pending, {1});
+    test(
+      'unticked reminder cancels any previous one and schedules nothing',
+      () async {
+        final due = now.add(const Duration(days: 1));
+        await provider.saveQuest(quest(dueDate: due));
+        expect(scheduler.pending, {1});
 
-      final outcome = await provider.saveQuest(
-        quest(dueDate: due, remindMe: false),
-      );
+        final outcome = await provider.saveQuest(
+          quest(dueDate: due, remindMe: false),
+        );
 
-      expect(outcome, QuestSaveOutcome.saved);
-      expect(scheduler.pending, isEmpty);
-      expect(scheduler.scheduled.length, 1); // no new schedule
-      expect(provider.quests.length, 1); // updated in place, not duplicated
-    });
+        expect(outcome, QuestSaveOutcome.saved);
+        expect(scheduler.pending, isEmpty);
+        expect(scheduler.scheduled.length, 1); // no new schedule
+        expect(provider.quests.length, 1); // updated in place, not duplicated
+      },
+    );
 
     test('editing with reminder ticked cancels then reschedules', () async {
       final due = now.add(const Duration(days: 1));
@@ -130,8 +130,12 @@ void main() {
     });
 
     test('uses nextQuestId-compatible ids for new quests', () async {
-      await provider.saveQuest(quest(id: 1, dueDate: now.add(const Duration(days: 1))));
-      await provider.saveQuest(quest(id: 2, dueDate: now.add(const Duration(days: 1))));
+      await provider.saveQuest(
+        quest(id: 1, dueDate: now.add(const Duration(days: 1))),
+      );
+      await provider.saveQuest(
+        quest(id: 2, dueDate: now.add(const Duration(days: 1))),
+      );
       expect(provider.nextQuestId(), 3);
     });
   });

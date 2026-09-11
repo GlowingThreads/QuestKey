@@ -76,7 +76,7 @@ class _CreateHeroWidgetState extends State<CreateHeroWidget> {
                 'Select Class',
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
               ),
-              Text('Swipe and tap to select a class'),
+              const Text('Swipe and tap to select a class'),
               const SizedBox(height: 12),
 
               SizedBox(
@@ -108,7 +108,7 @@ class _CreateHeroWidgetState extends State<CreateHeroWidget> {
                 'Choose your Avatar',
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
               ),
-              Text('Swipe to select an image'),
+              const Text('Swipe to select an image'),
               const SizedBox(height: 12),
 
               ImagePicker(

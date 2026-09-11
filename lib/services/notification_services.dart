@@ -37,7 +37,9 @@ class NotificationService implements ReminderScheduler {
     tzdata.initializeTimeZones();
     await _configureLocalTimezone();
 
-    const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
+    const androidSettings = AndroidInitializationSettings(
+      '@mipmap/ic_launcher',
+    );
     const androidNotificationChannel = AndroidNotificationChannel(
       channelId,
       channelName,

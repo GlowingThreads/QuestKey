@@ -1,1 +1,11 @@
+# Lint rules for Quest Key. Base set: package:flutter_lints.
+# CI runs `flutter analyze --fatal-infos`, so every info-level finding fails
+# the build; fix or explicitly ignore, never leave them.
 include: package:flutter_lints/flutter.yaml
+
+linter:
+  rules:
+    prefer_const_constructors: true
+    avoid_print: true
+    use_build_context_synchronously: true
+    unawaited_futures: true

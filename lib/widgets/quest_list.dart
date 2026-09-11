@@ -91,7 +91,12 @@ class _QuestListState extends State<QuestList> {
                         ),
                       ),
                       onDismissed: (direction) {
-                        _handleQuestDismiss(direction, quest, provider, context);
+                        _handleQuestDismiss(
+                          direction,
+                          quest,
+                          provider,
+                          context,
+                        );
                       },
                       child: _buildQuestTile(quest, provider, context),
                     ),
@@ -122,10 +127,7 @@ class _QuestListState extends State<QuestList> {
       decoration: BoxDecoration(
         color: isCompleted ? AppColors.completedGreen : AppColors.bgPurple,
         borderRadius: BorderRadius.circular(AppRadius.sm),
-        border: Border.all(
-          color: AppColors.borderTeal,
-          width: AppBorders.thin,
-        ),
+        border: Border.all(color: AppColors.borderTeal, width: AppBorders.thin),
       ),
       margin: const EdgeInsets.symmetric(vertical: AppPadding.xs),
       child: ListTile(
@@ -156,9 +158,9 @@ class _QuestListState extends State<QuestList> {
         ),
         subtitle: Text(
           quest.description,
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-            color: AppColors.textTertiary,
-          ),
+          style: Theme.of(
+            context,
+          ).textTheme.bodySmall?.copyWith(color: AppColors.textTertiary),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),

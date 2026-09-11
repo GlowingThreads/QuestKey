@@ -6,11 +6,7 @@ class XpBar extends StatefulWidget {
   final int currentXp;
   final int maxXp;
 
-  const XpBar({
-    super.key,
-    required this.currentXp,
-    required this.maxXp,
-  });
+  const XpBar({super.key, required this.currentXp, required this.maxXp});
 
   @override
   State<XpBar> createState() => _XpBarState();
@@ -62,7 +58,10 @@ class _XpBarState extends State<XpBar> with SingleTickerProviderStateMixin {
       decoration: BoxDecoration(
         color: AppColors.bgDark,
         borderRadius: BorderRadius.circular(AppRadius.xl),
-        border: Border.all(color: AppColors.borderLight, width: AppBorders.medium),
+        border: Border.all(
+          color: AppColors.borderLight,
+          width: AppBorders.medium,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -73,25 +72,25 @@ class _XpBarState extends State<XpBar> with SingleTickerProviderStateMixin {
               Text(
                 'Experience Points',
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      color: AppColors.textPrimary,
-                      fontWeight: FontWeight.bold,
-                    ),
+                  color: AppColors.textPrimary,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               Text(
                 '$percentage%',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: AppColors.textSecondary,
-                      fontSize: AppFontSizes.sm,
-                    ),
+                  color: AppColors.textSecondary,
+                  fontSize: AppFontSizes.sm,
+                ),
               ),
             ],
           ),
           const SizedBox(height: AppPadding.sm),
           Text(
             '${widget.currentXp} / ${widget.maxXp} XP',
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: AppColors.textSecondary,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
           ),
           const SizedBox(height: AppPadding.lg),
           ClipRRect(
@@ -110,14 +109,17 @@ class _XpBarState extends State<XpBar> with SingleTickerProviderStateMixin {
                     builder: (context, child) {
                       return Container(
                         height: AppHeights.xpBar,
-                        width: _progressAnimation.value * (MediaQuery.of(context).size.width - AppPadding.xxl * 2),
+                        width:
+                            _progressAnimation.value *
+                            (MediaQuery.of(context).size.width -
+                                AppPadding.xxl * 2),
                         decoration: BoxDecoration(
                           gradient: const LinearGradient(
                             colors: AppColors.xpGradient,
                           ),
                           borderRadius: BorderRadius.circular(AppRadius.md),
                           boxShadow: [
-                            BoxShadow(
+                            const BoxShadow(
                               color: AppColors.shadowPurple,
                               blurRadius: 8,
                               spreadRadius: 1,

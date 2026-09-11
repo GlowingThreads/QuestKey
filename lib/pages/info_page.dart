@@ -108,9 +108,9 @@ class InfoPage extends StatelessWidget {
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      child: Row(
+                      child: const Row(
                         mainAxisSize: MainAxisSize.min,
-                        children: const [
+                        children: [
                           Icon(Icons.person_add, size: 20),
                           SizedBox(width: 8),
                           Text('Create Hero'),
@@ -121,8 +121,7 @@ class InfoPage extends StatelessWidget {
                     ElevatedButton(
                       onPressed: () async {
                         final appState = context.read<AppState>();
-                        final questProvider =
-                            context.read<QuestListProvider>();
+                        final questProvider = context.read<QuestListProvider>();
                         final messenger = ScaffoldMessenger.of(context);
                         final navigator = Navigator.of(context);
 

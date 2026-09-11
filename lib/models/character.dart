@@ -72,7 +72,9 @@ class HeroCharacter {
     DateTime? createdDate,
     this.questsCompleted = 0,
   }) : learnedSkills = List.unmodifiable(learnedSkills ?? const []),
-       unlockedAchievements = List.unmodifiable(unlockedAchievements ?? const []),
+       unlockedAchievements = List.unmodifiable(
+         unlockedAchievements ?? const [],
+       ),
        createdDate = createdDate ?? DateTime.now();
 
   factory HeroCharacter.fromClasses(Classes classes) {
@@ -159,7 +161,9 @@ class HeroCharacter {
     return HeroCharacter(
       name: json['name'] as String? ?? 'Hero',
       motto: json['motto'] as String? ?? '',
-      classes: Classes.fromJson(Map<String, dynamic>.from(json['classes'] as Map)),
+      classes: Classes.fromJson(
+        Map<String, dynamic>.from(json['classes'] as Map),
+      ),
       description: json['description'] as String? ?? '',
       imageUrl: json['imageUrl'] as String? ?? '',
       levelUp:
@@ -235,13 +239,19 @@ class HeroCharacter {
       case 'dexterity':
         return copyWith(dexterity: dexterity + points, levelUp: remaining);
       case 'intelligence':
-        return copyWith(intelligence: intelligence + points, levelUp: remaining);
+        return copyWith(
+          intelligence: intelligence + points,
+          levelUp: remaining,
+        );
       case 'wisdom':
         return copyWith(wisdom: wisdom + points, levelUp: remaining);
       case 'charisma':
         return copyWith(charisma: charisma + points, levelUp: remaining);
       case 'constitution':
-        return copyWith(constitution: constitution + points, levelUp: remaining);
+        return copyWith(
+          constitution: constitution + points,
+          levelUp: remaining,
+        );
       case 'luck':
         return copyWith(luck: luck + points, levelUp: remaining);
       default:

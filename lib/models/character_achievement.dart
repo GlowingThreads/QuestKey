@@ -82,7 +82,7 @@ class UnlockedAchievement {
 
 // Predefined achievements
 final List<CharacterAchievement> allAchievements = [
-  CharacterAchievement(
+  const CharacterAchievement(
     id: 'first_quest',
     name: 'Quest Initiate',
     description: 'Complete your first quest.',
@@ -90,7 +90,7 @@ final List<CharacterAchievement> allAchievements = [
     category: 'progress',
     rarityScore: 1,
   ),
-  CharacterAchievement(
+  const CharacterAchievement(
     id: 'first_level',
     name: 'Leveled Up',
     description: 'Reach level 2.',
@@ -98,7 +98,7 @@ final List<CharacterAchievement> allAchievements = [
     category: 'progress',
     rarityScore: 1,
   ),
-  CharacterAchievement(
+  const CharacterAchievement(
     id: 'quest_master',
     name: 'Quest Master',
     description: 'Complete 10 quests.',
@@ -106,7 +106,7 @@ final List<CharacterAchievement> allAchievements = [
     category: 'progress',
     rarityScore: 3,
   ),
-  CharacterAchievement(
+  const CharacterAchievement(
     id: 'level_ten',
     name: 'Veteran',
     description: 'Reach level 10.',
@@ -114,7 +114,7 @@ final List<CharacterAchievement> allAchievements = [
     category: 'progress',
     rarityScore: 3,
   ),
-  CharacterAchievement(
+  const CharacterAchievement(
     id: 'stat_master',
     name: 'Stat Allocator',
     description: 'Allocate all available stat points.',
@@ -122,7 +122,7 @@ final List<CharacterAchievement> allAchievements = [
     category: 'progress',
     rarityScore: 2,
   ),
-  CharacterAchievement(
+  const CharacterAchievement(
     id: 'speedrunner',
     name: 'Speedrunner',
     description: 'Complete 5 quests in a single day.',
@@ -130,7 +130,7 @@ final List<CharacterAchievement> allAchievements = [
     category: 'challenge',
     rarityScore: 4,
   ),
-  CharacterAchievement(
+  const CharacterAchievement(
     id: 'perfectionist',
     name: 'Perfectionist',
     description: 'Complete 10 consecutive quests without a day off.',
@@ -138,7 +138,7 @@ final List<CharacterAchievement> allAchievements = [
     category: 'challenge',
     rarityScore: 4,
   ),
-  CharacterAchievement(
+  const CharacterAchievement(
     id: 'balanced_hero',
     name: 'Balanced Hero',
     description: 'Achieve 5 stat points in all attributes.',
@@ -146,7 +146,7 @@ final List<CharacterAchievement> allAchievements = [
     category: 'progress',
     rarityScore: 3,
   ),
-  CharacterAchievement(
+  const CharacterAchievement(
     id: 'specialist',
     name: 'Specialist',
     description: 'Get 10 points in any single stat.',
@@ -154,7 +154,7 @@ final List<CharacterAchievement> allAchievements = [
     category: 'progress',
     rarityScore: 3,
   ),
-  CharacterAchievement(
+  const CharacterAchievement(
     id: 'secret_hidden',
     name: '???',
     description: 'Hidden achievement.',

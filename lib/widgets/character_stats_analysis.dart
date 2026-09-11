@@ -7,10 +7,7 @@ import 'package:quest_key/constants/app_dimens.dart';
 class CharacterStatsAnalysis extends StatelessWidget {
   final HeroCharacter hero;
 
-  const CharacterStatsAnalysis({
-    super.key,
-    required this.hero,
-  });
+  const CharacterStatsAnalysis({super.key, required this.hero});
 
   @override
   Widget build(BuildContext context) {
@@ -32,9 +29,9 @@ class CharacterStatsAnalysis extends StatelessWidget {
           Text(
             'Character Stats',
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: AppColors.textPrimary,
-                  fontWeight: FontWeight.bold,
-                ),
+              color: AppColors.textPrimary,
+              fontWeight: FontWeight.bold,
+            ),
           ),
           const SizedBox(height: AppPadding.lg),
           // Stats grid
@@ -87,10 +84,7 @@ class CharacterStatsAnalysis extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Text(
-            icon,
-            style: const TextStyle(fontSize: 20),
-          ),
+          Text(icon, style: const TextStyle(fontSize: 20)),
           const SizedBox(width: AppPadding.sm),
           Expanded(
             child: Column(
@@ -100,17 +94,15 @@ class CharacterStatsAnalysis extends StatelessWidget {
                 Text(
                   name,
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: AppColors.textSecondary,
-                      ),
+                    color: AppColors.textSecondary,
+                  ),
                 ),
                 ClipRRect(
                   borderRadius: BorderRadius.circular(AppRadius.sm),
                   child: LinearProgressIndicator(
                     value: progress,
                     backgroundColor: AppColors.primaryDarker,
-                    valueColor: AlwaysStoppedAnimation(
-                      _getStatColor(value),
-                    ),
+                    valueColor: AlwaysStoppedAnimation(_getStatColor(value)),
                     minHeight: 4,
                   ),
                 ),
@@ -121,9 +113,9 @@ class CharacterStatsAnalysis extends StatelessWidget {
           Text(
             value.toString(),
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: AppColors.textPrimary,
-                  fontWeight: FontWeight.bold,
-                ),
+              color: AppColors.textPrimary,
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ],
       ),
@@ -189,15 +181,15 @@ class CharacterStatsAnalysis extends StatelessWidget {
                       Text(
                         'Background',
                         style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                              color: AppColors.textSecondary,
-                            ),
+                          color: AppColors.textSecondary,
+                        ),
                       ),
                       Text(
                         hero.background!.name,
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: AppColors.accentGreen,
-                              fontWeight: FontWeight.w600,
-                            ),
+                          color: AppColors.accentGreen,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ],
                   ),
@@ -223,15 +215,15 @@ class CharacterStatsAnalysis extends StatelessWidget {
         Text(
           value,
           style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                color: AppColors.textPrimary,
-                fontWeight: FontWeight.bold,
-              ),
+            color: AppColors.textPrimary,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         Text(
           label,
-          style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                color: AppColors.textSecondary,
-              ),
+          style: Theme.of(
+            context,
+          ).textTheme.labelSmall?.copyWith(color: AppColors.textSecondary),
         ),
       ],
     );

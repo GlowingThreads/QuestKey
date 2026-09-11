@@ -49,7 +49,7 @@ class CharacterSkill {
 
 /// Skills learned by characters
 final List<CharacterSkill> allSkills = [
-  CharacterSkill(
+  const CharacterSkill(
     id: 'power_strike',
     name: 'Power Strike',
     description: 'A devastating melee attack dealing increased damage.',
@@ -59,7 +59,7 @@ final List<CharacterSkill> allSkills = [
     costPerUse: 15,
     requirements: ['strength:5'],
   ),
-  CharacterSkill(
+  const CharacterSkill(
     id: 'swift_strike',
     name: 'Swift Strike',
     description: 'A quick strike that may land a critical hit.',
@@ -69,7 +69,7 @@ final List<CharacterSkill> allSkills = [
     costPerUse: 10,
     requirements: ['dexterity:6'],
   ),
-  CharacterSkill(
+  const CharacterSkill(
     id: 'fireball',
     name: 'Fireball',
     description: 'Hurl a ball of flames at enemies, dealing area damage.',
@@ -79,7 +79,7 @@ final List<CharacterSkill> allSkills = [
     costPerUse: 25,
     requirements: ['intelligence:7'],
   ),
-  CharacterSkill(
+  const CharacterSkill(
     id: 'heal',
     name: 'Heal',
     description: 'Restore health to yourself or an ally.',
@@ -89,7 +89,7 @@ final List<CharacterSkill> allSkills = [
     costPerUse: 20,
     requirements: ['wisdom:6'],
   ),
-  CharacterSkill(
+  const CharacterSkill(
     id: 'stealth',
     name: 'Stealth',
     description: 'Blend into shadows for tactical advantage.',
@@ -99,7 +99,7 @@ final List<CharacterSkill> allSkills = [
     costPerUse: 10,
     requirements: ['dexterity:7'],
   ),
-  CharacterSkill(
+  const CharacterSkill(
     id: 'shield_bash',
     name: 'Shield Bash',
     description: 'Bash enemies with your shield, stunning them briefly.',
@@ -109,7 +109,7 @@ final List<CharacterSkill> allSkills = [
     costPerUse: 12,
     requirements: ['strength:6', 'constitution:5'],
   ),
-  CharacterSkill(
+  const CharacterSkill(
     id: 'mana_shield',
     name: 'Mana Shield',
     description: 'Use mana to absorb incoming damage.',
@@ -119,7 +119,7 @@ final List<CharacterSkill> allSkills = [
     costPerUse: 30,
     requirements: ['intelligence:8', 'wisdom:5'],
   ),
-  CharacterSkill(
+  const CharacterSkill(
     id: 'whirlwind',
     name: 'Whirlwind Attack',
     description: 'Spin rapidly to hit all nearby enemies.',

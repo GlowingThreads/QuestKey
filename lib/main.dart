@@ -97,10 +97,7 @@ class _MainScreenState extends State<MainScreen> {
         transitionBuilder: (child, animation) {
           return FadeTransition(opacity: animation, child: child);
         },
-        child: KeyedSubtree(
-          key: ValueKey<int>(index),
-          child: _pages[index],
-        ),
+        child: KeyedSubtree(key: ValueKey<int>(index), child: _pages[index]),
       ),
       bottomNavigationBar: CustomNavBar(
         currentIndex: index,

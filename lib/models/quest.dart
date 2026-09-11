@@ -176,7 +176,9 @@ class Quest {
 
   static int _readDifficulty(Map<String, dynamic> json) {
     final stored = json['difficulty'];
-    if (stored is num) return stored.toInt().clamp(minDifficulty, maxDifficulty);
+    if (stored is num) {
+      return stored.toInt().clamp(minDifficulty, maxDifficulty);
+    }
 
     final xp = json['xpReward'];
     if (xp is num && xp > 0) {

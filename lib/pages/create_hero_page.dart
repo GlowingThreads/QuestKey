@@ -57,7 +57,7 @@ class _CreateHeroPageState extends State<CreateHeroPage> {
       classes: _selectedClass!,
     );
 
-    showDialog(
+    await showDialog<void>(
       context: context,
       builder:
           (ctx) => AlertDialog(

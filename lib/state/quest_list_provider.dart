@@ -49,8 +49,7 @@ class QuestListProvider with ChangeNotifier {
   /// Read-only view of all quests.
   List<Quest> get quests => List.unmodifiable(_quests);
 
-  List<Quest> get inProgressQuests =>
-      getFilteredQuests(QuestStatus.inProgress);
+  List<Quest> get inProgressQuests => getFilteredQuests(QuestStatus.inProgress);
 
   List<Quest> get completedQuests => getFilteredQuests(QuestStatus.completed);
 

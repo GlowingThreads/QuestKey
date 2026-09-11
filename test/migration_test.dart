@@ -98,9 +98,10 @@ void main() {
     });
 
     test('prefers the new dueDate/difficulty keys when present', () {
-      final json = _legacyQuestJson()
-        ..['dueDate'] = '2031-01-02T03:04:00.000'
-        ..['difficulty'] = 5;
+      final json =
+          _legacyQuestJson()
+            ..['dueDate'] = '2031-01-02T03:04:00.000'
+            ..['difficulty'] = 5;
 
       final quest = Quest.fromJson(json);
 

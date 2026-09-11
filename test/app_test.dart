@@ -34,22 +34,24 @@ void main() {
     expect((await storage.loadHero())!.name, 'TestHero');
   });
 
-  test('completeQuestForHero awards XP, counts the quest and persists',
-      () async {
-    final storage = InMemoryQuestStorage();
-    final appState = AppState(storage: storage);
-    await appState.saveHero(
-      makeHero(levelUp: const LevelUp(level: 1, exp: 10, maxExp: 100)),
-    );
+  test(
+    'completeQuestForHero awards XP, counts the quest and persists',
+    () async {
+      final storage = InMemoryQuestStorage();
+      final appState = AppState(storage: storage);
+      await appState.saveHero(
+        makeHero(levelUp: const LevelUp(level: 1, exp: 10, maxExp: 100)),
+      );
 
-    final leveledUp = await appState.completeQuestForHero(50);
+      final leveledUp = await appState.completeQuestForHero(50);
 
-    expect(leveledUp, isFalse);
-    expect(appState.lastCompletionLeveledUp, isFalse);
-    expect(appState.hero!.levelUp.exp, 60);
-    expect(appState.hero!.questsCompleted, 1);
-    expect((await storage.loadHero())!.levelUp.exp, 60);
-  });
+      expect(leveledUp, isFalse);
+      expect(appState.lastCompletionLeveledUp, isFalse);
+      expect(appState.hero!.levelUp.exp, 60);
+      expect(appState.hero!.questsCompleted, 1);
+      expect((await storage.loadHero())!.levelUp.exp, 60);
+    },
+  );
 
   test('completeQuestForHero reports a level up', () async {
     final appState = AppState(storage: InMemoryQuestStorage());

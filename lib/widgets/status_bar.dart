@@ -55,7 +55,8 @@ class _StatBarState extends State<StatBar> with SingleTickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    final availableWidth = MediaQuery.of(context).size.width - AppPadding.xxl * 2;
+    final availableWidth =
+        MediaQuery.of(context).size.width - AppPadding.xxl * 2;
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: AppPadding.md),
@@ -69,17 +70,17 @@ class _StatBarState extends State<StatBar> with SingleTickerProviderStateMixin {
                 child: Text(
                   widget.label,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: AppColors.textPrimary,
-                        fontWeight: FontWeight.w600,
-                      ),
+                    color: AppColors.textPrimary,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
               Text(
                 '${widget.value}',
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: AppColors.textSecondary,
-                      fontWeight: FontWeight.w500,
-                    ),
+                  color: AppColors.textSecondary,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
               if (widget.onAdd != null) ...[
                 const SizedBox(width: AppPadding.md),
@@ -136,7 +137,9 @@ class _StatBarState extends State<StatBar> with SingleTickerProviderStateMixin {
                           borderRadius: BorderRadius.circular(AppRadius.md),
                           boxShadow: [
                             BoxShadow(
-                              color: AppColors.shadowGreen.withValues(alpha: 0.6),
+                              color: AppColors.shadowGreen.withValues(
+                                alpha: 0.6,
+                              ),
                               blurRadius: 8,
                               spreadRadius: 1,
                             ),

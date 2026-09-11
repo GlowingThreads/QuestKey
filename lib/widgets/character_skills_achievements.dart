@@ -7,10 +7,7 @@ import 'package:quest_key/constants/app_dimens.dart';
 class CharacterSkillsAchievements extends StatefulWidget {
   final HeroCharacter hero;
 
-  const CharacterSkillsAchievements({
-    super.key,
-    required this.hero,
-  });
+  const CharacterSkillsAchievements({super.key, required this.hero});
 
   @override
   State<CharacterSkillsAchievements> createState() =>
@@ -18,7 +15,8 @@ class CharacterSkillsAchievements extends StatefulWidget {
 }
 
 class _CharacterSkillsAchievementsState
-    extends State<CharacterSkillsAchievements> with TickerProviderStateMixin {
+    extends State<CharacterSkillsAchievements>
+    with TickerProviderStateMixin {
   late TabController _tabController;
 
   @override
@@ -52,10 +50,7 @@ class _CharacterSkillsAchievementsState
             unselectedLabelColor: AppColors.textSecondary,
             indicatorColor: AppColors.accentGreen,
             tabs: [
-              Tab(
-                text:
-                    'Skills (${widget.hero.learnedSkills.length})',
-              ),
+              Tab(text: 'Skills (${widget.hero.learnedSkills.length})'),
               Tab(
                 text:
                     'Achievements (${widget.hero.unlockedAchievements.length})',
@@ -65,10 +60,7 @@ class _CharacterSkillsAchievementsState
           Expanded(
             child: TabBarView(
               controller: _tabController,
-              children: [
-                _buildSkillsTab(),
-                _buildAchievementsTab(),
-              ],
+              children: [_buildSkillsTab(), _buildAchievementsTab()],
             ),
           ),
         ],
@@ -81,9 +73,9 @@ class _CharacterSkillsAchievementsState
       return Center(
         child: Text(
           'No skills learned yet',
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: AppColors.textSecondary,
-              ),
+          style: Theme.of(
+            context,
+          ).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
         ),
       );
     }
@@ -119,16 +111,17 @@ class _CharacterSkillsAchievementsState
                       children: [
                         Text(
                           skill.name,
-                          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                color: AppColors.textPrimary,
-                                fontWeight: FontWeight.bold,
-                              ),
+                          style: Theme.of(
+                            context,
+                          ).textTheme.bodyLarge?.copyWith(
+                            color: AppColors.textPrimary,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                         Text(
                           'Lv. ${learnedSkill.level}',
-                          style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                                color: AppColors.textSecondary,
-                              ),
+                          style: Theme.of(context).textTheme.labelSmall
+                              ?.copyWith(color: AppColors.textSecondary),
                         ),
                       ],
                     ),
@@ -144,9 +137,9 @@ class _CharacterSkillsAchievementsState
                     ),
                     child: Text(
                       '${skill.costPerUse} mana',
-                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                            color: Colors.cyan[300],
-                          ),
+                      style: Theme.of(
+                        context,
+                      ).textTheme.labelSmall?.copyWith(color: Colors.cyan[300]),
                     ),
                   ),
                 ],
@@ -154,17 +147,17 @@ class _CharacterSkillsAchievementsState
               const SizedBox(height: AppPadding.sm),
               Text(
                 skill.description,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: AppColors.textSecondary,
-                    ),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
               ),
               if (learnedSkill.timesUsed > 0) ...[
                 const SizedBox(height: AppPadding.sm),
                 Text(
                   'Used ${learnedSkill.timesUsed} times',
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: AppColors.textSecondary,
-                      ),
+                    color: AppColors.textSecondary,
+                  ),
                 ),
               ],
             ],
@@ -179,9 +172,9 @@ class _CharacterSkillsAchievementsState
       return Center(
         child: Text(
           'No achievements unlocked yet',
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: AppColors.textSecondary,
-              ),
+          style: Theme.of(
+            context,
+          ).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
         ),
       );
     }
@@ -220,10 +213,7 @@ class _CharacterSkillsAchievementsState
       decoration: BoxDecoration(
         color: AppColors.primaryDarker,
         borderRadius: BorderRadius.circular(AppRadius.md),
-        border: Border.all(
-          color: rarityColor,
-          width: AppBorders.medium,
-        ),
+        border: Border.all(color: rarityColor, width: AppBorders.medium),
         boxShadow: [
           BoxShadow(
             color: rarityColor.withValues(alpha: 0.3),
@@ -243,9 +233,9 @@ class _CharacterSkillsAchievementsState
                 name,
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: AppColors.textPrimary,
-                      fontWeight: FontWeight.bold,
-                    ),
+                  color: AppColors.textPrimary,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ],
           ),
@@ -254,11 +244,7 @@ class _CharacterSkillsAchievementsState
             right: AppPadding.sm,
             child: Tooltip(
               message: description,
-              child: Icon(
-                Icons.info_outline,
-                color: rarityColor,
-                size: 20,
-              ),
+              child: Icon(Icons.info_outline, color: rarityColor, size: 20),
             ),
           ),
         ],

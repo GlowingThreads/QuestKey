@@ -42,7 +42,12 @@ class _QuestsPageState extends State<QuestsPage> {
                   Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: const Color.fromARGB(255, 35, 9, 80).withAlpha(200),
+                      color: const Color.fromARGB(
+                        255,
+                        35,
+                        9,
+                        80,
+                      ).withAlpha(200),
                       border: Border.all(
                         color: const Color.fromARGB(99, 255, 255, 255),
                         width: 2,
@@ -74,9 +79,7 @@ class _QuestsPageState extends State<QuestsPage> {
                   ),
                   const SizedBox(height: 10),
                   // Quest list
-                  Expanded(
-                    child: QuestList(filterStatus: _filter),
-                  ),
+                  Expanded(child: QuestList(filterStatus: _filter)),
                 ],
               ),
             ),

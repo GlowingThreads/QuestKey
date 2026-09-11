@@ -42,7 +42,9 @@ void main() {
   });
 
   test('Hero stats are updated correctly', () {
-    final hero = _hero(const LevelUp(level: 1, exp: 0, maxExp: 100, statPoints: 5));
+    final hero = _hero(
+      const LevelUp(level: 1, exp: 0, maxExp: 100, statPoints: 5),
+    );
 
     final updated = hero.assignStatPoints('strength', 3);
 
