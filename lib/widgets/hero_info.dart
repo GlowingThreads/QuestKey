@@ -22,7 +22,7 @@ class HeroProfileCard extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.3),
+            color: Colors.black.withValues(alpha: 0.3),
             blurRadius: 8,
             offset: const Offset(0, 4),
           ),
@@ -160,7 +160,7 @@ class HeroProfileCard extends StatelessWidget {
         color: AppColors.primaryDarker,
         borderRadius: BorderRadius.circular(AppRadius.md),
         border: Border.all(
-          color: color.withOpacity(0.3),
+          color: color.withValues(alpha: 0.3),
           width: AppBorders.thin,
         ),
       ),

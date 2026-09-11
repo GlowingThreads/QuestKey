@@ -55,7 +55,7 @@ class _CustomNavBarState extends State<CustomNavBar> {
                       padding: const EdgeInsets.all(AppPadding.sm),
                       decoration: BoxDecoration(
                         color: isSelected
-                            ? AppColors.accentPurple.withOpacity(0.3)
+                            ? AppColors.accentPurple.withValues(alpha: 0.3)
                             : Colors.transparent,
                         borderRadius: BorderRadius.circular(AppRadius.md),
                       ),

@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:quest_key/services/storage.dart';
-import 'package:quest_key/state/app_state.dart';
-import 'package:quest_key/widgets/lvl_notifcation.dart';
 import 'package:quest_key/constants/app_colors.dart';
 import 'package:quest_key/constants/app_dimens.dart';
+import 'package:quest_key/models/quest.dart';
+import 'package:quest_key/state/app_state.dart';
+import 'package:quest_key/state/quest_list_provider.dart';
+import 'package:quest_key/widgets/lvl_notifcation.dart';
 
 class QuestList extends StatefulWidget {
-  final String? filterStatus;
+  /// Show only quests with this status; `null` shows every quest.
+  final QuestStatus? filterStatus;
 
   const QuestList({super.key, this.filterStatus});
 
@@ -19,15 +21,7 @@ class _QuestListState extends State<QuestList> {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<QuestListProvider>();
-    final allQuests = provider.quests;
-    final rawQuests =
-        widget.filterStatus != null
-            ? allQuests
-                .where((quest) => quest.status == widget.filterStatus)
-                .toList()
-            : allQuests;
-
-    final quests = [...rawQuests];
+    final quests = provider.getFilteredQuests(widget.filterStatus);
 
     return Container(
       padding: const EdgeInsets.all(AppPadding.md),
@@ -46,8 +40,8 @@ class _QuestListState extends State<QuestList> {
                 child: Text(
                   'No quests available',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: AppColors.textPrimary,
-                      ),
+                    color: AppColors.textPrimary,
+                  ),
                 ),
               )
               : ListView.builder(
@@ -61,20 +55,15 @@ class _QuestListState extends State<QuestList> {
                       end: Offset.zero,
                     ).animate(
                       CurvedAnimation(
-                        parent: ModalRoute.of(context)?.animation ??
-                            AlwaysStoppedAnimation(1.0),
+                        parent:
+                            ModalRoute.of(context)?.animation ??
+                            const AlwaysStoppedAnimation(1.0),
                         curve: Curves.easeOutCubic,
                       ),
                     ),
                     child: Dismissible(
                       key: Key(quest.id.toString()),
-                      direction:
-                          widget.filterStatus == null ||
-                                  widget.filterStatus == 'All'
-                              ? DismissDirection.endToStart
-                              : quest.status == 'Completed'
-                              ? DismissDirection.endToStart
-                              : DismissDirection.horizontal,
+                      direction: _dismissDirectionFor(quest),
                       background: Container(
                         padding: const EdgeInsets.only(left: AppPadding.xl),
                         alignment: Alignment.centerLeft,
@@ -102,12 +91,7 @@ class _QuestListState extends State<QuestList> {
                         ),
                       ),
                       onDismissed: (direction) {
-                        _handleQuestDismiss(
-                          direction,
-                          quest,
-                          provider,
-                          context,
-                        );
+                        _handleQuestDismiss(direction, quest, provider, context);
                       },
                       child: _buildQuestTile(quest, provider, context),
                     ),
@@ -117,12 +101,22 @@ class _QuestListState extends State<QuestList> {
     );
   }
 
+  /// On the "All" list and for completed quests only deletion (swipe left)
+  /// is allowed; in-progress quests on a filtered list can also be completed
+  /// by swiping right.
+  DismissDirection _dismissDirectionFor(Quest quest) {
+    if (widget.filterStatus == null || quest.isCompleted) {
+      return DismissDirection.endToStart;
+    }
+    return DismissDirection.horizontal;
+  }
+
   Widget _buildQuestTile(
-    dynamic quest,
+    Quest quest,
     QuestListProvider provider,
     BuildContext context,
   ) {
-    final isCompleted = quest.status == 'Completed';
+    final isCompleted = quest.isCompleted;
 
     return Container(
       decoration: BoxDecoration(
@@ -153,18 +147,18 @@ class _QuestListState extends State<QuestList> {
         title: Text(
           quest.title,
           style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                color: AppColors.textPrimary,
-                decoration: isCompleted ? TextDecoration.lineThrough : null,
-                decorationColor: AppColors.textSecondary,
-              ),
+            color: AppColors.textPrimary,
+            decoration: isCompleted ? TextDecoration.lineThrough : null,
+            decorationColor: AppColors.textSecondary,
+          ),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
         subtitle: Text(
           quest.description,
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: AppColors.textTertiary,
-              ),
+            color: AppColors.textTertiary,
+          ),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
@@ -183,51 +177,45 @@ class _QuestListState extends State<QuestList> {
     );
   }
 
-  void _handleQuestDismiss(
+  Future<void> _handleQuestDismiss(
     DismissDirection direction,
-    dynamic quest,
+    Quest quest,
     QuestListProvider provider,
     BuildContext context,
-  ) {
-    final hero = context.read<AppState>().hero;
+  ) async {
+    final appState = context.read<AppState>();
+    final messenger = ScaffoldMessenger.of(context);
 
-    if (direction == DismissDirection.startToEnd &&
-        quest.status != 'Completed') {
-      provider.markQuestCompleted(quest);
+    if (direction == DismissDirection.startToEnd && !quest.isCompleted) {
+      await provider.markQuestCompleted(quest);
+      final leveledUp = await appState.completeQuestForHero(quest.xpReward);
 
-      if (hero != null) {
-        final leveledUp = hero.gainExperience(quest.xpReward);
-        context.read<AppState>().saveHero(hero);
-
-        if (leveledUp) {
-          showGeneralDialog(
-            context: context,
-            barrierDismissible: true,
-            barrierColor: Colors.black54,
-            barrierLabel: 'Dismiss',
-            transitionDuration: AppDurations.medium,
-            pageBuilder: (context, animation, secondaryAnimation) =>
-                Center(
-                  child: LevelUpWidget(
-                    levelUp: hero.levelUp,
-                  ),
-                ),
-          );
-        }
-      }
-
-      ScaffoldMessenger.of(context).showSnackBar(
+      messenger.showSnackBar(
         SnackBar(
-          content: Text('Completed "${quest.title}"'),
+          content: Text('Completed "${quest.title}" (+${quest.xpReward} XP)'),
           backgroundColor: const Color.fromARGB(199, 45, 241, 255),
           behavior: SnackBarBehavior.floating,
           margin: const EdgeInsets.all(AppPadding.lg),
         ),
       );
-    } else if (direction == DismissDirection.endToStart) {
-      provider.removeQuest(quest);
 
-      ScaffoldMessenger.of(context).showSnackBar(
+      final hero = appState.hero;
+      if (leveledUp && hero != null && context.mounted) {
+        await showGeneralDialog(
+          context: context,
+          barrierDismissible: true,
+          barrierColor: Colors.black54,
+          barrierLabel: 'Dismiss',
+          transitionDuration: AppDurations.medium,
+          pageBuilder:
+              (context, animation, secondaryAnimation) =>
+                  Center(child: LevelUpWidget(levelUp: hero.levelUp)),
+        );
+      }
+    } else if (direction == DismissDirection.endToStart) {
+      await provider.removeQuest(quest);
+
+      messenger.showSnackBar(
         SnackBar(
           content: Text('Deleted "${quest.title}"'),
           backgroundColor: const Color.fromARGB(180, 238, 67, 55),

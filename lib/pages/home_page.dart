@@ -4,7 +4,8 @@ import 'package:quest_key/state/app_state.dart';
 import 'package:quest_key/widgets/quest_list.dart';
 import 'package:quest_key/widgets/xp_bar.dart';
 import 'package:quest_key/widgets/hero_info.dart';
-import 'package:quest_key/services/storage.dart';
+import 'package:quest_key/models/quest.dart';
+import 'package:quest_key/state/quest_list_provider.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -66,7 +67,7 @@ class _HomePageState extends State<HomePage> {
                       style: TextStyle(color: Colors.white),
                     ),
                   const SizedBox(height: 20),
-                  QuestList(filterStatus: 'In Progress'),
+                  const QuestList(filterStatus: QuestStatus.inProgress),
                   const SizedBox(height: 20),
                   if (hero != null)
                     XpBar(

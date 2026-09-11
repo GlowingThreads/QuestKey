@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:quest_key/models/quest.dart';
 import 'package:quest_key/widgets/quest_list.dart';
 
 class QuestsPage extends StatefulWidget {
@@ -9,7 +10,8 @@ class QuestsPage extends StatefulWidget {
 }
 
 class _QuestsPageState extends State<QuestsPage> {
-  String _filter = 'In Progress';
+  /// `null` means "All".
+  QuestStatus? _filter = QuestStatus.inProgress;
 
   @override
   Widget build(BuildContext context) {
@@ -52,11 +54,11 @@ class _QuestsPageState extends State<QuestsPage> {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          _filterIcon('todo.png', 'In Progress'),
+                          _filterIcon('todo.png', QuestStatus.inProgress),
                           const SizedBox(width: 12),
-                          _filterIcon('all.png', 'All'),
+                          _filterIcon('all.png', null),
                           const SizedBox(width: 12),
-                          _filterIcon('finished.png', 'Completed'),
+                          _filterIcon('finished.png', QuestStatus.completed),
                         ],
                       ),
                     ),
@@ -73,9 +75,7 @@ class _QuestsPageState extends State<QuestsPage> {
                   const SizedBox(height: 10),
                   // Quest list
                   Expanded(
-                    child: QuestList(
-                      filterStatus: _filter == 'All' ? null : _filter,
-                    ),
+                    child: QuestList(filterStatus: _filter),
                   ),
                 ],
               ),
@@ -86,13 +86,14 @@ class _QuestsPageState extends State<QuestsPage> {
     );
   }
 
-  Widget _filterIcon(String assetName, String label) {
-    final isSelected = _filter == label;
+  Widget _filterIcon(String assetName, QuestStatus? status) {
+    final label = status?.label ?? 'All';
+    final isSelected = _filter == status;
 
     return GestureDetector(
       onTap: () {
         setState(() {
-          _filter = label;
+          _filter = status;
         });
       },
       child: Container(

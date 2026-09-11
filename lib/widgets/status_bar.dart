@@ -55,7 +55,6 @@ class _StatBarState extends State<StatBar> with SingleTickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    final fillPercent = (widget.value / 20).clamp(0.0, 1.0);
     final availableWidth = MediaQuery.of(context).size.width - AppPadding.xxl * 2;
 
     return Padding(

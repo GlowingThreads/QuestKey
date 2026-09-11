@@ -15,8 +15,6 @@ class CharacterStatsAnalysis extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final stats = _getStatsList();
-    final maxStatValue =
-        stats.fold<int>(0, (max, stat) => stat['value'] > max ? stat['value'] : max);
 
     return Container(
       padding: const EdgeInsets.all(AppPadding.xl),

@@ -2,39 +2,35 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:quest_key/models/character.dart';
-import 'package:quest_key/widgets/status_bar.dart';
 import 'package:quest_key/state/app_state.dart';
+import 'package:quest_key/widgets/status_bar.dart';
 
-class StatPanel extends StatefulWidget {
+class StatPanel extends StatelessWidget {
   final HeroCharacter hero;
 
   const StatPanel({super.key, required this.hero});
 
-  @override
-  State<StatPanel> createState() => _StatPanelState();
-}
-
-class _StatPanelState extends State<StatPanel> {
-  late HeroCharacter hero;
-  // hero character
-  @override
-  void initState() {
-    super.initState();
-    hero = widget.hero;
-  }
+  static const List<({String key, String label})> _stats = [
+    (key: 'strength', label: 'Strength'),
+    (key: 'dexterity', label: 'Dexterity'),
+    (key: 'intelligence', label: 'Intelligence'),
+    (key: 'wisdom', label: 'Wisdom'),
+    (key: 'charisma', label: 'Charisma'),
+    (key: 'constitution', label: 'Constitution'),
+    (key: 'luck', label: 'Luck'),
+  ];
 
   // increment stat points
-  void _incrementStat(String stat) {
-    if (hero.levelUp.statPoints > 0) {
-      setState(() {
-        hero.assignStatPoints(stat, 1);
-      });
-      context.read<AppState>().saveHero(hero);
-    }
+  void _incrementStat(BuildContext context, String stat) {
+    if (hero.levelUp.statPoints <= 0) return;
+    final updated = hero.assignStatPoints(stat, 1);
+    context.read<AppState>().saveHero(updated);
   }
 
   @override
   Widget build(BuildContext context) {
+    final hasPoints = hero.levelUp.statPoints > 0;
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
       width: double.infinity,
@@ -52,76 +48,29 @@ class _StatPanelState extends State<StatPanel> {
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 Text(
-                  hero.levelUp.statPoints > 0
+                  hasPoints
                       ? 'Stat Points (${hero.levelUp.statPoints})'
                       : 'No Stat Points Available',
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
                     color:
-                        hero.levelUp.statPoints > 0
+                        hasPoints
                             ? Colors.white
                             : const Color.fromARGB(255, 0, 0, 0),
                   ),
                 ),
                 const SizedBox(height: 18),
                 // stats collection - increment
-                StatBar(
-                  label: 'Strength',
-                  value: hero.strength,
-                  onAdd:
-                      hero.levelUp.statPoints > 0
-                          ? () => _incrementStat('strength')
-                          : null,
-                ),
-                StatBar(
-                  label: 'Dexterity',
-                  value: hero.dexterity,
-                  onAdd:
-                      hero.levelUp.statPoints > 0
-                          ? () => _incrementStat('dexterity')
-                          : null,
-                ),
-                StatBar(
-                  label: 'Intelligence',
-                  value: hero.intelligence,
-                  onAdd:
-                      hero.levelUp.statPoints > 0
-                          ? () => _incrementStat('intelligence')
-                          : null,
-                ),
-                StatBar(
-                  label: 'Wisdom',
-                  value: hero.wisdom,
-                  onAdd:
-                      hero.levelUp.statPoints > 0
-                          ? () => _incrementStat('wisdom')
-                          : null,
-                ),
-                StatBar(
-                  label: 'Charisma',
-                  value: hero.charisma,
-                  onAdd:
-                      hero.levelUp.statPoints > 0
-                          ? () => _incrementStat('charisma')
-                          : null,
-                ),
-                StatBar(
-                  label: 'Constitution',
-                  value: hero.constitution,
-                  onAdd:
-                      hero.levelUp.statPoints > 0
-                          ? () => _incrementStat('constitution')
-                          : null,
-                ),
-                StatBar(
-                  label: 'Luck',
-                  value: hero.luck,
-                  onAdd:
-                      hero.levelUp.statPoints > 0
-                          ? () => _incrementStat('luck')
-                          : null,
-                ),
+                for (final stat in _stats)
+                  StatBar(
+                    label: stat.label,
+                    value: hero.statValue(stat.key),
+                    onAdd:
+                        hasPoints
+                            ? () => _incrementStat(context, stat.key)
+                            : null,
+                  ),
               ],
             ),
           ),

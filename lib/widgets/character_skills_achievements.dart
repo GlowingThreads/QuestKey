@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:quest_key/models/character.dart';
-import 'package:quest_key/models/character_skill.dart';
-import 'package:quest_key/models/character_achievement.dart';
 import 'package:quest_key/constants/app_colors.dart';
 import 'package:quest_key/constants/app_dimens.dart';
 
@@ -228,7 +226,7 @@ class _CharacterSkillsAchievementsState
         ),
         boxShadow: [
           BoxShadow(
-            color: rarityColor.withOpacity(0.3),
+            color: rarityColor.withValues(alpha: 0.3),
             blurRadius: 8,
             spreadRadius: 1,
           ),

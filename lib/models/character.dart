@@ -3,9 +3,24 @@ import 'package:quest_key/models/classes.dart';
 import 'package:quest_key/models/character_background.dart';
 import 'package:quest_key/models/character_skill.dart';
 import 'package:quest_key/models/character_achievement.dart';
-import 'package:quest_key/state/app_state.dart';
+import 'package:quest_key/models/level_up.dart';
 
-//hero character model
+/// Names of the seven allocatable stats, in display order.
+const List<String> heroStatNames = [
+  'strength',
+  'dexterity',
+  'intelligence',
+  'wisdom',
+  'charisma',
+  'constitution',
+  'luck',
+];
+
+/// The player's hero.
+///
+/// Immutable: every "mutating" operation ([gainExperience],
+/// [assignStatPoints], [learnSkill], [unlockAchievement]) returns a new
+/// instance and leaves the receiver untouched.
 class HeroCharacter {
   final String name;
   final String motto;
@@ -14,25 +29,24 @@ class HeroCharacter {
   final String imageUrl;
   final LevelUp levelUp;
 
-  // New character features
-  CharacterBackground? background;
-  String biography; // Character's personal story/notes
-  List<LearnedSkill> learnedSkills;
-  List<UnlockedAchievement> unlockedAchievements;
-  DateTime createdDate;
-  int questsCompleted;
+  final CharacterBackground? background;
+  final String biography; // Character's personal story/notes
+  final List<LearnedSkill> learnedSkills;
+  final List<UnlockedAchievement> unlockedAchievements;
+  final DateTime createdDate;
+  final int questsCompleted;
 
-  int strength;
-  int dexterity;
-  int intelligence;
-  int wisdom;
-  int charisma;
-  int constitution;
-  int luck;
+  final int strength;
+  final int dexterity;
+  final int intelligence;
+  final int wisdom;
+  final int charisma;
+  final int constitution;
+  final int luck;
 
-  int health;
-  int mana;
-  int stamina;
+  final int health;
+  final int mana;
+  final int stamina;
 
   HeroCharacter({
     required this.name,
@@ -41,7 +55,6 @@ class HeroCharacter {
     required this.description,
     required this.imageUrl,
     required this.levelUp,
-
     this.strength = 0,
     this.dexterity = 0,
     this.intelligence = 0,
@@ -52,18 +65,15 @@ class HeroCharacter {
     this.health = 0,
     this.mana = 0,
     this.stamina = 0,
-
-    // New parameters
     this.background,
     this.biography = '',
     List<LearnedSkill>? learnedSkills,
     List<UnlockedAchievement>? unlockedAchievements,
     DateTime? createdDate,
     this.questsCompleted = 0,
-  })
-      : learnedSkills = learnedSkills ?? [],
-        unlockedAchievements = unlockedAchievements ?? [],
-        createdDate = createdDate ?? DateTime.now();
+  }) : learnedSkills = List.unmodifiable(learnedSkills ?? const []),
+       unlockedAchievements = List.unmodifiable(unlockedAchievements ?? const []),
+       createdDate = createdDate ?? DateTime.now();
 
   factory HeroCharacter.fromClasses(Classes classes) {
     return HeroCharacter(
@@ -73,7 +83,7 @@ class HeroCharacter {
       strength: classes.strength,
       dexterity: classes.dexterity,
       imageUrl: classes.classImageUrl,
-      levelUp: LevelUp(level: 1, exp: 0, maxExp: 100, statPoints: 0),
+      levelUp: const LevelUp(level: 1, exp: 0, maxExp: 100, statPoints: 0),
       description: 'A brave hero',
       intelligence: classes.intelligence,
       wisdom: classes.wisdom,
@@ -85,6 +95,7 @@ class HeroCharacter {
       stamina: 50,
     );
   }
+
   // Serialization with all character data
   Map<String, dynamic> toJson() {
     return {
@@ -117,99 +128,125 @@ class HeroCharacter {
   factory HeroCharacter.fromJson(Map<String, dynamic> json) {
     CharacterBackground? background;
     if (json['background'] != null) {
-      background = CharacterBackground.fromJson(json['background']);
+      background = CharacterBackground.fromJson(
+        Map<String, dynamic>.from(json['background'] as Map),
+      );
     }
 
-    List<LearnedSkill> learnedSkills = [];
+    final learnedSkills = <LearnedSkill>[];
     if (json['learnedSkills'] != null) {
-      learnedSkills = (json['learnedSkills'] as List)
-          .map((s) => LearnedSkill.fromJson(s))
-          .toList();
+      for (final entry in json['learnedSkills'] as List) {
+        learnedSkills.add(
+          LearnedSkill.fromJson(Map<String, dynamic>.from(entry as Map)),
+        );
+      }
     }
 
-    List<UnlockedAchievement> unlockedAchievements = [];
+    final unlockedAchievements = <UnlockedAchievement>[];
     if (json['unlockedAchievements'] != null) {
-      unlockedAchievements = (json['unlockedAchievements'] as List)
-          .map((a) => UnlockedAchievement.fromJson(a, allAchievements))
-          .toList();
+      for (final entry in json['unlockedAchievements'] as List) {
+        unlockedAchievements.add(
+          UnlockedAchievement.fromJson(
+            Map<String, dynamic>.from(entry as Map),
+            allAchievements,
+          ),
+        );
+      }
     }
+
+    final levelUpJson = json['levelUp'];
 
     return HeroCharacter(
-      name: json['name'],
-      motto: json['motto'],
-      classes: Classes.fromJson(json['classes']),
-      description: json['description'],
-      imageUrl: json['imageUrl'],
-      levelUp: LevelUp.fromJson(json['levelUp']),
-      strength: json['strength'],
-      dexterity: json['dexterity'],
-      intelligence: json['intelligence'],
-      wisdom: json['wisdom'],
-      charisma: json['charisma'],
-      constitution: json['constitution'],
-      luck: json['luck'],
-      health: json['health'],
-      mana: json['mana'],
-      stamina: json['stamina'],
+      name: json['name'] as String? ?? 'Hero',
+      motto: json['motto'] as String? ?? '',
+      classes: Classes.fromJson(Map<String, dynamic>.from(json['classes'] as Map)),
+      description: json['description'] as String? ?? '',
+      imageUrl: json['imageUrl'] as String? ?? '',
+      levelUp:
+          levelUpJson is Map
+              ? LevelUp.fromJson(Map<String, dynamic>.from(levelUpJson))
+              : const LevelUp(),
+      strength: _int(json['strength']),
+      dexterity: _int(json['dexterity']),
+      intelligence: _int(json['intelligence']),
+      wisdom: _int(json['wisdom']),
+      charisma: _int(json['charisma']),
+      constitution: _int(json['constitution']),
+      luck: _int(json['luck']),
+      health: _int(json['health']),
+      mana: _int(json['mana']),
+      stamina: _int(json['stamina']),
       background: background,
-      biography: json['biography'] ?? '',
+      biography: json['biography'] as String? ?? '',
       learnedSkills: learnedSkills,
       unlockedAchievements: unlockedAchievements,
       createdDate:
           json['createdDate'] != null
-              ? DateTime.parse(json['createdDate'])
+              ? DateTime.tryParse(json['createdDate'] as String) ??
+                  DateTime.now()
               : DateTime.now(),
-      questsCompleted: json['questsCompleted'] ?? 0,
+      questsCompleted: _int(json['questsCompleted']),
     );
   }
 
-  bool gainExperience(int amount) {
-    levelUp.exp += amount;
-    if (levelUp.exp >= levelUp.maxExp) {
-      levelUp.levelUp();
+  static int _int(Object? value) => value is num ? value.toInt() : 0;
 
-      // Update hero stats
-      health = 100 + (levelUp.level * 5);
-      mana = 50 + (levelUp.level * 5);
-      stamina = 75 + (levelUp.level * 8);
-
-      return true;
+  /// Adds [amount] XP. Returns the updated hero and whether it levelled up.
+  ///
+  /// On level up the hero's resource pools grow with its new level.
+  ({HeroCharacter hero, bool leveledUp}) gainExperience(int amount) {
+    final result = levelUp.applyExperience(amount);
+    if (!result.leveledUp) {
+      return (hero: copyWith(levelUp: result.next), leveledUp: false);
     }
-    return false;
+
+    final newLevel = result.next.level;
+    return (
+      hero: copyWith(
+        levelUp: result.next,
+        health: 100 + (newLevel * 5),
+        mana: 50 + (newLevel * 5),
+        stamina: 75 + (newLevel * 8),
+      ),
+      leveledUp: true,
+    );
   }
 
-  void assignStatPoints(String stat, int points) {
-    if (points > levelUp.statPoints) {
-      throw Exception('Not enough stat points available');
+  /// Spends [points] unassigned stat points on [stat].
+  ///
+  /// Throws [ArgumentError] if the hero does not have enough points or if
+  /// [stat] is not one of [heroStatNames].
+  HeroCharacter assignStatPoints(String stat, int points) {
+    if (points <= 0) {
+      throw ArgumentError.value(points, 'points', 'must be positive');
     }
+    if (points > levelUp.statPoints) {
+      throw ArgumentError('Not enough stat points available');
+    }
+    if (!heroStatNames.contains(stat)) {
+      throw ArgumentError.value(stat, 'stat', 'Invalid stat name');
+    }
+
+    final remaining = levelUp.copyWith(statPoints: levelUp.statPoints - points);
 
     switch (stat) {
       case 'strength':
-        strength += points;
-        break;
+        return copyWith(strength: strength + points, levelUp: remaining);
       case 'dexterity':
-        dexterity += points;
-        break;
+        return copyWith(dexterity: dexterity + points, levelUp: remaining);
       case 'intelligence':
-        intelligence += points;
-        break;
+        return copyWith(intelligence: intelligence + points, levelUp: remaining);
       case 'wisdom':
-        wisdom += points;
-        break;
+        return copyWith(wisdom: wisdom + points, levelUp: remaining);
       case 'charisma':
-        charisma += points;
-        break;
+        return copyWith(charisma: charisma + points, levelUp: remaining);
       case 'constitution':
-        constitution += points;
-        break;
+        return copyWith(constitution: constitution + points, levelUp: remaining);
       case 'luck':
-        luck += points;
-        break;
+        return copyWith(luck: luck + points, levelUp: remaining);
       default:
-        throw Exception('Invalid stat name');
+        throw ArgumentError.value(stat, 'stat', 'Invalid stat name');
     }
-
-    levelUp.statPoints -= points;
   }
 
   HeroCharacter copyWith({
@@ -233,6 +270,7 @@ class HeroCharacter {
     String? biography,
     List<LearnedSkill>? learnedSkills,
     List<UnlockedAchievement>? unlockedAchievements,
+    DateTime? createdDate,
     int? questsCompleted,
   }) {
     return HeroCharacter(
@@ -256,41 +294,37 @@ class HeroCharacter {
       biography: biography ?? this.biography,
       learnedSkills: learnedSkills ?? this.learnedSkills,
       unlockedAchievements: unlockedAchievements ?? this.unlockedAchievements,
+      createdDate: createdDate ?? this.createdDate,
       questsCompleted: questsCompleted ?? this.questsCompleted,
     );
   }
 
-  /// Learn a new skill if requirements are met
-  bool learnSkill(CharacterSkill skill) {
-    // Check if already learned
-    if (learnedSkills.any((s) => s.skill.id == skill.id)) {
-      return false;
-    }
+  /// Whether the hero meets the level and stat requirements of [skill].
+  bool canLearnSkill(CharacterSkill skill) {
+    if (hasSkill(skill.id)) return false;
+    if (levelUp.level < skill.levelRequired) return false;
 
-    // Check level requirement
-    if (levelUp.level < skill.levelRequired) {
-      return false;
-    }
-
-    // Check stat requirements
     for (final req in skill.requirements) {
       final parts = req.split(':');
       if (parts.length == 2) {
-        final statName = parts[0];
         final requiredValue = int.tryParse(parts[1]) ?? 0;
-        final actualValue = _getStatValue(statName);
-        if (actualValue < requiredValue) {
-          return false;
-        }
+        if (statValue(parts[0]) < requiredValue) return false;
       }
     }
-
-    learnedSkills.add(LearnedSkill(skill: skill));
     return true;
   }
 
-  /// Get a stat value by name
-  int _getStatValue(String statName) {
+  /// Returns a hero that has learned [skill], or `null` if the requirements
+  /// are not met or the skill is already known.
+  HeroCharacter? learnSkill(CharacterSkill skill) {
+    if (!canLearnSkill(skill)) return null;
+    return copyWith(
+      learnedSkills: [...learnedSkills, LearnedSkill(skill: skill)],
+    );
+  }
+
+  /// Get a stat value by name (0 for unknown names).
+  int statValue(String statName) {
     switch (statName) {
       case 'strength':
         return strength;
@@ -311,13 +345,16 @@ class HeroCharacter {
     }
   }
 
-  /// Unlock an achievement
-  bool unlockAchievement(CharacterAchievement achievement) {
-    if (unlockedAchievements.any((a) => a.achievement.id == achievement.id)) {
-      return false; // Already unlocked
-    }
-    unlockedAchievements.add(UnlockedAchievement(achievement: achievement));
-    return true;
+  /// Returns a hero with [achievement] unlocked, or `null` if it was already
+  /// unlocked.
+  HeroCharacter? unlockAchievement(CharacterAchievement achievement) {
+    if (hasAchievement(achievement.id)) return null;
+    return copyWith(
+      unlockedAchievements: [
+        ...unlockedAchievements,
+        UnlockedAchievement(achievement: achievement),
+      ],
+    );
   }
 
   /// Check if character has learned a skill

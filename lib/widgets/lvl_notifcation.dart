@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:popup_card/popup_card.dart';
+import 'package:quest_key/models/level_up.dart';
 import 'package:quest_key/state/app_state.dart';
 import 'package:provider/provider.dart';
 
@@ -52,11 +53,11 @@ class _LevelUpWidgetState extends State<LevelUpWidget>
           child: Container(
             padding: const EdgeInsets.all(20.0),
             decoration: BoxDecoration(
-              color: Color.fromARGB(230, 55, 0, 179),
+              color: const Color.fromARGB(230, 55, 0, 179),
               borderRadius: BorderRadius.circular(20),
               border: Border.all(color: Colors.amberAccent, width: 3),
               boxShadow: [
-                BoxShadow(
+                const BoxShadow(
                   color: Color.fromARGB(128, 255, 191, 0),
                   blurRadius: 20,
                   spreadRadius: 5,

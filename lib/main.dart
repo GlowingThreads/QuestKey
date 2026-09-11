@@ -7,7 +7,7 @@ import 'package:quest_key/pages/info_page.dart';
 import 'package:quest_key/pages/home_page.dart';
 import 'package:quest_key/pages/hero_page.dart';
 import 'package:quest_key/state/app_state.dart';
-import 'package:quest_key/services/storage.dart';
+import 'package:quest_key/state/quest_list_provider.dart';
 import 'package:quest_key/services/notification_services.dart';
 
 void main() async {

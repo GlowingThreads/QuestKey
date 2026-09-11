@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:quest_key/state/app_state.dart';
 import 'package:quest_key/services/storage.dart';
+import 'package:quest_key/state/quest_list_provider.dart';
 import 'package:quest_key/pages/create_hero_page.dart';
 
 class InfoPage extends StatelessWidget {
@@ -33,7 +34,7 @@ class InfoPage extends StatelessWidget {
                   borderRadius: BorderRadius.circular(16.0),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.7),
+                      color: Colors.black.withValues(alpha: 0.7),
                       blurRadius: 10.0,
                       offset: const Offset(0, 4),
                     ),
@@ -73,7 +74,7 @@ class InfoPage extends StatelessWidget {
                     ),
                     const SizedBox(height: 30),
                     ElevatedButton(
-                      onPressed: () async {
+                      onPressed: () {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
@@ -119,6 +120,12 @@ class InfoPage extends StatelessWidget {
                     const SizedBox(height: 40),
                     ElevatedButton(
                       onPressed: () async {
+                        final appState = context.read<AppState>();
+                        final questProvider =
+                            context.read<QuestListProvider>();
+                        final messenger = ScaffoldMessenger.of(context);
+                        final navigator = Navigator.of(context);
+
                         final confirm = await showDialog<bool>(
                           context: context,
                           builder:
@@ -168,26 +175,16 @@ class InfoPage extends StatelessWidget {
                         if (confirm != true) return;
 
                         await StorageService.clearAllData();
+                        appState.clearHero();
+                        await questProvider.loadQuestsFromStorage();
 
-                        final appState = Provider.of<AppState>(
-                          context,
-                          listen: false,
-                        );
-                        appState.hero = null;
-
-                        context
-                            .read<QuestListProvider>()
-                            .loadQuestsFromStorage();
-
-                        ScaffoldMessenger.of(context).showSnackBar(
+                        messenger.showSnackBar(
                           const SnackBar(
                             content: Text('Hero and quests cleared'),
                           ),
                         );
 
-                        Navigator.of(
-                          context,
-                        ).popUntil((route) => route.isFirst);
+                        navigator.popUntil((route) => route.isFirst);
                       },
                       style: ElevatedButton.styleFrom(
                         elevation: 4,

@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:quest_key/models/quest.dart';
-import 'package:quest_key/services/storage.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import 'package:quest_key/state/app_state.dart';
+import 'package:quest_key/models/quest.dart';
 import 'package:quest_key/services/notification_services.dart';
+import 'package:quest_key/state/app_state.dart';
+import 'package:quest_key/state/quest_list_provider.dart';
 import 'package:timezone/timezone.dart' as tz;
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:intl/intl.dart'; // Import for date formatting
 
 class CreateQuestPage extends StatefulWidget {
   const CreateQuestPage({super.key});
@@ -22,9 +21,16 @@ class _CreateQuestPageState extends State<CreateQuestPage> {
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
   Quest? _editingQuest;
-  double _difficulty = 1.0;
+  double _difficulty = minDifficulty.toDouble();
   bool _remindMe = false;
   bool _initialized = false;
+
+  @override
+  void dispose() {
+    _titleController.dispose();
+    _descriptionController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -34,15 +40,9 @@ class _CreateQuestPageState extends State<CreateQuestPage> {
       _editingQuest = selectedQuest;
       _titleController.text = selectedQuest.title;
       _descriptionController.text = selectedQuest.description;
-
-      if (selectedQuest.startDate.isNotEmpty) {
-        _selectedDate = DateTime.tryParse(selectedQuest.startDate);
-        if (_selectedDate != null) {
-          _selectedTime = TimeOfDay.fromDateTime(_selectedDate!);
-        }
-      }
-      _difficulty = (selectedQuest.xpReward / 50).clamp(1, 5).toDouble();
-
+      _selectedDate = selectedQuest.dueDate;
+      _selectedTime = TimeOfDay.fromDateTime(selectedQuest.dueDate);
+      _difficulty = selectedQuest.difficulty.toDouble();
       _initialized = true;
     }
 
@@ -72,9 +72,11 @@ class _CreateQuestPageState extends State<CreateQuestPage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'Create a New Quest',
-                          style: TextStyle(
+                        Text(
+                          _editingQuest == null
+                              ? 'Create a New Quest'
+                              : 'Edit Quest',
+                          style: const TextStyle(
                             fontSize: 26,
                             fontWeight: FontWeight.bold,
                             color: Colors.white,
@@ -114,7 +116,7 @@ class _CreateQuestPageState extends State<CreateQuestPage> {
                         const SizedBox(height: 12),
                         if (_selectedDate != null && _selectedTime != null)
                           Text(
-                            'Due: ${DateFormat('yyyy-MM-dd – HH:mm').format(DateTime(_selectedDate!.year, _selectedDate!.month, _selectedDate!.day, _selectedTime!.hour, _selectedTime!.minute))}',
+                            'Due: ${DateFormat('yyyy-MM-dd – HH:mm').format(_dueDateTime!)}',
                             style: const TextStyle(
                               fontSize: 16,
                               color: Colors.white,
@@ -125,15 +127,19 @@ class _CreateQuestPageState extends State<CreateQuestPage> {
                           onPressed: _submitForm,
                           style: _buttonStyle(primary: Colors.deepPurple),
                           child: Text(
-                            _editingQuest == null ? 'Create Quest' : 'Update Quest',
+                            _editingQuest == null
+                                ? 'Create Quest'
+                                : 'Update Quest',
                           ),
                         ),
                         Slider(
                           value: _difficulty,
-                          min: 1,
-                          max: 5,
-                          divisions: 4,
-                          label: 'Difficulty: ${_difficulty.round()}',
+                          min: minDifficulty.toDouble(),
+                          max: maxDifficulty.toDouble(),
+                          divisions: maxDifficulty - minDifficulty,
+                          label:
+                              'Difficulty: ${_difficulty.round()} '
+                              '(${xpForDifficulty(_difficulty.round())} XP)',
                           activeColor: Colors.deepPurple,
                           onChanged: (value) {
                             setState(() {
@@ -143,7 +149,9 @@ class _CreateQuestPageState extends State<CreateQuestPage> {
                         ),
                         CheckboxListTile(
                           value: _remindMe,
-                          onChanged: (value) => setState(() => _remindMe = value!),
+                          onChanged:
+                              (value) =>
+                                  setState(() => _remindMe = value ?? false),
                           title: const Text(
                             'Remind me when due',
                             style: TextStyle(color: Colors.white),
@@ -163,51 +171,38 @@ class _CreateQuestPageState extends State<CreateQuestPage> {
     );
   }
 
+  /// The chosen due date and time combined, or `null` until both are picked.
+  DateTime? get _dueDateTime {
+    final date = _selectedDate;
+    final time = _selectedTime;
+    if (date == null || time == null) return null;
+    return DateTime(date.year, date.month, date.day, time.hour, time.minute);
+  }
+
   Future<void> _submitForm() async {
-    if (!_formKey.currentState!.validate() ||
-        _selectedDate == null ||
-        _selectedTime == null) {
+    final dueDateTime = _dueDateTime;
+    if (!_formKey.currentState!.validate() || dueDateTime == null) {
       return;
     }
 
     final questProvider = context.read<QuestListProvider>();
-
-    String calculateTimeRemaining(DateTime dueDateTime) {
-      final now = DateTime.now();
-      final diff = dueDateTime.difference(now);
-      if (diff.isNegative) return "Overdue";
-      final days = diff.inDays;
-      final hours = diff.inHours % 24;
-      final minutes = diff.inMinutes % 60;
-      return "$days days, $hours hrs, $minutes mins";
-    }
-
-    final dueDateTime = DateTime(
-      _selectedDate!.year,
-      _selectedDate!.month,
-      _selectedDate!.day,
-      _selectedTime!.hour,
-      _selectedTime!.minute,
-    );
+    final appState = context.read<AppState>();
 
     final quest = Quest(
       id: _editingQuest?.id ?? questProvider.nextQuestId(),
       title: _titleController.text.trim(),
       description: _descriptionController.text.trim(),
-      questImageUrl: 'assets/images/app_assets/todo.png',
-      status: _editingQuest?.status ?? 'In Progress',
-      xpReward: (50 * _difficulty).round(),
-      startDate: dueDateTime.toString(),
-      endDate: dueDateTime.toString(),
-      timeRemaining: calculateTimeRemaining(dueDateTime),
+      status: _editingQuest?.status ?? QuestStatus.inProgress,
+      difficulty: _difficulty.round(),
+      dueDate: dueDateTime,
+      questImageUrl: _editingQuest?.questImageUrl ?? defaultQuestImage,
     );
 
     if (_editingQuest != null) {
-      questProvider.updateQuest(quest);
+      await questProvider.updateQuest(quest);
     } else {
-      questProvider.addQuest(quest);
+      await questProvider.addQuest(quest);
     }
-
     questProvider.setSelectedQuest(null);
 
     if (_remindMe) {
@@ -229,13 +224,17 @@ class _CreateQuestPageState extends State<CreateQuestPage> {
 
     _titleController.clear();
     _descriptionController.clear();
-    _editingQuest = null;
-    _initialized = false;
+    setState(() {
+      _editingQuest = null;
+      _initialized = false;
+      _selectedDate = null;
+      _selectedTime = null;
+      _difficulty = minDifficulty.toDouble();
+      _remindMe = false;
+    });
 
-    // Navigate to quest log using setIndex method
-    context.read<AppState>().setIndex(
-      1,
-    ); // Index 1 for quest log page (adjust as necessary)
+    // Navigate to the quest log tab.
+    appState.setIndex(1);
   }
 
   InputDecoration _inputDecoration(String label) {
@@ -263,11 +262,14 @@ class _CreateQuestPageState extends State<CreateQuestPage> {
   }
 
   Future<void> _pickDateTime() async {
+    final now = DateTime.now();
+    final initial = _selectedDate ?? now;
+
     // Pick a date
     final pickedDate = await showDatePicker(
       context: context,
-      initialDate: _selectedDate ?? DateTime.now(),
-      firstDate: DateTime.now(),
+      initialDate: initial.isBefore(now) ? now : initial,
+      firstDate: DateTime(now.year, now.month, now.day),
       lastDate: DateTime(2100),
     );
 

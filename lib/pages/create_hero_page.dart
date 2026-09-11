@@ -5,9 +5,7 @@ import 'package:quest_key/models/classes.dart';
 import 'package:quest_key/widgets/image_picker.dart';
 import 'package:quest_key/widgets/class_select.dart';
 import 'package:quest_key/state/app_state.dart';
-import 'package:quest_key/services/storage.dart';
 import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 class CreateHeroPage extends StatefulWidget {
   final void Function(HeroCharacter) onHeroCreated;
@@ -84,21 +82,17 @@ class _CreateHeroPageState extends State<CreateHeroPage> {
               ),
               ElevatedButton(
                 onPressed: () async {
-                  // Save hero to local storage
-                  await StorageService.saveHero(hero);
-
-                  // Set heroExists to true
-                  final prefs = await SharedPreferences.getInstance();
-                  await prefs.setBool('heroExists', true);
-
-                  // Call app state if needed
                   final appState = context.read<AppState>();
-                  appState.saveHero(hero);
+                  final dialogNavigator = Navigator.of(ctx);
+                  final pageNavigator = Navigator.of(context);
+
+                  // Save hero to app state + local storage
+                  await appState.saveHero(hero);
 
                   // Continue with original callback
                   widget.onHeroCreated(hero);
-                  Navigator.pop(ctx);
-                  Navigator.pop(context);
+                  dialogNavigator.pop();
+                  pageNavigator.pop();
                 },
                 child: const Text('Create'),
               ),
