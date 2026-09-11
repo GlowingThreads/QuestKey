@@ -26,6 +26,11 @@ dev_dependencies:
 flutter:
   uses-material-design: true
 
+  # TODO(assets): The image files are NOT in the repository yet. The three
+  # directories below exist only as `.gitkeep` placeholders so the build can
+  # resolve the declarations. Copy the real `assets/images/*` folders in from
+  # the developer's local machine and commit them. The complete list of files
+  # the code expects is in `assets/REQUIRED_ASSETS.md`.
   assets:
     - assets/images/app_assets/
     - assets/images/character_images/
