@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:quest_key/models/character.dart';
 import 'package:quest_key/state/app_state.dart';
+import 'package:quest_key/widgets/achievement_unlocked_dialog.dart';
 import 'package:quest_key/widgets/status_bar.dart';
 
 class StatPanel extends StatelessWidget {
@@ -20,11 +21,12 @@ class StatPanel extends StatelessWidget {
     (key: 'luck', label: 'Luck'),
   ];
 
-  // increment stat points
-  void _incrementStat(BuildContext context, String stat) {
+  // increment stat points (may unlock stat achievements)
+  Future<void> _incrementStat(BuildContext context, String stat) async {
     if (hero.levelUp.statPoints <= 0) return;
-    final updated = hero.assignStatPoints(stat, 1);
-    context.read<AppState>().saveHero(updated);
+    final unlocked = await context.read<AppState>().assignStatPoint(stat);
+    if (!context.mounted) return;
+    await showAchievementsUnlocked(context, unlocked);
   }
 
   @override
@@ -49,17 +51,22 @@ class StatPanel extends StatelessWidget {
               children: [
                 Text(
                   hasPoints
-                      ? 'Stat Points (${hero.levelUp.statPoints})'
+                      ? 'Stat Points to spend: ${hero.levelUp.statPoints}'
                       : 'No Stat Points Available',
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
-                    color:
-                        hasPoints
-                            ? Colors.white
-                            : const Color.fromARGB(255, 0, 0, 0),
+                    color: hasPoints ? Colors.white : Colors.white54,
                   ),
                 ),
+                if (!hasPoints)
+                  const Padding(
+                    padding: EdgeInsets.only(top: 4),
+                    child: Text(
+                      'Level up to earn 3 more',
+                      style: TextStyle(fontSize: 12, color: Colors.white38),
+                    ),
+                  ),
                 const SizedBox(height: 18),
                 // stats collection - increment
                 for (final stat in _stats)

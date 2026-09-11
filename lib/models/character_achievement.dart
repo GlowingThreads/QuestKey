@@ -154,12 +154,14 @@ final List<CharacterAchievement> allAchievements = [
     category: 'progress',
     rarityScore: 3,
   ),
+  // Hidden: shown as ??? until unlocked. Earned by completing a quest
+  // between midnight and 4 am (see achievement_rules.dart).
   const CharacterAchievement(
     id: 'secret_hidden',
-    name: '???',
-    description: 'Hidden achievement.',
-    icon: '❓',
-    category: 'progress',
+    name: 'Night Owl',
+    description: 'Complete a quest between midnight and 4 am.',
+    icon: '🦉',
+    category: 'challenge',
     hidden: true,
     rarityScore: 5,
   ),

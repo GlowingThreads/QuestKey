@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:quest_key/models/character.dart';
+import 'package:provider/provider.dart';
 import 'package:quest_key/constants/app_colors.dart';
 import 'package:quest_key/constants/app_dimens.dart';
+import 'package:quest_key/models/character.dart';
+import 'package:quest_key/models/character_achievement.dart';
+import 'package:quest_key/models/character_skill.dart';
+import 'package:quest_key/state/app_state.dart';
 
-/// Display character skills and achievements
+/// Skills the hero can learn and achievements it can earn, with progress.
 class CharacterSkillsAchievements extends StatefulWidget {
   final HeroCharacter hero;
 
@@ -33,6 +37,9 @@ class _CharacterSkillsAchievementsState
 
   @override
   Widget build(BuildContext context) {
+    final hero = widget.hero;
+    final unlockedCount = hero.unlockedAchievements.length;
+
     return Container(
       decoration: BoxDecoration(
         color: AppColors.bgOverlay,
@@ -50,17 +57,19 @@ class _CharacterSkillsAchievementsState
             unselectedLabelColor: AppColors.textSecondary,
             indicatorColor: AppColors.accentGreen,
             tabs: [
-              Tab(text: 'Skills (${widget.hero.learnedSkills.length})'),
               Tab(
                 text:
-                    'Achievements (${widget.hero.unlockedAchievements.length})',
+                    'Skills (${hero.learnedSkills.length}/${allSkills.length})',
+              ),
+              Tab(
+                text: 'Achievements ($unlockedCount/${allAchievements.length})',
               ),
             ],
           ),
           Expanded(
             child: TabBarView(
               controller: _tabController,
-              children: [_buildSkillsTab(), _buildAchievementsTab()],
+              children: [_buildSkillsTab(hero), _buildAchievementsTab(hero)],
             ),
           ),
         ],
@@ -68,186 +77,231 @@ class _CharacterSkillsAchievementsState
     );
   }
 
-  Widget _buildSkillsTab() {
-    if (widget.hero.learnedSkills.isEmpty) {
-      return Center(
-        child: Text(
-          'No skills learned yet',
-          style: Theme.of(
-            context,
-          ).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
-        ),
-      );
-    }
+  Widget _buildSkillsTab(HeroCharacter hero) {
+    final skills = [...allSkills]
+      ..sort((a, b) => a.levelRequired.compareTo(b.levelRequired));
 
     return ListView.builder(
       padding: const EdgeInsets.all(AppPadding.lg),
-      itemCount: widget.hero.learnedSkills.length,
+      itemCount: skills.length,
       itemBuilder: (context, index) {
-        final learnedSkill = widget.hero.learnedSkills[index];
-        final skill = learnedSkill.skill;
+        final skill = skills[index];
+        final learned = hero.hasSkill(skill.id);
+        final canLearn = !learned && hero.canLearnSkill(skill);
+        final color = _getCategoryColor(skill.category);
 
-        return Container(
-          margin: const EdgeInsets.only(bottom: AppPadding.md),
-          padding: const EdgeInsets.all(AppPadding.lg),
-          decoration: BoxDecoration(
-            color: AppColors.primaryDarker,
-            borderRadius: BorderRadius.circular(AppRadius.md),
-            border: Border.all(
-              color: _getCategoryColor(skill.category),
-              width: AppBorders.thin,
+        return Opacity(
+          opacity: learned || canLearn ? 1 : 0.55,
+          child: Container(
+            margin: const EdgeInsets.only(bottom: AppPadding.md),
+            padding: const EdgeInsets.all(AppPadding.lg),
+            decoration: BoxDecoration(
+              color: AppColors.primaryDarker,
+              borderRadius: BorderRadius.circular(AppRadius.md),
+              border: Border.all(
+                color: learned ? color : AppColors.borderLight,
+                width: learned ? AppBorders.medium : AppBorders.thin,
+              ),
             ),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Text(skill.icon, style: const TextStyle(fontSize: 24)),
-                  const SizedBox(width: AppPadding.md),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          skill.name,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text(skill.icon, style: const TextStyle(fontSize: 24)),
+                    const SizedBox(width: AppPadding.md),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            skill.name,
+                            style: Theme.of(
+                              context,
+                            ).textTheme.bodyLarge?.copyWith(
+                              color: AppColors.textPrimary,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          Text(
+                            _requirementsLabel(skill, hero),
+                            style: Theme.of(
+                              context,
+                            ).textTheme.labelSmall?.copyWith(
+                              color:
+                                  canLearn || learned
+                                      ? AppColors.accentGreen
+                                      : AppColors.textSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (learned)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppPadding.sm,
+                          vertical: AppPadding.xs,
+                        ),
+                        decoration: BoxDecoration(
+                          color: color.withValues(alpha: 0.25),
+                          borderRadius: BorderRadius.circular(AppRadius.sm),
+                          border: Border.all(color: color),
+                        ),
+                        child: Text(
+                          'Learned',
                           style: Theme.of(
                             context,
-                          ).textTheme.bodyLarge?.copyWith(
-                            color: AppColors.textPrimary,
-                            fontWeight: FontWeight.bold,
+                          ).textTheme.labelSmall?.copyWith(color: color),
+                        ),
+                      )
+                    else
+                      FilledButton(
+                        onPressed:
+                            canLearn ? () => _learn(context, skill) : null,
+                        style: FilledButton.styleFrom(
+                          backgroundColor: AppColors.accentPurple,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: AppPadding.md,
                           ),
                         ),
-                        Text(
-                          'Lv. ${learnedSkill.level}',
-                          style: Theme.of(context).textTheme.labelSmall
-                              ?.copyWith(color: AppColors.textSecondary),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppPadding.sm,
-                      vertical: AppPadding.xs,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.bgDark,
-                      borderRadius: BorderRadius.circular(AppRadius.sm),
-                    ),
-                    child: Text(
-                      '${skill.costPerUse} mana',
-                      style: Theme.of(
-                        context,
-                      ).textTheme.labelSmall?.copyWith(color: Colors.cyan[300]),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: AppPadding.sm),
-              Text(
-                skill.description,
-                style: Theme.of(
-                  context,
-                ).textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
-              ),
-              if (learnedSkill.timesUsed > 0) ...[
+                        child: const Text('Learn'),
+                      ),
+                  ],
+                ),
                 const SizedBox(height: AppPadding.sm),
                 Text(
-                  'Used ${learnedSkill.timesUsed} times',
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  skill.description,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: AppColors.textSecondary,
                   ),
                 ),
               ],
-            ],
+            ),
           ),
         );
       },
     );
   }
 
-  Widget _buildAchievementsTab() {
-    if (widget.hero.unlockedAchievements.isEmpty) {
-      return Center(
-        child: Text(
-          'No achievements unlocked yet',
-          style: Theme.of(
-            context,
-          ).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
-        ),
-      );
+  String _requirementsLabel(CharacterSkill skill, HeroCharacter hero) {
+    final parts = <String>['Lv. ${skill.levelRequired}'];
+    for (final req in skill.requirements) {
+      final split = req.split(':');
+      if (split.length == 2) {
+        final stat = split[0];
+        final needed = int.tryParse(split[1]) ?? 0;
+        parts.add('$stat ${hero.statValue(stat)}/$needed');
+      }
     }
+    return parts.join(' · ');
+  }
 
+  Future<void> _learn(BuildContext context, CharacterSkill skill) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final learned = await context.read<AppState>().learnSkill(skill);
+    if (!learned) return;
+    messenger.showSnackBar(
+      SnackBar(content: Text('${skill.icon} Learned ${skill.name}!')),
+    );
+  }
+
+  Widget _buildAchievementsTab(HeroCharacter hero) {
     return GridView.builder(
       padding: const EdgeInsets.all(AppPadding.lg),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
         crossAxisSpacing: AppPadding.md,
         mainAxisSpacing: AppPadding.md,
+        childAspectRatio: 1.15,
       ),
-      itemCount: widget.hero.unlockedAchievements.length,
+      itemCount: allAchievements.length,
       itemBuilder: (context, index) {
-        final unlocked = widget.hero.unlockedAchievements[index];
-        final achievement = unlocked.achievement;
+        final achievement = allAchievements[index];
+        final unlocked = hero.hasAchievement(achievement.id);
+        final secret = achievement.hidden && !unlocked;
 
         return _buildAchievementCard(
           context,
-          achievement.icon,
-          achievement.name,
-          achievement.description,
-          _getRarityColor(achievement.rarityScore),
+          icon: secret ? '❓' : achievement.icon,
+          name: secret ? '???' : achievement.name,
+          description:
+              secret
+                  ? 'Hidden achievement. Keep questing!'
+                  : achievement.description,
+          rarityColor:
+              unlocked
+                  ? _getRarityColor(achievement.rarityScore)
+                  : AppColors.borderLight,
+          unlocked: unlocked,
         );
       },
     );
   }
 
   Widget _buildAchievementCard(
-    BuildContext context,
-    String icon,
-    String name,
-    String description,
-    Color rarityColor,
-  ) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.primaryDarker,
-        borderRadius: BorderRadius.circular(AppRadius.md),
-        border: Border.all(color: rarityColor, width: AppBorders.medium),
-        boxShadow: [
-          BoxShadow(
-            color: rarityColor.withValues(alpha: 0.3),
-            blurRadius: 8,
-            spreadRadius: 1,
-          ),
-        ],
-      ),
-      child: Stack(
-        children: [
-          Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(icon, style: const TextStyle(fontSize: 40)),
-              const SizedBox(height: AppPadding.md),
-              Text(
-                name,
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: AppColors.textPrimary,
-                  fontWeight: FontWeight.bold,
+    BuildContext context, {
+    required String icon,
+    required String name,
+    required String description,
+    required Color rarityColor,
+    required bool unlocked,
+  }) {
+    return Opacity(
+      opacity: unlocked ? 1 : 0.55,
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppColors.primaryDarker,
+          borderRadius: BorderRadius.circular(AppRadius.md),
+          border: Border.all(color: rarityColor, width: AppBorders.medium),
+          boxShadow:
+              unlocked
+                  ? [
+                    BoxShadow(
+                      color: rarityColor.withValues(alpha: 0.3),
+                      blurRadius: 8,
+                      spreadRadius: 1,
+                    ),
+                  ]
+                  : null,
+        ),
+        child: Stack(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(AppPadding.sm),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(icon, style: const TextStyle(fontSize: 36)),
+                  const SizedBox(height: AppPadding.sm),
+                  Text(
+                    name,
+                    textAlign: TextAlign.center,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: AppColors.textPrimary,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Positioned(
+              top: AppPadding.sm,
+              right: AppPadding.sm,
+              child: Tooltip(
+                message: description,
+                triggerMode: TooltipTriggerMode.tap,
+                child: Icon(
+                  unlocked ? Icons.info_outline : Icons.lock_outline,
+                  color: rarityColor,
+                  size: 20,
                 ),
               ),
-            ],
-          ),
-          Positioned(
-            top: AppPadding.sm,
-            right: AppPadding.sm,
-            child: Tooltip(
-              message: description,
-              child: Icon(Icons.info_outline, color: rarityColor, size: 20),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

@@ -37,6 +37,38 @@ enum QuestStatus {
   }
 }
 
+/// What kind of task a quest is. Gives each quest an icon and colour so the
+/// list is scannable without custom image assets.
+enum QuestCategory {
+  health('Health', '💪', 0xFF2E7D32),
+  work('Work', '💼', 0xFF1565C0),
+  study('Study', '📚', 0xFF6A1B9A),
+  home('Home', '🏠', 0xFFEF6C00),
+  social('Social', '🤝', 0xFFAD1457),
+  creative('Creative', '🎨', 0xFF00838F),
+  adventure('Adventure', '🗺️', 0xFF558B2F),
+  other('Other', '📜', 0xFF5E35B1);
+
+  const QuestCategory(this.label, this.icon, this.colorValue);
+
+  final String label;
+
+  /// Emoji shown on the quest tile.
+  final String icon;
+
+  /// ARGB colour used for the tile accent (kept as an int so the model has
+  /// no Flutter dependency).
+  final int colorValue;
+
+  static QuestCategory fromJson(Object? value) {
+    final name = value?.toString().toLowerCase();
+    for (final category in QuestCategory.values) {
+      if (category.name == name) return category;
+    }
+    return QuestCategory.other;
+  }
+}
+
 /// Lowest selectable difficulty.
 const int minDifficulty = 1;
 
@@ -70,6 +102,11 @@ class Quest {
   /// Whether the user asked to be reminded shortly before [dueDate].
   final bool remindMe;
 
+  final QuestCategory category;
+
+  /// When the quest was completed; `null` while in progress.
+  final DateTime? completedAt;
+
   Quest({
     required this.id,
     required this.title,
@@ -79,6 +116,8 @@ class Quest {
     int difficulty = minDifficulty,
     this.questImageUrl = defaultQuestImage,
     this.remindMe = false,
+    this.category = QuestCategory.other,
+    this.completedAt,
   }) : difficulty = difficulty.clamp(minDifficulty, maxDifficulty);
 
   /// XP awarded on completion. Always derived from [difficulty].
@@ -97,6 +136,18 @@ class Quest {
 
   bool isOverdueAt(DateTime now) =>
       !isCompleted && timeUntilDueAt(now).isNegative;
+
+  /// Whether the quest is due on the same calendar day as [now].
+  bool isDueOn(DateTime day) => _sameDay(dueDate, day);
+
+  /// Whether the quest was completed on the calendar day of [day].
+  bool wasCompletedOn(DateTime day) {
+    final at = completedAt;
+    return at != null && _sameDay(at, day);
+  }
+
+  static bool _sameDay(DateTime a, DateTime b) =>
+      a.year == b.year && a.month == b.month && a.day == b.day;
 
   /// Human readable time remaining, e.g. "2 days, 3 hrs" or "Overdue".
   String get timeRemainingLabel => timeRemainingLabelAt(DateTime.now());
@@ -144,6 +195,8 @@ class Quest {
       'dueDate': dueDate.toIso8601String(),
       'questImageUrl': questImageUrl,
       'remindMe': remindMe,
+      'category': category.name,
+      'completedAt': completedAt?.toIso8601String(),
     };
   }
 
@@ -171,6 +224,8 @@ class Quest {
       dueDate: dueDate,
       questImageUrl: json['questImageUrl'] as String? ?? defaultQuestImage,
       remindMe: json['remindMe'] == true,
+      category: QuestCategory.fromJson(json['category']),
+      completedAt: _parseDate(json['completedAt']),
     );
   }
 
@@ -201,6 +256,9 @@ class Quest {
     DateTime? dueDate,
     String? questImageUrl,
     bool? remindMe,
+    QuestCategory? category,
+    DateTime? completedAt,
+    bool clearCompletedAt = false,
   }) {
     return Quest(
       id: id ?? this.id,
@@ -211,6 +269,8 @@ class Quest {
       dueDate: dueDate ?? this.dueDate,
       questImageUrl: questImageUrl ?? this.questImageUrl,
       remindMe: remindMe ?? this.remindMe,
+      category: category ?? this.category,
+      completedAt: clearCompletedAt ? null : (completedAt ?? this.completedAt),
     );
   }
 
@@ -224,7 +284,9 @@ class Quest {
         other.difficulty == difficulty &&
         other.dueDate == dueDate &&
         other.questImageUrl == questImageUrl &&
-        other.remindMe == remindMe;
+        other.remindMe == remindMe &&
+        other.category == category &&
+        other.completedAt == completedAt;
   }
 
   @override
@@ -237,6 +299,8 @@ class Quest {
     dueDate,
     questImageUrl,
     remindMe,
+    category,
+    completedAt,
   );
 
   @override

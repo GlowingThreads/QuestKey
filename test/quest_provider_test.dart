@@ -5,13 +5,18 @@ import 'package:quest_key/state/quest_list_provider.dart';
 
 import 'helpers/fake_reminder_scheduler.dart';
 
-Quest _quest(int id, {String title = 'Quest', int difficulty = 1}) {
+Quest _quest(
+  int id, {
+  String title = 'Quest',
+  int difficulty = 1,
+  DateTime? dueDate,
+}) {
   return Quest(
     id: id,
     title: '$title $id',
     description: 'Description $id',
     difficulty: difficulty,
-    dueDate: DateTime(2030, 1, 1, 12),
+    dueDate: dueDate ?? DateTime(2030, 1, 1, 12),
   );
 }
 
@@ -19,11 +24,16 @@ void main() {
   late InMemoryQuestStorage storage;
   late FakeReminderScheduler scheduler;
   late QuestListProvider provider;
+  final now = DateTime(2029, 12, 31, 15);
 
   setUp(() {
     storage = InMemoryQuestStorage();
     scheduler = FakeReminderScheduler();
-    provider = QuestListProvider(storage: storage, scheduler: scheduler);
+    provider = QuestListProvider(
+      storage: storage,
+      scheduler: scheduler,
+      now: () => now,
+    );
   });
 
   group('QuestListProvider', () {
@@ -114,6 +124,67 @@ void main() {
       expect(reloaded.quests[1].isCompleted, isTrue);
     });
 
+    test('completing stamps completedAt and counts toward today', () async {
+      await provider.addQuest(_quest(1));
+      await provider.addQuest(_quest(2));
+
+      await provider.markQuestCompleted(_quest(1));
+
+      expect(provider.questById(1)!.completedAt, now);
+      expect(provider.completedTodayCount, 1);
+      expect(provider.completedOn(now.subtract(const Duration(days: 1))), 0);
+
+      // Reopening clears the stamp.
+      await provider.updateQuestStatus(1, QuestStatus.inProgress);
+      expect(provider.questById(1)!.completedAt, isNull);
+      expect(provider.completedTodayCount, 0);
+    });
+
+    test(
+      'in-progress quests are sorted by due date, completed by recency',
+      () async {
+        await provider.addQuest(_quest(1, dueDate: DateTime(2030, 3, 1)));
+        await provider.addQuest(_quest(2, dueDate: DateTime(2030, 1, 1)));
+        await provider.addQuest(_quest(3, dueDate: DateTime(2030, 2, 1)));
+        await provider.addQuest(_quest(4, dueDate: DateTime(2030, 2, 2)));
+
+        expect(
+          provider.getFilteredQuests(QuestStatus.inProgress).map((q) => q.id),
+          [2, 3, 4, 1],
+        );
+
+        await provider.markQuestCompleted(_quest(4));
+        await provider.updateQuest(
+          provider
+              .questById(3)!
+              .copyWith(
+                status: QuestStatus.completed,
+                completedAt: now.add(const Duration(hours: 1)),
+              ),
+        );
+
+        expect(provider.completedQuests.map((q) => q.id), [3, 4]);
+        // "All": in-progress first (by due date), then completed (latest first).
+        expect(provider.getFilteredQuests(null).map((q) => q.id), [2, 1, 3, 4]);
+        // Insertion order is still available.
+        expect(provider.quests.map((q) => q.id), [1, 2, 3, 4]);
+      },
+    );
+
+    test('overdueQuests lists in-progress quests past due', () async {
+      await provider.addQuest(
+        _quest(1, dueDate: now.subtract(const Duration(hours: 1))),
+      );
+      await provider.addQuest(
+        _quest(2, dueDate: now.add(const Duration(hours: 1))),
+      );
+      await provider.addQuest(
+        _quest(3, dueDate: now.subtract(const Duration(days: 2))),
+      );
+      await provider.markQuestCompleted(_quest(3));
+
+      expect(provider.overdueQuests.map((q) => q.id), [1]);
+    });
     test('deleteQuest on storage removes only the given quest', () async {
       await storage.saveQuests([_quest(1), _quest(2), _quest(3)]);
 

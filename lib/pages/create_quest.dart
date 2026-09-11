@@ -22,6 +22,37 @@ class _CreateQuestPageState extends State<CreateQuestPage> {
   double _difficulty = minDifficulty.toDouble();
   bool _remindMe = false;
   bool _initialized = false;
+  QuestCategory _category = QuestCategory.other;
+
+  /// One-tap starting points for common everyday quests.
+  static const List<_QuestTemplate> _templates = [
+    _QuestTemplate(
+      '💧 Drink water',
+      'Drink 8 glasses of water today',
+      QuestCategory.health,
+    ),
+    _QuestTemplate(
+      '🏃 Exercise',
+      'Move your body for at least 20 minutes',
+      QuestCategory.health,
+    ),
+    _QuestTemplate('📖 Read', 'Read 10 pages of a book', QuestCategory.study),
+    _QuestTemplate(
+      '🧹 Tidy up',
+      'Clean one room or your workspace',
+      QuestCategory.home,
+    ),
+    _QuestTemplate(
+      '📞 Reach out',
+      'Check in with a friend or family member',
+      QuestCategory.social,
+    ),
+    _QuestTemplate(
+      '🧘 Unwind',
+      'Ten minutes of stretching or meditation',
+      QuestCategory.health,
+    ),
+  ];
 
   @override
   void dispose() {
@@ -42,6 +73,7 @@ class _CreateQuestPageState extends State<CreateQuestPage> {
       _selectedTime = TimeOfDay.fromDateTime(selectedQuest.dueDate);
       _difficulty = selectedQuest.difficulty.toDouble();
       _remindMe = selectedQuest.remindMe;
+      _category = selectedQuest.category;
       _initialized = true;
     }
 
@@ -81,6 +113,35 @@ class _CreateQuestPageState extends State<CreateQuestPage> {
                             color: Colors.white,
                           ),
                         ),
+                        if (_editingQuest == null) ...[
+                          const SizedBox(height: 12),
+                          const Text(
+                            'Quick start',
+                            style: TextStyle(color: Colors.white70),
+                          ),
+                          const SizedBox(height: 6),
+                          SizedBox(
+                            height: 40,
+                            child: ListView.separated(
+                              scrollDirection: Axis.horizontal,
+                              itemCount: _templates.length,
+                              separatorBuilder:
+                                  (_, _) => const SizedBox(width: 8),
+                              itemBuilder: (context, index) {
+                                final template = _templates[index];
+                                return ActionChip(
+                                  label: Text(template.title),
+                                  backgroundColor: Colors.black45,
+                                  side: const BorderSide(color: Colors.white24),
+                                  labelStyle: const TextStyle(
+                                    color: Colors.white,
+                                  ),
+                                  onPressed: () => _applyTemplate(template),
+                                );
+                              },
+                            ),
+                          ),
+                        ],
                         const SizedBox(height: 20),
                         TextFormField(
                           controller: _titleController,
@@ -106,11 +167,68 @@ class _CreateQuestPageState extends State<CreateQuestPage> {
                             return null;
                           },
                         ),
+                        const SizedBox(height: 16),
+                        const Text(
+                          'Category',
+                          style: TextStyle(color: Colors.white70),
+                        ),
+                        const SizedBox(height: 6),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 4,
+                          children: [
+                            for (final category in QuestCategory.values)
+                              ChoiceChip(
+                                label: Text(
+                                  '${category.icon} ${category.label}',
+                                ),
+                                selected: _category == category,
+                                selectedColor: Color(
+                                  category.colorValue,
+                                ).withValues(alpha: 0.8),
+                                backgroundColor: Colors.black45,
+                                labelStyle: const TextStyle(
+                                  color: Colors.white,
+                                ),
+                                onSelected:
+                                    (_) => setState(() => _category = category),
+                              ),
+                          ],
+                        ),
                         const SizedBox(height: 22),
-                        ElevatedButton(
-                          onPressed: _pickDateTime,
-                          style: _buttonStyle(),
-                          child: const Text('Pick Due Date & Time'),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: ElevatedButton(
+                                onPressed: _pickDateTime,
+                                style: _buttonStyle(),
+                                child: const Text('Pick Due Date & Time'),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Wrap(
+                          spacing: 8,
+                          children: [
+                            ActionChip(
+                              label: const Text('Today 6 pm'),
+                              backgroundColor: Colors.black45,
+                              side: const BorderSide(color: Colors.white24),
+                              labelStyle: const TextStyle(color: Colors.white),
+                              onPressed: () => _setDue(_todayAt(18)),
+                            ),
+                            ActionChip(
+                              label: const Text('Tomorrow 9 am'),
+                              backgroundColor: Colors.black45,
+                              side: const BorderSide(color: Colors.white24),
+                              labelStyle: const TextStyle(color: Colors.white),
+                              onPressed:
+                                  () => _setDue(
+                                    _todayAt(9).add(const Duration(days: 1)),
+                                  ),
+                            ),
+                          ],
                         ),
                         const SizedBox(height: 12),
                         if (_selectedDate != null && _selectedTime != null)
@@ -198,6 +316,8 @@ class _CreateQuestPageState extends State<CreateQuestPage> {
       dueDate: dueDateTime,
       questImageUrl: _editingQuest?.questImageUrl ?? defaultQuestImage,
       remindMe: _remindMe,
+      category: _category,
+      completedAt: _editingQuest?.completedAt,
     );
 
     final messenger = ScaffoldMessenger.of(context);
@@ -226,10 +346,33 @@ class _CreateQuestPageState extends State<CreateQuestPage> {
       _selectedTime = null;
       _difficulty = minDifficulty.toDouble();
       _remindMe = false;
+      _category = QuestCategory.other;
     });
 
     // Navigate to the quest log tab.
     appState.setIndex(1);
+  }
+
+  void _applyTemplate(_QuestTemplate template) {
+    setState(() {
+      _titleController.text = template.title.substring(
+        template.title.indexOf(' ') + 1,
+      );
+      _descriptionController.text = template.description;
+      _category = template.category;
+    });
+  }
+
+  static DateTime _todayAt(int hour) {
+    final now = DateTime.now();
+    return DateTime(now.year, now.month, now.day, hour);
+  }
+
+  void _setDue(DateTime when) {
+    setState(() {
+      _selectedDate = when;
+      _selectedTime = TimeOfDay.fromDateTime(when);
+    });
   }
 
   /// Asks for notification permission the first time the box is ticked.
@@ -311,4 +454,13 @@ class _CreateQuestPageState extends State<CreateQuestPage> {
       _selectedTime = pickedTime;
     });
   }
+}
+
+class _QuestTemplate {
+  const _QuestTemplate(this.title, this.description, this.category);
+
+  /// Emoji followed by the quest name, e.g. "💧 Drink water".
+  final String title;
+  final String description;
+  final QuestCategory category;
 }

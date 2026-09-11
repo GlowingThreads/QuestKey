@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:quest_key/models/quest.dart';
+import 'package:quest_key/state/quest_list_provider.dart';
 import 'package:quest_key/widgets/quest_list.dart';
 
 class QuestsPage extends StatefulWidget {
@@ -90,7 +92,9 @@ class _QuestsPageState extends State<QuestsPage> {
   }
 
   Widget _filterIcon(String assetName, QuestStatus? status) {
-    final label = status?.label ?? 'All';
+    final count =
+        context.watch<QuestListProvider>().getFilteredQuests(status).length;
+    final label = '${status?.label ?? 'All'} ($count)';
     final isSelected = _filter == status;
 
     return GestureDetector(
@@ -119,6 +123,12 @@ class _QuestsPageState extends State<QuestsPage> {
                 'assets/images/app_assets/$assetName',
                 width: 60,
                 height: 60,
+                errorBuilder:
+                    (_, _, _) => const Icon(
+                      Icons.image_not_supported_outlined,
+                      size: 60,
+                      color: Colors.white38,
+                    ),
               ),
             ),
             const SizedBox(height: 8),

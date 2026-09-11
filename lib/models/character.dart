@@ -36,6 +36,14 @@ class HeroCharacter {
   final DateTime createdDate;
   final int questsCompleted;
 
+  /// Consecutive calendar days (ending on [lastQuestCompletedOn]) with at
+  /// least one completed quest.
+  final int currentStreak;
+  final int longestStreak;
+
+  /// Calendar day (time stripped) of the most recent quest completion.
+  final DateTime? lastQuestCompletedOn;
+
   final int strength;
   final int dexterity;
   final int intelligence;
@@ -71,6 +79,9 @@ class HeroCharacter {
     List<UnlockedAchievement>? unlockedAchievements,
     DateTime? createdDate,
     this.questsCompleted = 0,
+    this.currentStreak = 0,
+    this.longestStreak = 0,
+    this.lastQuestCompletedOn,
   }) : learnedSkills = List.unmodifiable(learnedSkills ?? const []),
        unlockedAchievements = List.unmodifiable(
          unlockedAchievements ?? const [],
@@ -124,6 +135,9 @@ class HeroCharacter {
           unlockedAchievements.map((a) => a.toJson()).toList(),
       'createdDate': createdDate.toIso8601String(),
       'questsCompleted': questsCompleted,
+      'currentStreak': currentStreak,
+      'longestStreak': longestStreak,
+      'lastQuestCompletedOn': lastQuestCompletedOn?.toIso8601String(),
     };
   }
 
@@ -190,6 +204,12 @@ class HeroCharacter {
                   DateTime.now()
               : DateTime.now(),
       questsCompleted: _int(json['questsCompleted']),
+      currentStreak: _int(json['currentStreak']),
+      longestStreak: _int(json['longestStreak']),
+      lastQuestCompletedOn:
+          json['lastQuestCompletedOn'] is String
+              ? DateTime.tryParse(json['lastQuestCompletedOn'] as String)
+              : null,
     );
   }
 
@@ -214,6 +234,46 @@ class HeroCharacter {
       ),
       leveledUp: true,
     );
+  }
+
+  /// Records a quest completed at [now]: bumps [questsCompleted] and updates
+  /// the daily streak (same day keeps it, the next day extends it, a gap
+  /// resets it to 1).
+  HeroCharacter recordQuestCompletion(DateTime now) {
+    final today = DateTime(now.year, now.month, now.day);
+    final last = lastQuestCompletedOn;
+
+    int streak;
+    if (last == null) {
+      streak = 1;
+    } else {
+      final lastDay = DateTime(last.year, last.month, last.day);
+      final gap = today.difference(lastDay).inDays;
+      if (gap == 0) {
+        streak = currentStreak < 1 ? 1 : currentStreak;
+      } else if (gap == 1) {
+        streak = currentStreak + 1;
+      } else {
+        streak = 1;
+      }
+    }
+
+    return copyWith(
+      questsCompleted: questsCompleted + 1,
+      currentStreak: streak,
+      longestStreak: streak > longestStreak ? streak : longestStreak,
+      lastQuestCompletedOn: today,
+    );
+  }
+
+  /// Whether the streak is still alive as of [now] (a completion today or
+  /// yesterday).
+  bool isStreakAliveAt(DateTime now) {
+    final last = lastQuestCompletedOn;
+    if (last == null || currentStreak == 0) return false;
+    final today = DateTime(now.year, now.month, now.day);
+    final lastDay = DateTime(last.year, last.month, last.day);
+    return today.difference(lastDay).inDays <= 1;
   }
 
   /// Spends [points] unassigned stat points on [stat].
@@ -282,6 +342,9 @@ class HeroCharacter {
     List<UnlockedAchievement>? unlockedAchievements,
     DateTime? createdDate,
     int? questsCompleted,
+    int? currentStreak,
+    int? longestStreak,
+    DateTime? lastQuestCompletedOn,
   }) {
     return HeroCharacter(
       name: name ?? this.name,
@@ -306,6 +369,9 @@ class HeroCharacter {
       unlockedAchievements: unlockedAchievements ?? this.unlockedAchievements,
       createdDate: createdDate ?? this.createdDate,
       questsCompleted: questsCompleted ?? this.questsCompleted,
+      currentStreak: currentStreak ?? this.currentStreak,
+      longestStreak: longestStreak ?? this.longestStreak,
+      lastQuestCompletedOn: lastQuestCompletedOn ?? this.lastQuestCompletedOn,
     );
   }
 
@@ -353,6 +419,18 @@ class HeroCharacter {
       default:
         return 0;
     }
+  }
+
+  /// Returns a hero with every achievement in [achievements] unlocked
+  /// (already-unlocked ones are skipped).
+  HeroCharacter unlockAchievements(
+    Iterable<CharacterAchievement> achievements,
+  ) {
+    var hero = this;
+    for (final achievement in achievements) {
+      hero = hero.unlockAchievement(achievement) ?? hero;
+    }
+    return hero;
   }
 
   /// Returns a hero with [achievement] unlocked, or `null` if it was already

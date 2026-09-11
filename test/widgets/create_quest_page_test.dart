@@ -92,6 +92,50 @@ void main() {
     expect(find.text('Walk the dog'), findsNothing);
   });
 
+  testWidgets('a quick-start template fills the form and category', (
+    tester,
+  ) async {
+    await pumpPage(tester);
+
+    await tester.tap(find.text('💧 Drink water'));
+    await tester.pump();
+    await tester.tap(find.text('Today 6 pm'));
+    await tester.pump();
+    await tester.ensureVisible(find.text('Create Quest'));
+    await tester.tap(find.text('Create Quest'));
+    await tester.pumpAndSettle();
+
+    final quest = questProvider.quests.single;
+    expect(quest.title, 'Drink water');
+    expect(quest.description, 'Drink 8 glasses of water today');
+    expect(quest.category, QuestCategory.health);
+    expect(quest.dueDate.hour, 18);
+  });
+
+  testWidgets('a category can be chosen', (tester) async {
+    await pumpPage(tester);
+
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'Quest Name'),
+      'Essay',
+    );
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'Quest Description'),
+      'Write the intro',
+    );
+    await tester.ensureVisible(find.text('📚 Study'));
+    await tester.tap(find.text('📚 Study'));
+    await tester.pump();
+    await tester.ensureVisible(find.text('Tomorrow 9 am'));
+    await tester.tap(find.text('Tomorrow 9 am'));
+    await tester.pump();
+    await tester.ensureVisible(find.text('Create Quest'));
+    await tester.tap(find.text('Create Quest'));
+    await tester.pumpAndSettle();
+
+    expect(questProvider.quests.single.category, QuestCategory.study);
+  });
+
   testWidgets('submitting without a due date does nothing', (tester) async {
     await pumpPage(tester);
     await tester.enterText(

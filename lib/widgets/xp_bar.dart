@@ -107,24 +107,24 @@ class _XpBarState extends State<XpBar> with SingleTickerProviderStateMixin {
                   AnimatedBuilder(
                     animation: _progressAnimation,
                     builder: (context, child) {
-                      return Container(
-                        height: AppHeights.xpBar,
-                        width:
-                            _progressAnimation.value *
-                            (MediaQuery.of(context).size.width -
-                                AppPadding.xxl * 2),
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: AppColors.xpGradient,
-                          ),
-                          borderRadius: BorderRadius.circular(AppRadius.md),
-                          boxShadow: [
-                            const BoxShadow(
-                              color: AppColors.shadowPurple,
-                              blurRadius: 8,
-                              spreadRadius: 1,
+                      return FractionallySizedBox(
+                        alignment: Alignment.centerLeft,
+                        widthFactor: _progressAnimation.value,
+                        child: Container(
+                          height: AppHeights.xpBar,
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: AppColors.xpGradient,
                             ),
-                          ],
+                            borderRadius: BorderRadius.circular(AppRadius.md),
+                            boxShadow: [
+                              const BoxShadow(
+                                color: AppColors.shadowPurple,
+                                blurRadius: 8,
+                                spreadRadius: 1,
+                              ),
+                            ],
+                          ),
                         ),
                       );
                     },

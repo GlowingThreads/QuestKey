@@ -66,7 +66,7 @@ void main() {
     tester,
   ) async {
     await pumpList(tester, filter: QuestStatus.completed);
-    expect(find.text('No quests available'), findsOneWidget);
+    expect(find.textContaining('No completed quests yet'), findsOneWidget);
   });
 
   testWidgets('swiping right completes the quest and awards XP', (
@@ -77,7 +77,14 @@ void main() {
     await tester.drag(find.text('Quest 1'), const Offset(600, 0));
     await tester.pumpAndSettle();
 
+    // First completion unlocks an achievement; the dialog is shown.
+    expect(find.text('Achievement unlocked!'), findsOneWidget);
+    expect(find.text('Quest Initiate'), findsOneWidget);
+    await tester.tap(find.text('Nice!'));
+    await tester.pumpAndSettle();
+
     final completed = questProvider.questById(1)!;
+    expect(completed.completedAt, isNotNull);
     expect(completed.isCompleted, isTrue);
     expect(questProvider.completedQuests.map((q) => q.id), [1]);
     // Quest 1 left the in-progress list, quest 2 is still there.
@@ -100,6 +107,12 @@ void main() {
     await tester.drag(find.text('Quest 2'), const Offset(-600, 0));
     await tester.pumpAndSettle();
 
+    // Deleting asks for confirmation first.
+    expect(find.text('Delete quest?'), findsOneWidget);
+    expect(questProvider.questById(2), isNotNull);
+    await tester.tap(find.text('Delete'));
+    await tester.pumpAndSettle();
+
     expect(questProvider.questById(2), isNull);
     expect(questProvider.quests.map((q) => q.id), [1]);
     expect(find.text('Quest 2'), findsNothing);
@@ -109,15 +122,72 @@ void main() {
     expect(find.textContaining('Deleted "Quest 2"'), findsOneWidget);
   });
 
-  testWidgets('the "All" list only allows deleting, not completing', (
+  testWidgets('cancelling the delete dialog keeps the quest', (tester) async {
+    await pumpList(tester, filter: QuestStatus.inProgress);
+
+    await tester.drag(find.text('Quest 2'), const Offset(-600, 0));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Keep'));
+    await tester.pumpAndSettle();
+
+    expect(questProvider.questById(2), isNotNull);
+    expect(find.text('Quest 2'), findsOneWidget);
+  });
+
+  testWidgets('the check button completes a quest without swiping', (
+    tester,
+  ) async {
+    await pumpList(tester, filter: QuestStatus.inProgress);
+
+    await tester.tap(find.byTooltip('Complete quest').first);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Nice!'));
+    await tester.pumpAndSettle();
+
+    expect(questProvider.completedQuests.length, 1);
+    expect(appState.hero!.questsCompleted, 1);
+  });
+
+  testWidgets('completed quests can only be swiped away, not completed again', (
+    tester,
+  ) async {
+    await questProvider.markQuestCompleted(quest(1));
+    await pumpList(tester);
+
+    final directions =
+        tester
+            .widgetList<Dismissible>(find.byType(Dismissible))
+            .map((d) => d.direction)
+            .toList();
+    // In-progress quest 2 is listed first (horizontal), completed quest 1
+    // after it (delete only).
+    expect(directions, [
+      DismissDirection.horizontal,
+      DismissDirection.endToStart,
+    ]);
+    expect(find.text('Done'), findsOneWidget);
+  });
+
+  testWidgets('on the "All" view completing keeps the quest in the list', (
     tester,
   ) async {
     await pumpList(tester);
 
-    final dismissible = tester.widget<Dismissible>(
-      find.byType(Dismissible).first,
+    await tester.drag(find.text('Quest 1'), const Offset(600, 0));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Nice!'));
+    await tester.pumpAndSettle();
+
+    expect(questProvider.questById(1)!.isCompleted, isTrue);
+    expect(find.text('Quest 1'), findsOneWidget);
+    // Both quests are still listed (the SnackBar has its own Dismissible).
+    expect(
+      find.descendant(
+        of: find.byType(ListView),
+        matching: find.byType(Dismissible),
+      ),
+      findsNWidgets(2),
     );
-    expect(dismissible.direction, DismissDirection.endToStart);
   });
 
   testWidgets('tapping an in-progress quest selects it for editing', (

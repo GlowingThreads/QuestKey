@@ -55,9 +55,6 @@ class _StatBarState extends State<StatBar> with SingleTickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    final availableWidth =
-        MediaQuery.of(context).size.width - AppPadding.xxl * 2;
-
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: AppPadding.md),
       child: Column(
@@ -127,23 +124,26 @@ class _StatBarState extends State<StatBar> with SingleTickerProviderStateMixin {
                   AnimatedBuilder(
                     animation: _fillAnimation,
                     builder: (context, child) {
-                      return Container(
-                        height: AppHeights.statBar,
-                        width: _fillAnimation.value * availableWidth,
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: AppColors.statGradient,
-                          ),
-                          borderRadius: BorderRadius.circular(AppRadius.md),
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppColors.shadowGreen.withValues(
-                                alpha: 0.6,
-                              ),
-                              blurRadius: 8,
-                              spreadRadius: 1,
+                      return FractionallySizedBox(
+                        alignment: Alignment.centerLeft,
+                        widthFactor: _fillAnimation.value,
+                        child: Container(
+                          height: AppHeights.statBar,
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: AppColors.statGradient,
                             ),
-                          ],
+                            borderRadius: BorderRadius.circular(AppRadius.md),
+                            boxShadow: [
+                              BoxShadow(
+                                color: AppColors.shadowGreen.withValues(
+                                  alpha: 0.6,
+                                ),
+                                blurRadius: 8,
+                                spreadRadius: 1,
+                              ),
+                            ],
+                          ),
                         ),
                       );
                     },

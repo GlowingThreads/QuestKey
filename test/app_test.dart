@@ -35,7 +35,7 @@ void main() {
   });
 
   test(
-    'completeQuestForHero awards XP, counts the quest and persists',
+    'completeQuestForHero awards XP, counts the quest, unlocks and persists',
     () async {
       final storage = InMemoryQuestStorage();
       final appState = AppState(storage: storage);
@@ -43,13 +43,19 @@ void main() {
         makeHero(levelUp: const LevelUp(level: 1, exp: 10, maxExp: 100)),
       );
 
-      final leveledUp = await appState.completeQuestForHero(50);
+      final result = await appState.completeQuestForHero(50);
 
-      expect(leveledUp, isFalse);
+      expect(result.leveledUp, isFalse);
+      expect(result.xpGained, 50);
       expect(appState.lastCompletionLeveledUp, isFalse);
       expect(appState.hero!.levelUp.exp, 60);
       expect(appState.hero!.questsCompleted, 1);
+      expect(appState.hero!.currentStreak, 1);
+      // First completion unlocks "Quest Initiate".
+      expect(result.unlockedAchievements.map((a) => a.id), ['first_quest']);
+      expect(appState.hero!.hasAchievement('first_quest'), isTrue);
       expect((await storage.loadHero())!.levelUp.exp, 60);
+      expect((await storage.loadHero())!.hasAchievement('first_quest'), isTrue);
     },
   );
 
@@ -59,18 +65,41 @@ void main() {
       makeHero(levelUp: const LevelUp(level: 1, exp: 90, maxExp: 100)),
     );
 
-    final leveledUp = await appState.completeQuestForHero(50);
+    final result = await appState.completeQuestForHero(50);
 
-    expect(leveledUp, isTrue);
+    expect(result.leveledUp, isTrue);
     expect(appState.lastCompletionLeveledUp, isTrue);
     expect(appState.hero!.levelUp.level, 2);
     expect(appState.hero!.levelUp.exp, 40);
+    expect(
+      result.unlockedAchievements.map((a) => a.id),
+      containsAll(['first_quest', 'first_level']),
+    );
   });
 
   test('completeQuestForHero without a hero is a no-op', () async {
     final appState = AppState(storage: InMemoryQuestStorage());
-    expect(await appState.completeQuestForHero(50), isFalse);
+    final result = await appState.completeQuestForHero(50);
+    expect(result.leveledUp, isFalse);
+    expect(result.unlockedAchievements, isEmpty);
     expect(appState.hero, isNull);
+  });
+
+  test('assignStatPoint spends a point and can unlock achievements', () async {
+    final appState = AppState(storage: InMemoryQuestStorage());
+    await appState.saveHero(
+      makeHero(levelUp: const LevelUp(level: 2, statPoints: 1)),
+    );
+
+    final unlocked = await appState.assignStatPoint('luck');
+
+    expect(appState.hero!.luck, 1);
+    expect(appState.hero!.levelUp.statPoints, 0);
+    // Level 2 with every point spent -> Stat Allocator (+ Leveled Up).
+    expect(
+      unlocked.map((a) => a.id),
+      containsAll(['stat_master', 'first_level']),
+    );
   });
 
   test('clearHero forgets the hero', () async {

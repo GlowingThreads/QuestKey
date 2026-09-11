@@ -74,20 +74,7 @@ class InfoPage extends StatelessWidget {
                     ),
                     const SizedBox(height: 30),
                     ElevatedButton(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder:
-                                (ctx) => CreateHeroPage(
-                                  onHeroCreated:
-                                      (
-                                        _,
-                                      ) {}, // <- empty callback to satisfy the required parameter
-                                ),
-                          ),
-                        );
-                      },
+                      onPressed: () => _openCreateHero(context),
                       style: ElevatedButton.styleFrom(
                         elevation: 4,
                         padding: const EdgeInsets.symmetric(
@@ -108,12 +95,16 @@ class InfoPage extends StatelessWidget {
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      child: const Row(
+                      child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.person_add, size: 20),
-                          SizedBox(width: 8),
-                          Text('Create Hero'),
+                          const Icon(Icons.person_add, size: 20),
+                          const SizedBox(width: 8),
+                          Text(
+                            context.watch<AppState>().hasHero
+                                ? 'Create New Hero'
+                                : 'Create Hero',
+                          ),
                         ],
                       ),
                     ),
@@ -219,6 +210,40 @@ class InfoPage extends StatelessWidget {
   }
 }
 
+/// Opens the hero creator; asks first if it would replace an existing hero.
+Future<void> _openCreateHero(BuildContext context) async {
+  final navigator = Navigator.of(context);
+  if (context.read<AppState>().hasHero) {
+    final replace = await showDialog<bool>(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Replace your hero?'),
+            content: const Text(
+              'Creating a new hero replaces your current hero, level and '
+              'stats. Your quests are kept.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('Replace'),
+              ),
+            ],
+          ),
+    );
+    if (replace != true) return;
+  }
+  await navigator.push(
+    MaterialPageRoute<void>(
+      builder: (ctx) => CreateHeroPage(onHeroCreated: (_) {}),
+    ),
+  );
+}
+
 // Info instructions
 const String _infoText = '''
 Create your hero and embark on quests!
@@ -231,9 +256,11 @@ Track your progress on the Hero Page.
 
 In the Quest Log you can:
 ✓ View ongoing and completed quests.
-↔ Swipe right to complete a quest.
-↔ Swipe left to delete a quest.
-✎ Long press a quest to edit it.
+→ Swipe right (or tap ✓) to complete a quest.
+← Swipe left to delete a quest (you'll be asked to confirm).
+✎ Tap a quest to edit it.
+
+Complete quests daily to build a streak, unlock achievements and learn skills on the Hero page.
 
 Tap "Create Hero" to begin your adventure!
 ''';

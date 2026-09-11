@@ -46,8 +46,34 @@ class QuestListProvider with ChangeNotifier {
   /// Quest currently being edited on the create/edit page, if any.
   Quest? selectedQuest;
 
-  /// Read-only view of all quests.
+  /// Read-only view of all quests in insertion order.
   List<Quest> get quests => List.unmodifiable(_quests);
+
+  /// Quests still in progress that are past their due date.
+  List<Quest> get overdueQuests {
+    final now = _now();
+    return _quests.where((q) => q.isOverdueAt(now)).toList()..sort(_byDueDate);
+  }
+
+  /// Number of quests completed on the calendar day of [day] (today by
+  /// default).
+  int completedOn([DateTime? day]) {
+    final d = day ?? _now();
+    return _quests.where((q) => q.wasCompletedOn(d)).length;
+  }
+
+  int get completedTodayCount => completedOn();
+
+  static int _byDueDate(Quest a, Quest b) => a.dueDate.compareTo(b.dueDate);
+
+  static int _byCompletedDesc(Quest a, Quest b) {
+    final ca = a.completedAt;
+    final cb = b.completedAt;
+    if (ca == null && cb == null) return _byDueDate(a, b);
+    if (ca == null) return 1;
+    if (cb == null) return -1;
+    return cb.compareTo(ca);
+  }
 
   List<Quest> get inProgressQuests => getFilteredQuests(QuestStatus.inProgress);
 
@@ -144,7 +170,12 @@ class QuestListProvider with ChangeNotifier {
   Future<void> updateQuestStatus(int questId, QuestStatus status) async {
     final index = _quests.indexWhere((q) => q.id == questId);
     if (index == -1) return;
-    _quests[index] = _quests[index].copyWith(status: status);
+    final completed = status == QuestStatus.completed;
+    _quests[index] = _quests[index].copyWith(
+      status: status,
+      completedAt: completed ? _now() : null,
+      clearCompletedAt: !completed,
+    );
     notifyListeners();
     await saveQuestsToStorage();
     if (status == QuestStatus.completed) {
@@ -156,9 +187,23 @@ class QuestListProvider with ChangeNotifier {
       updateQuestStatus(quest.id, QuestStatus.completed);
 
   /// Quests with [filterStatus], or all quests when it is `null`.
+  ///
+  /// In-progress quests are sorted by due date (soonest first) and completed
+  /// quests by completion time (latest first). The "all" view lists
+  /// in-progress quests before completed ones.
   List<Quest> getFilteredQuests(QuestStatus? filterStatus) {
-    if (filterStatus == null) return quests;
-    return _quests.where((quest) => quest.status == filterStatus).toList();
+    switch (filterStatus) {
+      case QuestStatus.inProgress:
+        return _quests.where((q) => !q.isCompleted).toList()..sort(_byDueDate);
+      case QuestStatus.completed:
+        return _quests.where((q) => q.isCompleted).toList()
+          ..sort(_byCompletedDesc);
+      case null:
+        return [
+          ...getFilteredQuests(QuestStatus.inProgress),
+          ...getFilteredQuests(QuestStatus.completed),
+        ];
+    }
   }
 
   Future<void> loadQuestsFromStorage() async {

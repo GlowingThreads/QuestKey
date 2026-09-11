@@ -76,6 +76,9 @@ void main() {
       expect(quest.xpReward, 150);
       expect(quest.dueDate, DateTime(2025, 4, 18, 9, 30));
       expect(quest.questImageUrl, 'assets/images/app_assets/todo.png');
+      expect(quest.category, QuestCategory.other);
+      expect(quest.completedAt, isNull);
+      expect(quest.remindMe, isFalse);
     });
 
     test('falls back safely on garbage legacy values', () {
