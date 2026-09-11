@@ -2,10 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:quest_key/models/quest.dart';
-import 'package:quest_key/services/notification_services.dart';
 import 'package:quest_key/state/app_state.dart';
 import 'package:quest_key/state/quest_list_provider.dart';
-import 'package:timezone/timezone.dart' as tz;
 
 class CreateQuestPage extends StatefulWidget {
   const CreateQuestPage({super.key});
@@ -43,6 +41,7 @@ class _CreateQuestPageState extends State<CreateQuestPage> {
       _selectedDate = selectedQuest.dueDate;
       _selectedTime = TimeOfDay.fromDateTime(selectedQuest.dueDate);
       _difficulty = selectedQuest.difficulty.toDouble();
+      _remindMe = selectedQuest.remindMe;
       _initialized = true;
     }
 
@@ -149,12 +148,14 @@ class _CreateQuestPageState extends State<CreateQuestPage> {
                         ),
                         CheckboxListTile(
                           value: _remindMe,
-                          onChanged:
-                              (value) =>
-                                  setState(() => _remindMe = value ?? false),
+                          onChanged: _onRemindMeChanged,
                           title: const Text(
                             'Remind me when due',
                             style: TextStyle(color: Colors.white),
+                          ),
+                          subtitle: const Text(
+                            'Notifies you 30 minutes before the due time',
+                            style: TextStyle(color: Colors.white54),
                           ),
                           controlAffinity: ListTileControlAffinity.leading,
                           activeColor: Colors.deepPurple,
@@ -196,27 +197,21 @@ class _CreateQuestPageState extends State<CreateQuestPage> {
       difficulty: _difficulty.round(),
       dueDate: dueDateTime,
       questImageUrl: _editingQuest?.questImageUrl ?? defaultQuestImage,
+      remindMe: _remindMe,
     );
 
-    if (_editingQuest != null) {
-      await questProvider.updateQuest(quest);
-    } else {
-      await questProvider.addQuest(quest);
-    }
+    final messenger = ScaffoldMessenger.of(context);
+    final outcome = await questProvider.saveQuest(quest);
     questProvider.setSelectedQuest(null);
 
-    if (_remindMe) {
-      // Convert DateTime to TZDateTime for reminder
-      final tzDateTime = tz.TZDateTime.from(
-        dueDateTime.subtract(const Duration(minutes: 30)),
-        tz.local,
-      );
-
-      await NotificationService.scheduleInexactNotification(
-        id: quest.id,
-        title: 'Quest Reminder',
-        body: '“${quest.title}” is due soon. Don’t forget to complete it!',
-        scheduledDate: tzDateTime, // Schedule reminder 30 mins before due date
+    if (outcome == QuestSaveOutcome.reminderInPast) {
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text(
+            'The due time is less than 30 minutes away, so no reminder was '
+            'scheduled.',
+          ),
+        ),
       );
     }
 
@@ -235,6 +230,33 @@ class _CreateQuestPageState extends State<CreateQuestPage> {
 
     // Navigate to the quest log tab.
     appState.setIndex(1);
+  }
+
+  /// Asks for notification permission the first time the box is ticked.
+  /// If the user denies it, the box stays unticked and we explain why.
+  Future<void> _onRemindMeChanged(bool? value) async {
+    final wantsReminder = value ?? false;
+    if (!wantsReminder) {
+      setState(() => _remindMe = false);
+      return;
+    }
+
+    final scheduler = context.read<QuestListProvider>().scheduler;
+    final messenger = ScaffoldMessenger.of(context);
+    final granted = await scheduler.requestPermission();
+    if (!mounted) return;
+
+    setState(() => _remindMe = granted);
+    if (!granted) {
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Notifications are turned off for Quest Key, so reminders can\'t '
+            'be scheduled. Enable them in system settings to use reminders.',
+          ),
+        ),
+      );
+    }
   }
 
   InputDecoration _inputDecoration(String label) {

@@ -67,6 +67,9 @@ class Quest {
   final DateTime dueDate;
   final String questImageUrl;
 
+  /// Whether the user asked to be reminded shortly before [dueDate].
+  final bool remindMe;
+
   Quest({
     required this.id,
     required this.title,
@@ -75,6 +78,7 @@ class Quest {
     this.status = QuestStatus.inProgress,
     int difficulty = minDifficulty,
     this.questImageUrl = defaultQuestImage,
+    this.remindMe = false,
   }) : difficulty = difficulty.clamp(minDifficulty, maxDifficulty);
 
   /// XP awarded on completion. Always derived from [difficulty].
@@ -139,6 +143,7 @@ class Quest {
       'xpReward': xpReward,
       'dueDate': dueDate.toIso8601String(),
       'questImageUrl': questImageUrl,
+      'remindMe': remindMe,
     };
   }
 
@@ -165,6 +170,7 @@ class Quest {
       difficulty: difficulty,
       dueDate: dueDate,
       questImageUrl: json['questImageUrl'] as String? ?? defaultQuestImage,
+      remindMe: json['remindMe'] == true,
     );
   }
 
@@ -192,6 +198,7 @@ class Quest {
     int? difficulty,
     DateTime? dueDate,
     String? questImageUrl,
+    bool? remindMe,
   }) {
     return Quest(
       id: id ?? this.id,
@@ -201,6 +208,7 @@ class Quest {
       difficulty: difficulty ?? this.difficulty,
       dueDate: dueDate ?? this.dueDate,
       questImageUrl: questImageUrl ?? this.questImageUrl,
+      remindMe: remindMe ?? this.remindMe,
     );
   }
 
@@ -213,7 +221,8 @@ class Quest {
         other.status == status &&
         other.difficulty == difficulty &&
         other.dueDate == dueDate &&
-        other.questImageUrl == questImageUrl;
+        other.questImageUrl == questImageUrl &&
+        other.remindMe == remindMe;
   }
 
   @override
@@ -225,6 +234,7 @@ class Quest {
     difficulty,
     dueDate,
     questImageUrl,
+    remindMe,
   );
 
   @override

@@ -3,6 +3,8 @@ import 'package:quest_key/models/quest.dart';
 import 'package:quest_key/services/in_memory_quest_storage.dart';
 import 'package:quest_key/state/quest_list_provider.dart';
 
+import 'helpers/fake_reminder_scheduler.dart';
+
 Quest _quest(int id, {String title = 'Quest', int difficulty = 1}) {
   return Quest(
     id: id,
@@ -15,11 +17,13 @@ Quest _quest(int id, {String title = 'Quest', int difficulty = 1}) {
 
 void main() {
   late InMemoryQuestStorage storage;
+  late FakeReminderScheduler scheduler;
   late QuestListProvider provider;
 
   setUp(() {
     storage = InMemoryQuestStorage();
-    provider = QuestListProvider(storage: storage);
+    scheduler = FakeReminderScheduler();
+    provider = QuestListProvider(storage: storage, scheduler: scheduler);
   });
 
   group('QuestListProvider', () {
