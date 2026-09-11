@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:quest_key/models/character.dart';
+import 'package:quest_key/constants/app_colors.dart';
+import 'package:quest_key/constants/app_dimens.dart';
 
 class HeroProfileCard extends StatelessWidget {
   final HeroCharacter hero;
@@ -9,86 +11,132 @@ class HeroProfileCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(AppPadding.xl),
       width: double.infinity,
       decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.5),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white24, width: 1.5),
+        color: AppColors.bgDark,
+        borderRadius: BorderRadius.circular(AppRadius.xl),
+        border: Border.all(
+          color: AppColors.borderLight,
+          width: AppBorders.medium,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.3),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          //left side
-          Expanded(
-            flex: 2,
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
+          // Header with avatar and name
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Avatar
+              ClipRRect(
+                borderRadius: BorderRadius.circular(AppRadius.md),
+                child: Container(
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                      color: AppColors.borderLight,
+                      width: AppBorders.thin,
+                    ),
+                  ),
                   child: Image.asset(
                     hero.imageUrl,
-                    height: 90,
-                    width: 90,
+                    height: AppImageSizes.heroAvatar,
+                    width: AppImageSizes.heroAvatar,
                     fit: BoxFit.cover,
                   ),
                 ),
-                const SizedBox(width: 16),
-
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        hero.name,
-                        style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
+              ),
+              const SizedBox(width: AppPadding.xl),
+              // Hero info
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      hero.name,
+                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                            color: AppColors.textPrimary,
+                            fontWeight: FontWeight.bold,
+                          ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: AppPadding.xs),
+                    Text(
+                      '"${hero.motto}"',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: AppColors.textSecondary,
+                            fontStyle: FontStyle.italic,
+                          ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: AppPadding.md),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppPadding.md,
+                        vertical: AppPadding.xs,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryDarker,
+                        borderRadius: BorderRadius.circular(AppRadius.sm),
+                        border: Border.all(
+                          color: AppColors.borderLight,
+                          width: AppBorders.thin,
                         ),
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        '"${hero.motto}"',
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontStyle: FontStyle.italic,
-                          color: Colors.white70,
-                        ),
+                      child: Text(
+                        '${hero.classes.className} Lv. ${hero.levelUp.level}',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: AppColors.accentGreen,
+                              fontWeight: FontWeight.w600,
+                            ),
                       ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Class: ${hero.classes.className}',
-                        style: const TextStyle(
-                          fontSize: 14,
-                          color: Colors.white,
-                        ),
-                      ),
-                      Text(
-                        'Level: ${hero.levelUp.level}',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-
-          //right side
-          const SizedBox(width: 20),
-          Column(
-            //left aligned right
-            crossAxisAlignment: CrossAxisAlignment.start,
+          const SizedBox(height: AppPadding.xl),
+          // Divider
+          Container(
+            height: 1,
+            color: AppColors.borderLight,
+          ),
+          const SizedBox(height: AppPadding.lg),
+          // Resource stats
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _statItem('HP', '${hero.health}'),
-              _statItem('MP', '${hero.mana}'),
-              _statItem('Stamina', '${hero.stamina}'),
+              _buildStatCard(
+                context,
+                'HP',
+                hero.health.toString(),
+                Icons.favorite,
+                Colors.redAccent,
+              ),
+              _buildStatCard(
+                context,
+                'MP',
+                hero.mana.toString(),
+                Icons.bolt,
+                Colors.blueAccent,
+              ),
+              _buildStatCard(
+                context,
+                'Stamina',
+                hero.stamina.toString(),
+                Icons.flash_on,
+                Colors.orangeAccent,
+              ),
             ],
           ),
         ],
@@ -96,24 +144,43 @@ class HeroProfileCard extends StatelessWidget {
     );
   }
 
-  //helper for stat items
-  Widget _statItem(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 6.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.end,
+  Widget _buildStatCard(
+    BuildContext context,
+    String label,
+    String value,
+    IconData icon,
+    Color color,
+  ) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppPadding.md,
+        vertical: AppPadding.sm,
+      ),
+      decoration: BoxDecoration(
+        color: AppColors.primaryDarker,
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        border: Border.all(
+          color: color.withOpacity(0.3),
+          width: AppBorders.thin,
+        ),
+      ),
+      child: Column(
         children: [
+          Icon(icon, color: color, size: AppIconSizes.md),
+          const SizedBox(height: AppPadding.xs),
           Text(
-            '$label: ',
-            style: const TextStyle(fontSize: 14, color: Colors.white70),
+            label,
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  color: AppColors.textSecondary,
+                ),
           ),
+          const SizedBox(height: AppPadding.xs),
           Text(
             value,
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
+            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                  color: color,
+                  fontWeight: FontWeight.bold,
+                ),
           ),
         ],
       ),

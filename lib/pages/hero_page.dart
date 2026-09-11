@@ -4,6 +4,9 @@ import 'package:quest_key/widgets/hero_info.dart';
 import 'package:quest_key/state/app_state.dart';
 import 'package:quest_key/widgets/stats_panel.dart';
 import 'package:quest_key/widgets/xp_bar.dart';
+import 'package:quest_key/widgets/character_stats_analysis.dart';
+import 'package:quest_key/widgets/character_skills_achievements.dart';
+import 'package:quest_key/constants/app_dimens.dart';
 
 class HeroPage extends StatefulWidget {
   const HeroPage({super.key});
@@ -40,16 +43,28 @@ class _HeroState extends State<HeroPage> {
                           style: TextStyle(color: Colors.white),
                         ),
                       ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: AppPadding.xl),
                   if (hero != null)
                     Padding(
-                      padding: const EdgeInsets.only(bottom: 12.0),
+                      padding: const EdgeInsets.only(bottom: AppPadding.lg),
                       child: XpBar(
                         currentXp: hero.levelUp.exp,
                         maxXp: hero.levelUp.maxExp,
                       ),
                     ),
-                  if (hero != null) StatPanel(hero: hero),
+                  if (hero != null) ...[
+                    // Character stats analysis
+                    CharacterStatsAnalysis(hero: hero),
+                    const SizedBox(height: AppPadding.xl),
+                    // Skills and achievements
+                    SizedBox(
+                      height: 300,
+                      child: CharacterSkillsAchievements(hero: hero),
+                    ),
+                    const SizedBox(height: AppPadding.lg),
+                    // Stat allocation panel
+                    StatPanel(hero: hero),
+                  ],
                 ],
               ),
             ),

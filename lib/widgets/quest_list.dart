@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import 'package:quest_key/services/storage.dart';
 import 'package:quest_key/state/app_state.dart';
 import 'package:quest_key/widgets/lvl_notifcation.dart';
+import 'package:quest_key/constants/app_colors.dart';
+import 'package:quest_key/constants/app_dimens.dart';
 
 class QuestList extends StatefulWidget {
   final String? filterStatus;
@@ -28,19 +30,24 @@ class _QuestListState extends State<QuestList> {
     final quests = [...rawQuests];
 
     return Container(
-      padding: const EdgeInsets.all(12.0),
+      padding: const EdgeInsets.all(AppPadding.md),
       decoration: BoxDecoration(
-        color: const Color.fromARGB(100, 29, 17, 62),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white24, width: 2),
+        color: AppColors.bgDarkTransparent,
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        border: Border.all(
+          color: AppColors.borderMedium,
+          width: AppBorders.thick,
+        ),
       ),
-      constraints: const BoxConstraints(maxHeight: 450),
+      constraints: const BoxConstraints(maxHeight: AppHeights.questContainer),
       child:
           quests.isEmpty
-              ? const Center(
+              ? Center(
                 child: Text(
                   'No quests available',
-                  style: TextStyle(color: Colors.white, fontSize: 20),
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        color: AppColors.textPrimary,
+                      ),
                 ),
               )
               : ListView.builder(
@@ -48,139 +55,186 @@ class _QuestListState extends State<QuestList> {
                 itemBuilder: (context, index) {
                   final quest = quests[index];
 
-                  return Dismissible(
-                    key: Key(quest.id.toString()),
-                    direction:
-                        widget.filterStatus == null ||
-                                widget.filterStatus == 'All'
-                            ? DismissDirection
-                                .endToStart // delete on all
-                            : quest.status == 'Completed'
-                            ? DismissDirection
-                                .endToStart // delete on comp
-                            : DismissDirection
-                                .horizontal, // both for in progress
-
-                    background: Container(
-                      padding: const EdgeInsets.only(left: 20),
-                      alignment: Alignment.centerLeft,
-                      color: const Color.fromARGB(128, 86, 183, 118),
-                      child: const Icon(
-                        Icons.check_circle_rounded,
-                        color: Colors.white,
-                        size: 32,
+                  return SlideTransition(
+                    position: Tween<Offset>(
+                      begin: const Offset(-1, 0),
+                      end: Offset.zero,
+                    ).animate(
+                      CurvedAnimation(
+                        parent: ModalRoute.of(context)?.animation ??
+                            AlwaysStoppedAnimation(1.0),
+                        curve: Curves.easeOutCubic,
                       ),
                     ),
-                    secondaryBackground: Container(
-                      color: const Color.fromARGB(128, 139, 21, 12),
-                      alignment: Alignment.centerRight,
-                      padding: const EdgeInsets.only(right: 20),
-                      child: const Icon(
-                        Icons.delete_sweep,
-                        color: Colors.white,
+                    child: Dismissible(
+                      key: Key(quest.id.toString()),
+                      direction:
+                          widget.filterStatus == null ||
+                                  widget.filterStatus == 'All'
+                              ? DismissDirection.endToStart
+                              : quest.status == 'Completed'
+                              ? DismissDirection.endToStart
+                              : DismissDirection.horizontal,
+                      background: Container(
+                        padding: const EdgeInsets.only(left: AppPadding.xl),
+                        alignment: Alignment.centerLeft,
+                        decoration: BoxDecoration(
+                          color: AppColors.completeGreen,
+                          borderRadius: BorderRadius.circular(AppRadius.sm),
+                        ),
+                        child: const Icon(
+                          Icons.check_circle_rounded,
+                          color: AppColors.textPrimary,
+                          size: AppIconSizes.lg,
+                        ),
                       ),
-                    ),
-                    onDismissed: (direction) {
-                      final hero = context.read<AppState>().hero;
-
-                      if (direction == DismissDirection.startToEnd &&
-                          quest.status != 'Completed') {
-                        provider.markQuestCompleted(quest);
-
-                        if (hero != null) {
-                          final leveledUp = hero.gainExperience(quest.xpReward);
-                          context.read<AppState>().saveHero(hero);
-
-                          if (leveledUp) {
-                            showGeneralDialog(
-                              context: context,
-                              barrierDismissible: true,
-                              barrierColor: Colors.black54,
-                              barrierLabel: 'Dismiss',
-                              transitionDuration: const Duration(
-                                milliseconds: 300,
-                              ),
-                              pageBuilder:
-                                  (context, animation, secondaryAnimation) =>
-                                      Center(
-                                        child: LevelUpWidget(
-                                          levelUp: hero.levelUp,
-                                        ),
-                                      ),
-                            );
-                          }
-                        }
-
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('Completed "${quest.title}"'),
-                            backgroundColor: const Color.fromARGB(
-                              199,
-                              45,
-                              241,
-                              255,
-                            ),
-                          ),
+                      secondaryBackground: Container(
+                        decoration: BoxDecoration(
+                          color: AppColors.deleteRed,
+                          borderRadius: BorderRadius.circular(AppRadius.sm),
+                        ),
+                        alignment: Alignment.centerRight,
+                        padding: const EdgeInsets.only(right: AppPadding.xl),
+                        child: const Icon(
+                          Icons.delete_sweep,
+                          color: AppColors.textPrimary,
+                          size: AppIconSizes.lg,
+                        ),
+                      ),
+                      onDismissed: (direction) {
+                        _handleQuestDismiss(
+                          direction,
+                          quest,
+                          provider,
+                          context,
                         );
-                      } else if (direction == DismissDirection.endToStart) {
-                        provider.removeQuest(quest);
-
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('Deleted "${quest.title}"'),
-                            backgroundColor: const Color.fromARGB(
-                              180,
-                              238,
-                              67,
-                              55,
-                            ),
-                          ),
-                        );
-                      }
-                    },
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color:
-                            quest.status == 'Completed'
-                                ? const Color.fromARGB(128, 23, 135, 81)
-                                : const Color.fromARGB(128, 128, 0, 128),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                          color: const Color.fromARGB(60, 22, 255, 174),
-                        ),
-                      ),
-                      margin: const EdgeInsets.symmetric(vertical: 4),
-                      child: ListTile(
-                        leading: Image.asset(
-                          quest.status == 'Completed'
-                              ? 'assets/images/app_assets/finished.png'
-                              : quest.questImageUrl,
-                          width: 50,
-                          height: 50,
-                        ),
-                        title: Text(
-                          quest.title,
-                          style: const TextStyle(color: Colors.white),
-                        ),
-                        subtitle: Text(
-                          quest.description,
-                          style: const TextStyle(
-                            color: Color.fromARGB(199, 255, 255, 255),
-                          ),
-                        ),
-                        trailing: const Icon(
-                          Icons.edit,
-                          color: Color.fromARGB(199, 255, 255, 255),
-                        ),
-                        onTap: () {
-                          provider.setSelectedQuest(quest);
-                          context.read<AppState>().setIndex(2);
-                        },
-                      ),
+                      },
+                      child: _buildQuestTile(quest, provider, context),
                     ),
                   );
                 },
               ),
     );
+  }
+
+  Widget _buildQuestTile(
+    dynamic quest,
+    QuestListProvider provider,
+    BuildContext context,
+  ) {
+    final isCompleted = quest.status == 'Completed';
+
+    return Container(
+      decoration: BoxDecoration(
+        color: isCompleted ? AppColors.completedGreen : AppColors.bgPurple,
+        borderRadius: BorderRadius.circular(AppRadius.sm),
+        border: Border.all(
+          color: AppColors.borderTeal,
+          width: AppBorders.thin,
+        ),
+      ),
+      margin: const EdgeInsets.symmetric(vertical: AppPadding.xs),
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: AppPadding.lg,
+          vertical: AppPadding.sm,
+        ),
+        leading: ClipRRect(
+          borderRadius: BorderRadius.circular(AppRadius.sm),
+          child: Image.asset(
+            isCompleted
+                ? 'assets/images/app_assets/finished.png'
+                : quest.questImageUrl,
+            width: AppImageSizes.questIcon,
+            height: AppImageSizes.questIcon,
+            fit: BoxFit.cover,
+          ),
+        ),
+        title: Text(
+          quest.title,
+          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                color: AppColors.textPrimary,
+                decoration: isCompleted ? TextDecoration.lineThrough : null,
+                decorationColor: AppColors.textSecondary,
+              ),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        subtitle: Text(
+          quest.description,
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: AppColors.textTertiary,
+              ),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        trailing: Icon(
+          isCompleted ? Icons.check_circle : Icons.edit,
+          color: AppColors.textTertiary,
+          size: AppIconSizes.md,
+        ),
+        onTap: () {
+          if (!isCompleted) {
+            provider.setSelectedQuest(quest);
+            context.read<AppState>().setIndex(2);
+          }
+        },
+      ),
+    );
+  }
+
+  void _handleQuestDismiss(
+    DismissDirection direction,
+    dynamic quest,
+    QuestListProvider provider,
+    BuildContext context,
+  ) {
+    final hero = context.read<AppState>().hero;
+
+    if (direction == DismissDirection.startToEnd &&
+        quest.status != 'Completed') {
+      provider.markQuestCompleted(quest);
+
+      if (hero != null) {
+        final leveledUp = hero.gainExperience(quest.xpReward);
+        context.read<AppState>().saveHero(hero);
+
+        if (leveledUp) {
+          showGeneralDialog(
+            context: context,
+            barrierDismissible: true,
+            barrierColor: Colors.black54,
+            barrierLabel: 'Dismiss',
+            transitionDuration: AppDurations.medium,
+            pageBuilder: (context, animation, secondaryAnimation) =>
+                Center(
+                  child: LevelUpWidget(
+                    levelUp: hero.levelUp,
+                  ),
+                ),
+          );
+        }
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Completed "${quest.title}"'),
+          backgroundColor: const Color.fromARGB(199, 45, 241, 255),
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.all(AppPadding.lg),
+        ),
+      );
+    } else if (direction == DismissDirection.endToStart) {
+      provider.removeQuest(quest);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Deleted "${quest.title}"'),
+          backgroundColor: const Color.fromARGB(180, 238, 67, 55),
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.all(AppPadding.lg),
+        ),
+      );
+    }
   }
 }
