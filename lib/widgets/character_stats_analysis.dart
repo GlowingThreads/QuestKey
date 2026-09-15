@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:quest_key/models/character.dart';
 import 'package:quest_key/constants/app_colors.dart';
-import 'package:quest_key/constants/app_dimens.dart';
+import 'package:quest_key/models/character.dart';
+import 'package:quest_key/theme/app_theme.dart';
+import 'package:quest_key/theme/iconography.dart';
+import 'package:quest_key/widgets/common/ui_kit.dart';
 
-/// Detailed character stats analysis and comparison
+/// Radar chart of the hero's attributes next to a compact record of level,
+/// quests, skills and achievements.
 class CharacterStatsAnalysis extends StatelessWidget {
   final HeroCharacter hero;
 
@@ -11,184 +14,89 @@ class CharacterStatsAnalysis extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final stats = _getStatsList();
+    final values = {for (final s in heroStatNames) s: hero.statValue(s)};
+    final base = {
+      'strength': hero.classes.strength,
+      'dexterity': hero.classes.dexterity,
+      'intelligence': hero.classes.intelligence,
+      'wisdom': hero.classes.wisdom,
+      'charisma': hero.classes.charisma,
+      'constitution': hero.classes.constitution,
+      'luck': hero.classes.luck,
+    };
+    final maxValue = [12, ...values.values].reduce((a, b) => a > b ? a : b);
+    final background = hero.background;
 
-    return Container(
-      padding: const EdgeInsets.all(AppPadding.xl),
-      decoration: BoxDecoration(
-        color: AppColors.bgOverlay,
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-        border: Border.all(
-          color: AppColors.borderLight,
-          width: AppBorders.thin,
-        ),
-      ),
+    return ArcanePanel(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Character Stats',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              color: AppColors.textPrimary,
-              fontWeight: FontWeight.bold,
+          const SectionHeader(
+            icon: Icons.hexagon_outlined,
+            title: 'Attribute Sigil',
+            subtitle: 'Teal is your hero; bronze is the class baseline.',
+          ),
+          const SizedBox(height: 8),
+          Center(
+            child: StatRadar(
+              values: values,
+              compare: base,
+              maxValue: maxValue,
+              size: 230,
             ),
           ),
-          const SizedBox(height: AppPadding.lg),
-          // Stats grid
-          GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              crossAxisSpacing: AppPadding.md,
-              mainAxisSpacing: AppPadding.md,
-              childAspectRatio: 3,
-            ),
-            itemCount: stats.length,
-            itemBuilder: (context, index) {
-              final stat = stats[index];
-              final progress = (stat['value'] / 15).clamp(0.0, 1.0);
-              return _buildStatItem(
-                context,
-                stat['name'],
-                stat['value'],
-                stat['icon'],
-                progress,
-              );
-            },
-          ),
-          const SizedBox(height: AppPadding.xl),
-          // Character info
-          _buildCharacterInfo(context),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStatItem(
-    BuildContext context,
-    String name,
-    int value,
-    String icon,
-    double progress,
-  ) {
-    return Container(
-      padding: const EdgeInsets.all(AppPadding.sm),
-      decoration: BoxDecoration(
-        color: AppColors.primaryDarker,
-        borderRadius: BorderRadius.circular(AppRadius.md),
-        border: Border.all(
-          color: AppColors.borderLight,
-          width: AppBorders.thin,
-        ),
-      ),
-      child: Row(
-        children: [
-          Text(icon, style: const TextStyle(fontSize: 20)),
-          const SizedBox(width: AppPadding.sm),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  name,
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(AppRadius.sm),
-                  child: LinearProgressIndicator(
-                    value: progress,
-                    backgroundColor: AppColors.primaryDarker,
-                    valueColor: AlwaysStoppedAnimation(_getStatColor(value)),
-                    minHeight: 4,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: AppPadding.sm),
-          Text(
-            value.toString(),
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: AppColors.textPrimary,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCharacterInfo(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(AppPadding.lg),
-      decoration: BoxDecoration(
-        color: AppColors.primaryDarker,
-        borderRadius: BorderRadius.circular(AppRadius.md),
-        border: Border.all(
-          color: AppColors.borderLight,
-          width: AppBorders.thin,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+          const SizedBox(height: 6),
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildInfoItem(
-                context,
-                'Level',
-                hero.levelUp.level.toString(),
-                '🎯',
+              _Record(
+                icon: Icons.military_tech_rounded,
+                value: '${hero.levelUp.level}',
+                label: 'LEVEL',
               ),
-              _buildInfoItem(
-                context,
-                'Quests',
-                hero.questsCompleted.toString(),
-                '📋',
+              _Record(
+                icon: Icons.emoji_events_rounded,
+                value: '${hero.questsCompleted}',
+                label: 'QUESTS',
               ),
-              _buildInfoItem(
-                context,
-                'Skills',
-                hero.learnedSkills.length.toString(),
-                '⚡',
+              _Record(
+                icon: Icons.auto_fix_high_rounded,
+                value: '${hero.learnedSkills.length}',
+                label: 'SKILLS',
               ),
-              _buildInfoItem(
-                context,
-                'Achievements',
-                hero.unlockedAchievements.length.toString(),
-                '🏆',
+              _Record(
+                icon: Icons.workspace_premium_rounded,
+                value: '${hero.unlockedAchievements.length}',
+                label: 'HONOURS',
               ),
             ],
           ),
-          if (hero.background != null) ...[
-            const SizedBox(height: AppPadding.lg),
+          if (background != null) ...[
+            const SizedBox(height: 12),
+            const RuneDivider(),
+            const SizedBox(height: 10),
             Row(
               children: [
-                Text(
-                  hero.background!.icon,
-                  style: const TextStyle(fontSize: 24),
+                GemRing(
+                  icon: originIcon(background.id),
+                  color: AppColors.amethyst,
+                  size: 40,
                 ),
-                const SizedBox(width: AppPadding.md),
+                const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Background',
-                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          color: AppColors.textSecondary,
-                        ),
+                        'ORIGIN · ${background.name.toUpperCase()}',
+                        style: AppFonts.label(size: 10, color: AppColors.teal),
                       ),
                       Text(
-                        hero.background!.name,
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: AppColors.accentGreen,
-                          fontWeight: FontWeight.w600,
+                        background.flavorText,
+                        style: AppFonts.body(
+                          size: 13,
+                          color: AppColors.inkMuted,
+                          style: FontStyle.italic,
                         ),
                       ),
                     ],
@@ -201,51 +109,24 @@ class CharacterStatsAnalysis extends StatelessWidget {
       ),
     );
   }
+}
 
-  Widget _buildInfoItem(
-    BuildContext context,
-    String label,
-    String value,
-    String icon,
-  ) {
+class _Record extends StatelessWidget {
+  const _Record({required this.icon, required this.value, required this.label});
+
+  final IconData icon;
+  final String value;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
     return Column(
       children: [
-        Text(icon, style: const TextStyle(fontSize: 18)),
-        const SizedBox(height: AppPadding.xs),
-        Text(
-          value,
-          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-            color: AppColors.textPrimary,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        Text(
-          label,
-          style: Theme.of(
-            context,
-          ).textTheme.labelSmall?.copyWith(color: AppColors.textSecondary),
-        ),
+        Icon(icon, color: AppColors.gold, size: 18),
+        const SizedBox(height: 2),
+        Text(value, style: AppFonts.heading(size: 18, letterSpacing: 0)),
+        Text(label, style: AppFonts.label(size: 8, color: AppColors.inkMuted)),
       ],
     );
-  }
-
-  List<Map<String, dynamic>> _getStatsList() {
-    return [
-      {'name': 'Strength', 'value': hero.strength, 'icon': '💪'},
-      {'name': 'Dexterity', 'value': hero.dexterity, 'icon': '🎯'},
-      {'name': 'Intelligence', 'value': hero.intelligence, 'icon': '🧠'},
-      {'name': 'Wisdom', 'value': hero.wisdom, 'icon': '💡'},
-      {'name': 'Charisma', 'value': hero.charisma, 'icon': '✨'},
-      {'name': 'Constitution', 'value': hero.constitution, 'icon': '🛡️'},
-      {'name': 'Luck', 'value': hero.luck, 'icon': '🍀'},
-    ];
-  }
-
-  Color _getStatColor(int value) {
-    if (value <= 3) return Colors.red[400]!;
-    if (value <= 5) return Colors.orange[400]!;
-    if (value <= 7) return Colors.yellow[400]!;
-    if (value <= 9) return Colors.green[400]!;
-    return Colors.cyan[400]!;
   }
 }

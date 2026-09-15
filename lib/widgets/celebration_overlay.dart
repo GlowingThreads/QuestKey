@@ -3,8 +3,8 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:quest_key/constants/app_colors.dart';
 
-/// Shows a short burst of confetti over the whole screen. Non-blocking: it
-/// ignores pointer events and removes itself when the animation ends.
+/// Golden embers and teal motes drift up over the screen for a moment.
+/// Non-blocking: ignores pointer events and removes itself when done.
 void showCelebration(BuildContext context, {Duration? duration}) {
   final overlay = Overlay.maybeOf(context);
   if (overlay == null) return;
@@ -12,8 +12,8 @@ void showCelebration(BuildContext context, {Duration? duration}) {
   late final OverlayEntry entry;
   entry = OverlayEntry(
     builder:
-        (_) => _ConfettiBurst(
-          duration: duration ?? const Duration(milliseconds: 1400),
+        (_) => _EmberBurst(
+          duration: duration ?? const Duration(milliseconds: 1700),
           onFinished: () {
             if (entry.mounted) entry.remove();
           },
@@ -22,45 +22,41 @@ void showCelebration(BuildContext context, {Duration? duration}) {
   overlay.insert(entry);
 }
 
-class _ConfettiBurst extends StatefulWidget {
-  const _ConfettiBurst({required this.duration, required this.onFinished});
+class _EmberBurst extends StatefulWidget {
+  const _EmberBurst({required this.duration, required this.onFinished});
 
   final Duration duration;
   final VoidCallback onFinished;
 
   @override
-  State<_ConfettiBurst> createState() => _ConfettiBurstState();
+  State<_EmberBurst> createState() => _EmberBurstState();
 }
 
-class _ConfettiBurstState extends State<_ConfettiBurst>
+class _EmberBurstState extends State<_EmberBurst>
     with SingleTickerProviderStateMixin {
-  static const int _count = 48;
-  static const List<Color> _palette = [
-    AppColors.accentGold,
-    AppColors.accentGreen,
-    AppColors.shadowPurple,
-    Colors.cyanAccent,
-    Colors.pinkAccent,
-    Colors.white,
-  ];
+  static const int _count = 70;
 
   late final AnimationController _controller;
-  late final List<_Particle> _particles;
+  late final List<_Ember> _embers;
 
   @override
   void initState() {
     super.initState();
     final random = Random();
-    _particles = List.generate(_count, (i) {
-      final angle = -pi / 2 + (random.nextDouble() - 0.5) * pi * 0.9;
-      final speed = 0.55 + random.nextDouble() * 0.6;
-      return _Particle(
-        color: _palette[i % _palette.length],
-        dx: cos(angle) * speed,
-        dy: sin(angle) * speed,
-        size: 5 + random.nextDouble() * 6,
-        spin: (random.nextDouble() - 0.5) * 12,
-        delay: random.nextDouble() * 0.15,
+    _embers = List.generate(_count, (i) {
+      final teal = i % 5 == 0;
+      return _Ember(
+        x: random.nextDouble(),
+        drift: (random.nextDouble() - 0.5) * 0.18,
+        rise: 0.35 + random.nextDouble() * 0.55,
+        size:
+            teal ? 2 + random.nextDouble() * 2 : 1.5 + random.nextDouble() * 3,
+        delay: random.nextDouble() * 0.4,
+        flicker: 3 + random.nextDouble() * 6,
+        color:
+            teal
+                ? AppColors.teal
+                : (i % 3 == 0 ? AppColors.magenta : AppColors.gold),
       );
     });
     _controller =
@@ -85,68 +81,81 @@ class _ConfettiBurstState extends State<_ConfettiBurst>
         builder:
             (context, _) => CustomPaint(
               size: Size.infinite,
-              painter: _ConfettiPainter(_particles, _controller.value),
+              painter: _EmberPainter(_embers, _controller.value),
             ),
       ),
     );
   }
 }
 
-class _Particle {
-  const _Particle({
-    required this.color,
-    required this.dx,
-    required this.dy,
+class _Ember {
+  const _Ember({
+    required this.x,
+    required this.drift,
+    required this.rise,
     required this.size,
-    required this.spin,
     required this.delay,
+    required this.flicker,
+    required this.color,
   });
 
-  final Color color;
-  final double dx;
-  final double dy;
+  final double x;
+  final double drift;
+  final double rise;
   final double size;
-  final double spin;
   final double delay;
+  final double flicker;
+  final Color color;
 }
 
-class _ConfettiPainter extends CustomPainter {
-  _ConfettiPainter(this.particles, this.progress);
+class _EmberPainter extends CustomPainter {
+  _EmberPainter(this.embers, this.progress);
 
-  final List<_Particle> particles;
+  final List<_Ember> embers;
   final double progress;
 
   @override
   void paint(Canvas canvas, Size size) {
-    final origin = Offset(size.width / 2, size.height * 0.55);
     final paint = Paint();
-
-    for (final p in particles) {
-      final t = ((progress - p.delay) / (1 - p.delay)).clamp(0.0, 1.0);
-      if (t == 0) continue;
-      // Launch outwards, then let gravity pull the particle down.
-      final x = origin.dx + p.dx * size.width * 0.9 * t;
-      final y =
-          origin.dy + p.dy * size.height * 0.8 * t + size.height * 0.9 * t * t;
-      final opacity = (1 - t).clamp(0.0, 1.0);
-      paint.color = p.color.withValues(alpha: opacity);
-
-      canvas.save();
-      canvas.translate(x, y);
-      canvas.rotate(p.spin * t);
+    // A brief golden flash at the bottom of the screen.
+    final flash = (1 - (progress * 3).clamp(0.0, 1.0));
+    if (flash > 0) {
       canvas.drawRect(
-        Rect.fromCenter(
-          center: Offset.zero,
-          width: p.size,
-          height: p.size * 0.6,
-        ),
-        paint,
+        Offset.zero & size,
+        Paint()
+          ..shader = LinearGradient(
+            begin: Alignment.bottomCenter,
+            end: Alignment.topCenter,
+            colors: [
+              AppColors.gold.withValues(alpha: 0.25 * flash),
+              Colors.transparent,
+            ],
+          ).createShader(Offset.zero & size),
       );
-      canvas.restore();
+    }
+
+    for (final e in embers) {
+      final t = ((progress - e.delay) / (1 - e.delay)).clamp(0.0, 1.0);
+      if (t == 0) continue;
+      final eased = Curves.easeOut.transform(t);
+      final x =
+          (e.x + e.drift * eased + 0.02 * sin(t * e.flicker)) * size.width;
+      final y = size.height * (1.05 - e.rise * eased);
+      final fade = t < 0.15 ? t / 0.15 : (1 - t);
+      final twinkle = 0.6 + 0.4 * sin(t * e.flicker * pi);
+      final alpha = (fade * twinkle).clamp(0.0, 1.0);
+
+      paint
+        ..color = e.color.withValues(alpha: alpha * 0.35)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
+      canvas.drawCircle(Offset(x, y), e.size * 2.2, paint);
+      paint
+        ..color = e.color.withValues(alpha: alpha)
+        ..maskFilter = null;
+      canvas.drawCircle(Offset(x, y), e.size, paint);
     }
   }
 
   @override
-  bool shouldRepaint(_ConfettiPainter oldDelegate) =>
-      oldDelegate.progress != progress;
+  bool shouldRepaint(_EmberPainter old) => old.progress != progress;
 }

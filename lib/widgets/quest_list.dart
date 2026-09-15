@@ -5,6 +5,8 @@ import 'package:quest_key/constants/app_dimens.dart';
 import 'package:quest_key/models/quest.dart';
 import 'package:quest_key/state/app_state.dart';
 import 'package:quest_key/state/quest_list_provider.dart';
+import 'package:quest_key/theme/app_theme.dart';
+import 'package:quest_key/theme/iconography.dart';
 import 'package:quest_key/widgets/achievement_unlocked_dialog.dart';
 import 'package:quest_key/widgets/celebration_overlay.dart';
 import 'package:quest_key/widgets/common/ui_kit.dart';
@@ -29,78 +31,90 @@ class _QuestListState extends State<QuestList> {
     final provider = context.watch<QuestListProvider>();
     final quests = provider.getFilteredQuests(widget.filterStatus);
 
-    return Container(
-      padding: const EdgeInsets.all(AppPadding.md),
-      decoration: BoxDecoration(
-        color: AppColors.bgDarkTransparent,
-        borderRadius: BorderRadius.circular(AppRadius.md),
-        border: Border.all(
-          color: AppColors.borderMedium,
-          width: AppBorders.thick,
-        ),
-      ),
-      constraints:
-          widget.expand
-              ? const BoxConstraints.expand()
-              : const BoxConstraints(maxHeight: AppHeights.questContainer),
-      child:
-          quests.isEmpty
-              ? _EmptyState(filterStatus: widget.filterStatus)
-              : ListView.builder(
-                itemCount: quests.length,
-                itemBuilder: (context, index) {
-                  final quest = quests[index];
-
-                  return FadeSlideIn(
-                    key: ValueKey('fade_${quest.id}'),
-                    delay: Duration(milliseconds: 40 * (index < 8 ? index : 8)),
-                    offset: const Offset(-0.05, 0),
-                    child: Dismissible(
-                      key: Key(quest.id.toString()),
-                      direction:
-                          quest.isCompleted
-                              ? DismissDirection.endToStart
-                              : DismissDirection.horizontal,
-                      background: _swipeBackground(
-                        color: AppColors.completeGreen,
-                        icon: Icons.check_circle_rounded,
-                        alignment: Alignment.centerLeft,
-                      ),
-                      secondaryBackground: _swipeBackground(
-                        color: AppColors.deleteRed,
-                        icon: Icons.delete_sweep,
-                        alignment: Alignment.centerRight,
-                      ),
-                      confirmDismiss:
-                          (direction) => _confirmDismiss(direction, quest),
-                      onDismissed:
-                          (direction) => _onDismissed(direction, quest),
-                      child: _QuestTile(
-                        quest: quest,
-                        onEdit: quest.isCompleted ? null : () => _edit(quest),
-                        onComplete:
-                            quest.isCompleted ? null : () => _complete(quest),
-                      ),
+    final list =
+        quests.isEmpty
+            ? _EmptyState(filterStatus: widget.filterStatus)
+            : ListView.builder(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              itemCount: quests.length,
+              itemBuilder: (context, index) {
+                final quest = quests[index];
+                return FadeSlideIn(
+                  key: ValueKey('fade_${quest.id}'),
+                  delay: Duration(milliseconds: 40 * (index < 8 ? index : 8)),
+                  offset: const Offset(-0.05, 0),
+                  child: Dismissible(
+                    key: Key(quest.id.toString()),
+                    direction:
+                        quest.isCompleted
+                            ? DismissDirection.endToStart
+                            : DismissDirection.horizontal,
+                    background: _swipeBackground(
+                      color: AppColors.teal,
+                      icon: Icons.check_rounded,
+                      label: 'COMPLETE',
+                      alignment: Alignment.centerLeft,
                     ),
-                  );
-                },
-              ),
+                    secondaryBackground: _swipeBackground(
+                      color: AppColors.ruby,
+                      icon: Icons.delete_outline_rounded,
+                      label: 'DELETE',
+                      alignment: Alignment.centerRight,
+                    ),
+                    confirmDismiss:
+                        (direction) => _confirmDismiss(direction, quest),
+                    onDismissed: (direction) => _onDismissed(direction, quest),
+                    child: _QuestTile(
+                      quest: quest,
+                      onEdit: quest.isCompleted ? null : () => _edit(quest),
+                      onComplete:
+                          quest.isCompleted ? null : () => _complete(quest),
+                    ),
+                  ),
+                );
+              },
+            );
+
+    if (widget.expand) return list;
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxHeight: AppHeights.questContainer),
+      child: list,
     );
   }
 
   Widget _swipeBackground({
     required Color color,
     required IconData icon,
+    required String label,
     required Alignment alignment,
   }) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: AppPadding.xl),
+      margin: const EdgeInsets.symmetric(vertical: 5),
+      padding: const EdgeInsets.symmetric(horizontal: 18),
       alignment: alignment,
       decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(AppRadius.sm),
+        gradient: LinearGradient(
+          begin:
+              alignment == Alignment.centerLeft
+                  ? Alignment.centerLeft
+                  : Alignment.centerRight,
+          end:
+              alignment == Alignment.centerLeft
+                  ? Alignment.centerRight
+                  : Alignment.centerLeft,
+          colors: [color.withValues(alpha: 0.75), color.withValues(alpha: 0.1)],
+        ),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: color.withValues(alpha: 0.7)),
       ),
-      child: Icon(icon, color: AppColors.textPrimary, size: AppIconSizes.lg),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: AppColors.ink, size: 22),
+          const SizedBox(width: 8),
+          Text(label, style: AppFonts.label(size: 11, color: AppColors.ink)),
+        ],
+      ),
     );
   }
 
@@ -128,7 +142,9 @@ class _QuestListState extends State<QuestList> {
       builder:
           (context) => AlertDialog(
             title: const Text('Delete quest?'),
-            content: Text('"${quest.title}" will be removed for good.'),
+            content: Text(
+              '"${quest.title}" will be struck from the log for good.',
+            ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(context).pop(false),
@@ -138,7 +154,7 @@ class _QuestListState extends State<QuestList> {
                 onPressed: () => Navigator.of(context).pop(true),
                 child: const Text(
                   'Delete',
-                  style: TextStyle(color: Colors.redAccent),
+                  style: TextStyle(color: AppColors.ruby),
                 ),
               ),
             ],
@@ -158,17 +174,8 @@ class _QuestListState extends State<QuestList> {
   Future<void> _delete(Quest quest) async {
     final provider = context.read<QuestListProvider>();
     final messenger = ScaffoldMessenger.of(context);
-
     await provider.removeQuest(quest);
-
-    messenger.showSnackBar(
-      SnackBar(
-        content: Text('Deleted "${quest.title}"'),
-        backgroundColor: const Color.fromARGB(180, 238, 67, 55),
-        behavior: SnackBarBehavior.floating,
-        margin: const EdgeInsets.all(AppPadding.lg),
-      ),
-    );
+    messenger.showSnackBar(SnackBar(content: Text('Deleted "${quest.title}"')));
   }
 
   Future<void> _complete(Quest quest) async {
@@ -188,10 +195,21 @@ class _QuestListState extends State<QuestList> {
     showCelebration(context);
     messenger.showSnackBar(
       SnackBar(
-        content: Text('Completed "${quest.title}" (+${quest.xpReward} XP)'),
-        backgroundColor: const Color.fromARGB(199, 45, 241, 255),
-        behavior: SnackBarBehavior.floating,
-        margin: const EdgeInsets.all(AppPadding.lg),
+        content: Row(
+          children: [
+            const Icon(
+              Icons.auto_awesome_rounded,
+              color: AppColors.gold,
+              size: 18,
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                'Completed "${quest.title}"  ·  +${quest.xpReward} XP',
+              ),
+            ),
+          ],
+        ),
       ),
     );
 
@@ -200,7 +218,7 @@ class _QuestListState extends State<QuestList> {
       await showGeneralDialog<void>(
         context: context,
         barrierDismissible: true,
-        barrierColor: Colors.black54,
+        barrierColor: Colors.black87,
         barrierLabel: 'Dismiss',
         transitionDuration: AppDurations.medium,
         pageBuilder:
@@ -221,33 +239,50 @@ class _EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final message = switch (filterStatus) {
-      QuestStatus.completed =>
-        'No completed quests yet.\nSwipe a quest right to finish it!',
-      QuestStatus.inProgress =>
-        'No quests in progress.\nYour hero awaits a new challenge!',
-      null => 'No quests yet.\nCreate your first quest to start earning XP!',
+    final (asset, message) = switch (filterStatus) {
+      QuestStatus.completed => (
+        Art.finished,
+        'No quests completed yet.\nSwipe one right to finish it.',
+      ),
+      QuestStatus.inProgress => (
+        Art.todo,
+        'The log is clear.\nYour hero awaits a new challenge.',
+      ),
+      null => (
+        Art.all,
+        'No quests yet.\nForge your first to start earning XP.',
+      ),
     };
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
+          Opacity(
+            opacity: 0.85,
+            child: PortholeBadge(
+              asset: asset,
+              size: 84,
+              glow: AppColors.amethystBright,
+            ),
+          ),
+          const SizedBox(height: AppPadding.md),
           Text(
             message,
             textAlign: TextAlign.center,
-            style: Theme.of(
-              context,
-            ).textTheme.titleMedium?.copyWith(color: AppColors.textPrimary),
+            style: AppFonts.body(
+              size: 15,
+              color: AppColors.inkMuted,
+              style: FontStyle.italic,
+            ),
           ),
           if (filterStatus != QuestStatus.completed) ...[
             const SizedBox(height: AppPadding.lg),
-            FilledButton.icon(
+            QuestButton(
+              label: 'Forge a quest',
+              icon: Icons.auto_fix_high_rounded,
+              expand: false,
+              compact: true,
               onPressed: () => context.read<AppState>().setIndex(2),
-              style: FilledButton.styleFrom(
-                backgroundColor: AppColors.accentPurple,
-              ),
-              icon: const Icon(Icons.add),
-              label: const Text('Create a quest'),
             ),
           ],
         ],
@@ -270,181 +305,138 @@ class _QuestTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isCompleted = quest.isCompleted;
-    final categoryColor = Color(quest.category.colorValue);
+    final color = categoryColor(quest.category);
     final now = DateTime.now();
     final overdue = quest.isOverdueAt(now);
-    final dueSoon = !overdue && !isCompleted && quest.isDueOn(now);
+    final dueToday = !overdue && !isCompleted && quest.isDueOn(now);
 
-    return Container(
-      decoration: BoxDecoration(
-        color: isCompleted ? AppColors.completedGreen : AppColors.bgPurple,
-        borderRadius: BorderRadius.circular(AppRadius.sm),
-        border: Border.all(
-          color: overdue ? Colors.redAccent : AppColors.borderTeal,
-          width: overdue ? AppBorders.medium : AppBorders.thin,
-        ),
-      ),
-      margin: const EdgeInsets.symmetric(vertical: AppPadding.xs),
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: AppPadding.lg,
-          vertical: AppPadding.sm,
-        ),
-        leading:
-            isCompleted
-                ? ClipRRect(
-                  borderRadius: BorderRadius.circular(AppRadius.sm),
-                  child: Image.asset(
-                    'assets/images/app_assets/finished.png',
-                    width: AppImageSizes.questIcon,
-                    height: AppImageSizes.questIcon,
-                    fit: BoxFit.cover,
-                    errorBuilder:
-                        (_, _, _) => _CategoryBadge(
-                          quest: quest,
-                          color: categoryColor,
-                          dimmed: true,
-                        ),
-                  ),
-                )
-                : _CategoryBadge(quest: quest, color: categoryColor),
-        title: Text(
-          quest.title,
-          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-            color: AppColors.textPrimary,
-            decoration: isCompleted ? TextDecoration.lineThrough : null,
-            decorationColor: AppColors.textSecondary,
-          ),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              quest.description,
-              style: Theme.of(
-                context,
-              ).textTheme.bodySmall?.copyWith(color: AppColors.textTertiary),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-            const SizedBox(height: AppPadding.xs),
-            Wrap(
-              spacing: AppPadding.sm,
-              runSpacing: AppPadding.xs,
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 5),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onEdit,
+          borderRadius: BorderRadius.circular(10),
+          child: ArcanePanel(
+            radius: 10,
+            ornate: false,
+            fillOpacity: isCompleted ? 0.55 : 0.82,
+            accent:
+                overdue
+                    ? AppColors.ruby
+                    : isCompleted
+                    ? AppColors.bronze
+                    : AppColors.bronzeLight,
+            padding: const EdgeInsets.fromLTRB(12, 10, 8, 10),
+            child: Row(
               children: [
                 if (isCompleted)
-                  const _Chip(text: 'Done', color: AppColors.accentGreen)
+                  SizedBox(
+                    width: 46,
+                    height: 46,
+                    child: Image.asset(
+                      Art.finished,
+                      errorBuilder:
+                          (_, _, _) => const GemRing(
+                            icon: Icons.check_rounded,
+                            color: AppColors.teal,
+                            size: 46,
+                          ),
+                    ),
+                  )
                 else
-                  _Chip(
-                    text:
-                        overdue
-                            ? 'Overdue'
-                            : dueSoon
-                            ? 'Due today · ${quest.timeRemainingLabelAt(now)}'
-                            : quest.timeRemainingLabelAt(now),
-                    color:
-                        overdue
-                            ? Colors.redAccent
-                            : dueSoon
-                            ? AppColors.accentGold
-                            : AppColors.textSecondary,
-                    icon: Icons.schedule,
+                  GemRing(
+                    icon: categoryIcon(quest.category),
+                    color: color,
+                    size: 46,
                   ),
-                _Chip(
-                  text: '${'★' * quest.difficulty} +${quest.xpReward} XP',
-                  color: AppColors.accentGold,
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        quest.title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppFonts.body(
+                          size: 16,
+                          weight: FontWeight.w600,
+                          color:
+                              isCompleted ? AppColors.inkMuted : AppColors.ink,
+                        ).copyWith(
+                          decoration:
+                              isCompleted ? TextDecoration.lineThrough : null,
+                          decorationColor: AppColors.bronzeLight,
+                        ),
+                      ),
+                      Text(
+                        quest.description,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppFonts.body(
+                          size: 13,
+                          color: AppColors.inkMuted,
+                          style: FontStyle.italic,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Wrap(
+                        spacing: 6,
+                        runSpacing: 4,
+                        children: [
+                          if (isCompleted)
+                            const RuneTag(
+                              text: 'DONE',
+                              color: AppColors.teal,
+                              icon: Icons.check_rounded,
+                            )
+                          else
+                            RuneTag(
+                              text:
+                                  overdue
+                                      ? 'OVERDUE'
+                                      : dueToday
+                                      ? 'TODAY · ${quest.timeRemainingLabelAt(now)}'
+                                      : quest
+                                          .timeRemainingLabelAt(now)
+                                          .toUpperCase(),
+                              color:
+                                  overdue
+                                      ? AppColors.ruby
+                                      : dueToday
+                                      ? AppColors.gold
+                                      : AppColors.bronzeLight,
+                              icon: Icons.hourglass_bottom_rounded,
+                              filled: overdue || dueToday,
+                            ),
+                          RuneTag(
+                            text:
+                                '${difficultyLabel(quest.difficulty).toUpperCase()} · ${quest.xpReward} XP',
+                            color: AppColors.gold,
+                          ),
+                          RuneTag(
+                            text: quest.category.label.toUpperCase(),
+                            color: color,
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
+                if (!isCompleted)
+                  IconButton(
+                    tooltip: 'Complete quest',
+                    onPressed: onComplete,
+                    icon: const Icon(
+                      Icons.check_circle_outline_rounded,
+                      color: AppColors.bronzeLight,
+                    ),
+                  ),
               ],
             ),
-          ],
-        ),
-        isThreeLine: true,
-        trailing:
-            isCompleted
-                ? const Icon(
-                  Icons.check_circle,
-                  color: AppColors.accentGreen,
-                  size: AppIconSizes.md,
-                )
-                : IconButton(
-                  tooltip: 'Complete quest',
-                  onPressed: onComplete,
-                  icon: const Icon(
-                    Icons.check_circle_outline,
-                    color: AppColors.textTertiary,
-                    size: AppIconSizes.md,
-                  ),
-                ),
-        onTap: onEdit,
-      ),
-    );
-  }
-}
-
-class _CategoryBadge extends StatelessWidget {
-  const _CategoryBadge({
-    required this.quest,
-    required this.color,
-    this.dimmed = false,
-  });
-
-  final Quest quest;
-  final Color color;
-  final bool dimmed;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: AppImageSizes.questIcon,
-      height: AppImageSizes.questIcon,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: dimmed ? 0.3 : 0.85),
-        borderRadius: BorderRadius.circular(AppRadius.sm),
-        border: Border.all(color: AppColors.borderLight),
-      ),
-      child: Text(quest.category.icon, style: const TextStyle(fontSize: 24)),
-    );
-  }
-}
-
-class _Chip extends StatelessWidget {
-  const _Chip({required this.text, required this.color, this.icon});
-
-  final String text;
-  final Color color;
-  final IconData? icon;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppPadding.sm,
-        vertical: 2,
-      ),
-      decoration: BoxDecoration(
-        color: Colors.black26,
-        borderRadius: BorderRadius.circular(AppRadius.sm),
-        border: Border.all(color: color.withValues(alpha: 0.6)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (icon != null) ...[
-            Icon(icon, size: 12, color: color),
-            const SizedBox(width: 3),
-          ],
-          Text(
-            text,
-            style: TextStyle(
-              fontSize: AppFontSizes.xs - 1,
-              color: color,
-              fontWeight: FontWeight.w600,
-            ),
           ),
-        ],
+        ),
       ),
     );
   }

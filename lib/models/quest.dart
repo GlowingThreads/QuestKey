@@ -40,13 +40,13 @@ enum QuestStatus {
 /// What kind of task a quest is. Gives each quest an icon and colour so the
 /// list is scannable without custom image assets.
 enum QuestCategory {
-  health('Health', '💪', 0xFF2E7D32),
-  work('Work', '💼', 0xFF1565C0),
-  study('Study', '📚', 0xFF6A1B9A),
-  home('Home', '🏠', 0xFFEF6C00),
-  social('Social', '🤝', 0xFFAD1457),
-  creative('Creative', '🎨', 0xFF00838F),
-  adventure('Adventure', '🗺️', 0xFF558B2F),
+  health('Health', '💪', 0xFFC62828),
+  work('Work', '💼', 0xFFB8860B),
+  study('Study', '📚', 0xFF1E5AA8),
+  home('Home', '🏠', 0xFF2E7D5B),
+  social('Social', '🤝', 0xFFAD3E7A),
+  creative('Creative', '🎨', 0xFF7E57C2),
+  adventure('Adventure', '🗺️', 0xFF1F8F86),
   other('Other', '📜', 0xFF5E35B1);
 
   const QuestCategory(this.label, this.icon, this.colorValue);

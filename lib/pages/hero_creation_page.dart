@@ -9,27 +9,14 @@ import 'package:quest_key/models/character_background.dart';
 import 'package:quest_key/models/class_values.dart';
 import 'package:quest_key/models/classes.dart';
 import 'package:quest_key/state/app_state.dart';
+import 'package:quest_key/theme/app_theme.dart';
+import 'package:quest_key/theme/iconography.dart';
 import 'package:quest_key/widgets/celebration_overlay.dart';
 import 'package:quest_key/widgets/common/ui_kit.dart';
 
-/// Emoji shown for each class (the class images are optional assets).
-String classEmoji(String className) => switch (className.toLowerCase()) {
-  'fighter' => '⚔️',
-  'wizard' => '🧙',
-  'rogue' => '🗡️',
-  'paladin' => '🛡️',
-  'warlock' => '🔮',
-  'monk' => '🥋',
-  'cleric' => '✨',
-  'ranger' => '🏹',
-  'barbarian' => '🪓',
-  _ => '🛡️',
-};
-
-/// Five-step hero creation wizard: identity → class → origin → avatar →
-/// summon. Used as the onboarding screen when no hero exists
-/// ([isOnboarding] = true, nothing to pop) and from the Guide tab to
-/// replace an existing hero.
+/// Five-step summoning rite: identity → class → origin → portrait → summon.
+/// Shown as onboarding when no hero exists ([isOnboarding] = true, nothing
+/// to pop) and from the Guide tab to replace an existing hero.
 class HeroCreationPage extends StatefulWidget {
   const HeroCreationPage({super.key, this.isOnboarding = false});
 
@@ -40,7 +27,7 @@ class HeroCreationPage extends StatefulWidget {
     'Identity',
     'Class',
     'Origin',
-    'Avatar',
+    'Portrait',
     'Summon',
   ];
 
@@ -175,7 +162,8 @@ class _HeroCreationPageState extends State<HeroCreationPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: PageBackground(
-        asset: 'assets/images/app_assets/hero_bkg.jpg',
+        asset: Art.createHeroBackground,
+        darken: 0.55,
         child: SafeArea(
           child: Column(
             children: [
@@ -225,79 +213,126 @@ class _HeroCreationPageState extends State<HeroCreationPage> {
   }
 
   Widget _buildStep() {
-    final padding = const EdgeInsets.fromLTRB(
-      AppPadding.xl,
-      AppPadding.sm,
-      AppPadding.xl,
-      AppPadding.xl,
-    );
-    return switch (_step) {
-      0 => SingleChildScrollView(padding: padding, child: _identityStep()),
-      1 => SingleChildScrollView(padding: padding, child: _classStep()),
-      2 => SingleChildScrollView(padding: padding, child: _originStep()),
-      3 => SingleChildScrollView(padding: padding, child: _avatarStep()),
-      _ => SingleChildScrollView(padding: padding, child: _summonStep()),
+    const padding = EdgeInsets.fromLTRB(18, 6, 18, 20);
+    final body = switch (_step) {
+      0 => _identityStep(),
+      1 => _classStep(),
+      2 => _originStep(),
+      3 => _portraitStep(),
+      _ => _summonStep(),
     };
+    return SingleChildScrollView(padding: padding, child: body);
   }
 
   // ---------------------------------------------------------------- step 0
   Widget _identityStep() {
-    return FadeSlideIn(
-      child: GlassPanel(
-        child: Form(
-          key: _formKey,
-          onChanged: () => setState(() {}),
+    return Column(
+      children: [
+        FadeSlideIn(child: _identityPanel()),
+        const SizedBox(height: 28),
+        FadeSlideIn(
+          delay: const Duration(milliseconds: 200),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SectionHeader(
-                icon: Icons.badge_outlined,
-                title: 'Who are you?',
-                subtitle: 'Every legend starts with a name.',
-              ),
-              const SizedBox(height: AppPadding.lg),
-              TextFormField(
-                controller: _nameController,
-                textCapitalization: TextCapitalization.words,
-                maxLength: 24,
-                decoration: const InputDecoration(
-                  labelText: 'Hero name',
-                  prefixIcon: Icon(Icons.person_outline),
-                  counterText: '',
+              Opacity(
+                opacity: 0.9,
+                child: Container(
+                  width: 110,
+                  height: 110,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(22),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.magenta.withValues(alpha: 0.35),
+                        blurRadius: 30,
+                      ),
+                    ],
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(22),
+                    child: Image.asset(
+                      Art.appIcon,
+                      errorBuilder:
+                          (_, _, _) =>
+                              const GemRing(icon: Icons.key_rounded, size: 110),
+                    ),
+                  ),
                 ),
-                validator:
-                    (value) =>
-                        value == null || value.trim().isEmpty
-                            ? 'Please enter a name'
-                            : null,
               ),
-              const SizedBox(height: AppPadding.md),
-              TextFormField(
-                controller: _mottoController,
-                textCapitalization: TextCapitalization.sentences,
-                maxLength: 60,
-                decoration: const InputDecoration(
-                  labelText: 'Motto or tagline',
-                  prefixIcon: Icon(Icons.format_quote),
-                  counterText: '',
-                ),
-                validator:
-                    (value) =>
-                        value == null || value.trim().isEmpty
-                            ? 'Please enter a motto'
-                            : null,
-              ),
-              const SizedBox(height: AppPadding.md),
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton.icon(
-                  onPressed: _randomise,
-                  icon: const Icon(Icons.casino_outlined),
-                  label: const Text('Roll a random name'),
+              const SizedBox(height: 16),
+              Text(
+                'The key opens a door only for those who know their own name.',
+                textAlign: TextAlign.center,
+                style: AppFonts.body(
+                  size: 13,
+                  color: AppColors.inkMuted,
+                  style: FontStyle.italic,
                 ),
               ),
             ],
           ),
+        ),
+      ],
+    );
+  }
+
+  Widget _identityPanel() {
+    return ArcanePanel(
+      child: Form(
+        key: _formKey,
+        onChanged: () => setState(() {}),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SectionHeader(
+              icon: Icons.badge_outlined,
+              title: 'Who are you?',
+              subtitle: 'Every legend begins with a name.',
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _nameController,
+              textCapitalization: TextCapitalization.words,
+              maxLength: 24,
+              style: AppFonts.body(size: 16, weight: FontWeight.w600),
+              decoration: const InputDecoration(
+                labelText: 'Hero name',
+                prefixIcon: Icon(Icons.person_outline),
+                counterText: '',
+              ),
+              validator:
+                  (value) =>
+                      value == null || value.trim().isEmpty
+                          ? 'Please enter a name'
+                          : null,
+            ),
+            const SizedBox(height: 12),
+            TextFormField(
+              controller: _mottoController,
+              textCapitalization: TextCapitalization.sentences,
+              maxLength: 60,
+              style: AppFonts.body(size: 15, style: FontStyle.italic),
+              decoration: const InputDecoration(
+                labelText: 'Motto or tagline',
+                prefixIcon: Icon(Icons.format_quote_rounded),
+                counterText: '',
+              ),
+              validator:
+                  (value) =>
+                      value == null || value.trim().isEmpty
+                          ? 'Please enter a motto'
+                          : null,
+            ),
+            const SizedBox(height: 10),
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton.icon(
+                onPressed: _randomise,
+                icon: const Icon(Icons.casino_outlined, size: 18),
+                label: const Text('ROLL A RANDOM NAME'),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -313,82 +348,71 @@ class _HeroCreationPageState extends State<HeroCreationPage> {
           child: SectionHeader(
             icon: Icons.shield_outlined,
             title: 'Choose your class',
-            subtitle: 'Your class sets your starting stats.',
+            subtitle: 'Your class sets your starting attributes.',
           ),
         ),
-        const SizedBox(height: AppPadding.md),
+        const SizedBox(height: 12),
         GridView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: 3,
-            mainAxisSpacing: AppPadding.sm,
-            crossAxisSpacing: AppPadding.sm,
-            childAspectRatio: 0.95,
+            mainAxisSpacing: 10,
+            crossAxisSpacing: 10,
+            childAspectRatio: 0.8,
           ),
           itemCount: classesList.length,
           itemBuilder: (context, index) {
             final classes = classesList[index];
-            final isSelected = selected == classes;
             return FadeSlideIn(
               delay: Duration(milliseconds: 40 * index),
-              child: _ClassCard(
+              child: _ClassGlyph(
                 classes: classes,
-                selected: isSelected,
+                selected: selected == classes,
                 onTap: () => setState(() => _selectedClass = classes),
               ),
             );
           },
         ),
-        const SizedBox(height: AppPadding.lg),
+        const SizedBox(height: 16),
         AnimatedSize(
           duration: AppDurations.medium,
           curve: Curves.easeOutCubic,
           child:
               selected == null
                   ? const SizedBox.shrink()
-                  : GlassPanel(
+                  : ArcanePanel(
                     key: ValueKey(selected.className),
-                    glowColor: AppColors.accentPurple,
+                    glow: AppColors.amethystBright,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
-                          children: [
-                            Text(
-                              classEmoji(selected.className),
-                              style: const TextStyle(fontSize: 32),
-                            ),
-                            const SizedBox(width: AppPadding.md),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    selected.className,
-                                    style:
-                                        Theme.of(context).textTheme.titleLarge,
-                                  ),
-                                  Text(
-                                    selected.description,
-                                    style: const TextStyle(
-                                      color: AppColors.textSecondary,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: AppPadding.md),
-                        _StatBars(values: _statsOf(selected)),
-                        const SizedBox(height: AppPadding.sm),
                         Text(
-                          'HP ${selected.health} · MP ${selected.mana} · '
-                          'Stamina ${selected.stamina}',
-                          style: const TextStyle(
-                            color: AppColors.accentGreen,
-                            fontSize: AppFontSizes.xs,
+                          selected.className,
+                          style: AppFonts.heading(size: 18),
+                        ),
+                        Text(
+                          selected.description,
+                          style: AppFonts.body(
+                            size: 13,
+                            color: AppColors.inkMuted,
+                            style: FontStyle.italic,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Center(
+                          child: StatRadar(
+                            values: _statsOf(selected),
+                            size: 190,
+                          ),
+                        ),
+                        Center(
+                          child: Text(
+                            'HP ${selected.health} · MP ${selected.mana} · STA ${selected.stamina}',
+                            style: AppFonts.label(
+                              size: 10,
+                              color: AppColors.teal,
+                            ),
                           ),
                         ),
                       ],
@@ -418,13 +442,13 @@ class _HeroCreationPageState extends State<HeroCreationPage> {
           child: SectionHeader(
             icon: Icons.auto_stories_outlined,
             title: 'Where do you come from?',
-            subtitle: 'Your origin grants bonus stats. Optional.',
+            subtitle: 'Your origin grants bonus attributes. Optional.',
           ),
         ),
-        const SizedBox(height: AppPadding.md),
+        const SizedBox(height: 12),
         FadeSlideIn(
           child: _OriginCard(
-            icon: '🧭',
+            id: null,
             name: 'Wanderer',
             description: 'No origin, no bonus. A blank page.',
             bonuses: const {},
@@ -436,7 +460,7 @@ class _HeroCreationPageState extends State<HeroCreationPage> {
           FadeSlideIn(
             delay: Duration(milliseconds: 40 * (i + 1)),
             child: _OriginCard(
-              icon: backgroundsList[i].icon,
+              id: backgroundsList[i].id,
               name: backgroundsList[i].name,
               description: backgroundsList[i].description,
               flavor: backgroundsList[i].flavorText,
@@ -452,25 +476,25 @@ class _HeroCreationPageState extends State<HeroCreationPage> {
   }
 
   // ---------------------------------------------------------------- step 3
-  Widget _avatarStep() {
+  Widget _portraitStep() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const FadeSlideIn(
           child: SectionHeader(
-            icon: Icons.face_retouching_natural,
-            title: 'Pick your portrait',
-            subtitle: 'How the world will see you.',
+            icon: Icons.portrait_rounded,
+            title: 'Choose your portrait',
+            subtitle: 'How the world will remember you.',
           ),
         ),
-        const SizedBox(height: AppPadding.md),
+        const SizedBox(height: 12),
         GridView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 4,
-            mainAxisSpacing: AppPadding.sm,
-            crossAxisSpacing: AppPadding.sm,
+            crossAxisCount: 3,
+            mainAxisSpacing: 10,
+            crossAxisSpacing: 10,
           ),
           itemCount: _heroImages.length,
           itemBuilder: (context, index) {
@@ -481,37 +505,16 @@ class _HeroCreationPageState extends State<HeroCreationPage> {
               child: GestureDetector(
                 onTap: () => setState(() => _selectedImage = image),
                 child: AnimatedScale(
-                  scale: isSelected ? 1.08 : 1,
+                  scale: isSelected ? 1.06 : 1,
                   duration: AppDurations.short,
-                  child: AnimatedContainer(
+                  child: AnimatedOpacity(
+                    opacity: _selectedImage == null || isSelected ? 1 : 0.55,
                     duration: AppDurations.short,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(AppRadius.md),
-                      border: Border.all(
-                        color:
-                            isSelected
-                                ? AppColors.accentGold
-                                : AppColors.borderLight,
-                        width: isSelected ? 3 : 1,
-                      ),
-                      boxShadow:
-                          isSelected
-                              ? [
-                                BoxShadow(
-                                  color: AppColors.accentGold.withValues(
-                                    alpha: 0.5,
-                                  ),
-                                  blurRadius: 14,
-                                ),
-                              ]
-                              : null,
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(AppRadius.md - 2),
-                      child: HeroAvatar(
-                        imageUrl: image,
-                        fallbackLabel: '${index + 1}',
-                      ),
+                    child: FramedPortrait(
+                      imageUrl: image,
+                      size: 100,
+                      glow: isSelected ? AppColors.teal : null,
+                      fallbackLabel: '${index + 1}',
                     ),
                   ),
                 ),
@@ -527,8 +530,11 @@ class _HeroCreationPageState extends State<HeroCreationPage> {
   Widget _summonStep() {
     final hero = _previewHero;
     if (hero == null) {
-      return const GlassPanel(
-        child: Text('Go back and finish the earlier steps first.'),
+      return ArcanePanel(
+        child: Text(
+          'Go back and finish the earlier steps first.',
+          style: AppFonts.body(),
+        ),
       );
     }
     final background = hero.background;
@@ -536,78 +542,86 @@ class _HeroCreationPageState extends State<HeroCreationPage> {
     return Column(
       children: [
         FadeSlideIn(
-          child: GlassPanel(
-            glowColor: AppColors.accentGold,
-            borderColor: AppColors.accentGold,
+          child: ArcanePanel(
+            glow: AppColors.gold,
+            accent: AppColors.gold,
             child: Column(
               children: [
                 PulseGlow(
-                  child: ClipOval(
-                    child: SizedBox(
-                      width: 120,
-                      height: 120,
-                      child: HeroAvatar(imageUrl: hero.imageUrl),
-                    ),
+                  shape: BoxShape.rectangle,
+                  borderRadius: BorderRadius.circular(12),
+                  child: FramedPortrait(
+                    imageUrl: hero.imageUrl,
+                    size: 140,
+                    glow: AppColors.gold,
                   ),
                 ),
-                const SizedBox(height: AppPadding.lg),
+                const SizedBox(height: 14),
                 Text(
                   hero.name,
-                  style: Theme.of(context).textTheme.headlineSmall,
+                  style: AppFonts.heading(size: 24),
                   textAlign: TextAlign.center,
                 ),
                 Text(
                   '"${hero.motto}"',
                   textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    color: AppColors.textSecondary,
-                    fontStyle: FontStyle.italic,
+                  style: AppFonts.body(
+                    size: 14,
+                    color: AppColors.inkMuted,
+                    style: FontStyle.italic,
                   ),
                 ),
-                const SizedBox(height: AppPadding.md),
+                const SizedBox(height: 10),
                 Wrap(
-                  spacing: AppPadding.sm,
+                  spacing: 6,
+                  runSpacing: 6,
                   alignment: WrapAlignment.center,
                   children: [
-                    Chip(
-                      label: Text(
-                        '${classEmoji(hero.classes.className)} '
-                        '${hero.classes.className}',
-                      ),
+                    RuneTag(
+                      text: hero.classes.className.toUpperCase(),
+                      color: AppColors.teal,
+                      filled: true,
                     ),
-                    Chip(
-                      label: Text(
-                        background == null
-                            ? '🧭 Wanderer'
-                            : '${background.icon} ${background.name}',
-                      ),
+                    RuneTag(
+                      text: (background?.name ?? 'Wanderer').toUpperCase(),
+                      color: AppColors.amethystBright,
+                      icon: originIcon(background?.id),
+                      filled: true,
                     ),
-                    const Chip(label: Text('Lv. 1')),
+                    const RuneTag(
+                      text: 'LEVEL 1',
+                      color: AppColors.gold,
+                      filled: true,
+                    ),
                   ],
                 ),
-                const SizedBox(height: AppPadding.lg),
-                _StatBars(
+                const SizedBox(height: 8),
+                StatRadar(
                   values: {
                     for (final stat in heroStatNames)
                       stat: hero.statValue(stat),
                   },
-                  bonuses: background?.statBonus ?? const {},
+                  compare: _statsOf(hero.classes),
+                  size: 220,
                 ),
-                const SizedBox(height: AppPadding.md),
                 Text(
-                  'HP ${hero.health} · MP ${hero.mana} · Stamina ${hero.stamina}',
-                  style: const TextStyle(color: AppColors.accentGreen),
+                  'HP ${hero.health} · MP ${hero.mana} · STA ${hero.stamina}',
+                  style: AppFonts.label(size: 10, color: AppColors.teal),
                 ),
               ],
             ),
           ),
         ),
-        const SizedBox(height: AppPadding.lg),
-        const FadeSlideIn(
-          delay: Duration(milliseconds: 200),
+        const SizedBox(height: 14),
+        FadeSlideIn(
+          delay: const Duration(milliseconds: 200),
           child: Text(
-            'Ready? Your quests await.',
-            style: TextStyle(color: AppColors.textSecondary),
+            'The circle is drawn. Speak the word and begin.',
+            style: AppFonts.body(
+              size: 13,
+              color: AppColors.inkMuted,
+              style: FontStyle.italic,
+            ),
           ),
         ),
       ],
@@ -630,12 +644,7 @@ class _Header extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        AppPadding.xl,
-        AppPadding.md,
-        AppPadding.xl,
-        AppPadding.md,
-      ),
+      padding: const EdgeInsets.fromLTRB(18, 10, 18, 10),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -644,22 +653,25 @@ class _Header extends StatelessWidget {
               if (!isOnboarding)
                 IconButton(
                   onPressed: () => Navigator.of(context).maybePop(),
-                  icon: const Icon(Icons.arrow_back),
+                  icon: const Icon(
+                    Icons.arrow_back_rounded,
+                    color: AppColors.bronzeLight,
+                  ),
                   tooltip: 'Cancel',
                 ),
               Expanded(
                 child: Text(
                   isOnboarding ? 'Welcome, adventurer' : 'Create a new hero',
-                  style: Theme.of(context).textTheme.headlineSmall,
+                  style: AppFonts.heading(size: 20),
                 ),
               ),
               Text(
-                'Step ${step + 1} of ${HeroCreationPage.stepCount}',
-                style: const TextStyle(color: AppColors.textSecondary),
+                'STEP ${step + 1} OF ${HeroCreationPage.stepCount}',
+                style: AppFonts.label(size: 9, color: AppColors.inkMuted),
               ),
             ],
           ),
-          const SizedBox(height: AppPadding.md),
+          const SizedBox(height: 10),
           Row(
             children: [
               for (var i = 0; i < HeroCreationPage.stepCount; i++) ...[
@@ -670,18 +682,27 @@ class _Header extends StatelessWidget {
                       children: [
                         AnimatedContainer(
                           duration: AppDurations.medium,
-                          height: 6,
+                          height: 4,
                           decoration: BoxDecoration(
+                            gradient:
+                                i <= step
+                                    ? const LinearGradient(
+                                      colors: [
+                                        AppColors.bronzeLight,
+                                        AppColors.gold,
+                                      ],
+                                    )
+                                    : null,
                             color:
                                 i <= step
-                                    ? AppColors.accentGold
-                                    : Colors.white24,
-                            borderRadius: BorderRadius.circular(3),
+                                    ? null
+                                    : AppColors.bronze.withValues(alpha: 0.35),
+                            borderRadius: BorderRadius.circular(2),
                             boxShadow:
                                 i == step
                                     ? [
                                       BoxShadow(
-                                        color: AppColors.accentGold.withValues(
+                                        color: AppColors.gold.withValues(
                                           alpha: 0.6,
                                         ),
                                         blurRadius: 8,
@@ -692,15 +713,13 @@ class _Header extends StatelessWidget {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          HeroCreationPage.stepTitles[i],
-                          style: TextStyle(
-                            fontSize: 10,
+                          HeroCreationPage.stepTitles[i].toUpperCase(),
+                          style: AppFonts.label(
+                            size: 7.5,
                             color:
-                                i == step
-                                    ? AppColors.accentGold
-                                    : AppColors.textSecondary,
-                            fontWeight:
-                                i == step ? FontWeight.bold : FontWeight.normal,
+                                i == step ? AppColors.gold : AppColors.inkMuted,
+                            weight:
+                                i == step ? FontWeight.w700 : FontWeight.w500,
                           ),
                         ),
                       ],
@@ -735,17 +754,12 @@ class _Footer extends StatelessWidget {
   Widget build(BuildContext context) {
     final isLast = step == HeroCreationPage.stepCount - 1;
     return Container(
-      padding: const EdgeInsets.fromLTRB(
-        AppPadding.xl,
-        AppPadding.md,
-        AppPadding.xl,
-        AppPadding.lg,
-      ),
+      padding: const EdgeInsets.fromLTRB(18, 10, 18, 14),
       decoration: const BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [Colors.transparent, Colors.black87],
+          colors: [Colors.transparent, AppColors.obsidian],
         ),
       ),
       child: Row(
@@ -753,20 +767,19 @@ class _Footer extends StatelessWidget {
           if (onBack != null) ...[
             OutlinedButton.icon(
               onPressed: onBack,
-              icon: const Icon(Icons.arrow_back),
-              label: const Text('Back'),
+              icon: const Icon(Icons.arrow_back_rounded, size: 16),
+              label: const Text('BACK'),
             ),
-            const SizedBox(width: AppPadding.md),
+            const SizedBox(width: 10),
           ],
           Expanded(
             child: QuestButton(
               label: isLast ? 'Begin Adventure' : 'Next',
-              icon: isLast ? Icons.auto_awesome : Icons.arrow_forward,
-              colors:
+              icon:
                   isLast
-                      ? const [Color(0xFFB8860B), AppColors.accentGold]
-                      : const [AppColors.accentPurple, Color(0xFF9C27B0)],
-              glow: isLast ? AppColors.accentGold : AppColors.shadowPurple,
+                      ? Icons.auto_awesome_rounded
+                      : Icons.arrow_forward_rounded,
+              style: isLast ? QuestButtonStyle.gold : QuestButtonStyle.amethyst,
               onPressed: canContinue ? onNext : null,
             ),
           ),
@@ -776,8 +789,9 @@ class _Footer extends StatelessWidget {
   }
 }
 
-class _ClassCard extends StatelessWidget {
-  const _ClassCard({
+/// Class glyph tile from the class artwork with the name beneath.
+class _ClassGlyph extends StatelessWidget {
+  const _ClassGlyph({
     required this.classes,
     required this.selected,
     required this.onTap,
@@ -791,49 +805,56 @@ class _ClassCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
+      behavior: HitTestBehavior.opaque,
       child: AnimatedScale(
-        scale: selected ? 1.05 : 1,
+        scale: selected ? 1.06 : 1,
         duration: AppDurations.short,
-        child: AnimatedContainer(
-          duration: AppDurations.short,
-          padding: const EdgeInsets.all(AppPadding.sm),
-          decoration: BoxDecoration(
-            color: selected ? AppColors.accentPurple : AppColors.bgDark,
-            borderRadius: BorderRadius.circular(AppRadius.md),
-            border: Border.all(
-              color: selected ? AppColors.accentGold : AppColors.borderLight,
-              width: selected ? 2 : 1,
-            ),
-            boxShadow:
-                selected
-                    ? [
-                      BoxShadow(
-                        color: AppColors.shadowPurple.withValues(alpha: 0.5),
-                        blurRadius: 12,
-                      ),
-                    ]
-                    : null,
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                classEmoji(classes.className),
-                style: const TextStyle(fontSize: 30),
-              ),
-              const SizedBox(height: AppPadding.xs),
-              Text(
-                classes.className,
-                textAlign: TextAlign.center,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: AppFontSizes.sm,
+        child: Column(
+          children: [
+            Expanded(
+              child: AnimatedContainer(
+                duration: AppDurations.short,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow:
+                      selected
+                          ? [
+                            BoxShadow(
+                              color: AppColors.teal.withValues(alpha: 0.6),
+                              blurRadius: 16,
+                              spreadRadius: 1,
+                            ),
+                          ]
+                          : null,
+                  border: Border.all(
+                    color: selected ? AppColors.teal : Colors.transparent,
+                    width: 2,
+                  ),
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(10),
+                  child: Image.asset(
+                    classes.classImageUrl,
+                    fit: BoxFit.cover,
+                    errorBuilder:
+                        (_, _, _) =>
+                            const GemRing(icon: Icons.shield_rounded, size: 60),
+                  ),
                 ),
               ),
-            ],
-          ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              classes.className,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: AppFonts.heading(
+                size: 11,
+                color: selected ? AppColors.gold : AppColors.ink,
+                letterSpacing: 0.8,
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -842,7 +863,7 @@ class _ClassCard extends StatelessWidget {
 
 class _OriginCard extends StatelessWidget {
   const _OriginCard({
-    required this.icon,
+    required this.id,
     required this.name,
     required this.description,
     required this.bonuses,
@@ -851,7 +872,7 @@ class _OriginCard extends StatelessWidget {
     this.flavor,
   });
 
-  final String icon;
+  final String? id;
   final String name;
   final String description;
   final String? flavor;
@@ -863,161 +884,64 @@ class _OriginCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
-      child: AnimatedContainer(
-        duration: AppDurations.short,
-        margin: const EdgeInsets.only(bottom: AppPadding.sm),
-        padding: const EdgeInsets.all(AppPadding.md),
-        decoration: BoxDecoration(
-          color:
-              selected
-                  ? AppColors.accentPurple.withValues(alpha: 0.6)
-                  : AppColors.bgDark,
-          borderRadius: BorderRadius.circular(AppRadius.md),
-          border: Border.all(
-            color: selected ? AppColors.accentGold : AppColors.borderLight,
-            width: selected ? 2 : 1,
-          ),
-        ),
+      behavior: HitTestBehavior.opaque,
+      child: ArcanePanel(
+        ornate: false,
+        radius: 10,
+        margin: const EdgeInsets.only(bottom: 8),
+        padding: const EdgeInsets.all(12),
+        accent: selected ? AppColors.teal : null,
+        glow: selected ? AppColors.teal : null,
+        fillOpacity: selected ? 0.92 : 0.7,
         child: Row(
           children: [
-            Text(icon, style: const TextStyle(fontSize: 28)),
-            const SizedBox(width: AppPadding.md),
+            GemRing(
+              icon: originIcon(id),
+              color: AppColors.amethyst,
+              size: 44,
+              selected: selected,
+            ),
+            const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     name,
-                    style: const TextStyle(fontWeight: FontWeight.bold),
+                    style: AppFonts.heading(size: 13, letterSpacing: 0.8),
                   ),
                   Text(
                     description,
-                    style: const TextStyle(
-                      color: AppColors.textSecondary,
-                      fontSize: AppFontSizes.xs,
-                    ),
+                    style: AppFonts.body(size: 12, color: AppColors.inkMuted),
                   ),
                   if (selected && flavor != null) ...[
-                    const SizedBox(height: AppPadding.xs),
+                    const SizedBox(height: 4),
                     Text(
                       flavor!,
-                      style: const TextStyle(
-                        color: AppColors.accentGold,
-                        fontSize: AppFontSizes.xs,
-                        fontStyle: FontStyle.italic,
+                      style: AppFonts.body(
+                        size: 12,
+                        color: AppColors.gold,
+                        style: FontStyle.italic,
                       ),
                     ),
                   ],
                 ],
               ),
             ),
-            const SizedBox(width: AppPadding.sm),
+            const SizedBox(width: 8),
             Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 for (final entry in bonuses.entries)
                   Text(
-                    '+${entry.value} ${entry.key}',
-                    style: const TextStyle(
-                      color: AppColors.accentGreen,
-                      fontSize: AppFontSizes.xs,
-                      fontWeight: FontWeight.w600,
-                    ),
+                    '+${entry.value} ${statAbbreviation(entry.key)}',
+                    style: AppFonts.label(size: 9, color: AppColors.teal),
                   ),
               ],
             ),
           ],
         ),
       ),
-    );
-  }
-}
-
-/// Seven animated stat bars; [bonuses] are shown as "+n" next to the value.
-class _StatBars extends StatelessWidget {
-  const _StatBars({required this.values, this.bonuses = const {}});
-
-  final Map<String, int> values;
-  final Map<String, int> bonuses;
-
-  static const int _maxStat = 12;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        for (final entry in values.entries)
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 3),
-            child: Row(
-              children: [
-                SizedBox(
-                  width: 92,
-                  child: Text(
-                    _capitalise(entry.key),
-                    style: const TextStyle(
-                      fontSize: AppFontSizes.xs,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                ),
-                Expanded(
-                  child: AnimatedBar(
-                    fraction: entry.value / _maxStat,
-                    height: 8,
-                    colors: AppColors.statGradient,
-                  ),
-                ),
-                const SizedBox(width: AppPadding.sm),
-                SizedBox(
-                  width: 40,
-                  child: Text(
-                    bonuses.containsKey(entry.key)
-                        ? '${entry.value} (+${bonuses[entry.key]})'
-                        : '${entry.value}',
-                    textAlign: TextAlign.right,
-                    style: TextStyle(
-                      fontSize: AppFontSizes.xs,
-                      fontWeight: FontWeight.bold,
-                      color:
-                          bonuses.containsKey(entry.key)
-                              ? AppColors.accentGreen
-                              : Colors.white,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-      ],
-    );
-  }
-
-  static String _capitalise(String s) =>
-      s.isEmpty ? s : s[0].toUpperCase() + s.substring(1);
-}
-
-/// Hero portrait with a graceful fallback when the image asset is missing.
-class HeroAvatar extends StatelessWidget {
-  const HeroAvatar({super.key, required this.imageUrl, this.fallbackLabel});
-
-  final String imageUrl;
-  final String? fallbackLabel;
-
-  @override
-  Widget build(BuildContext context) {
-    return Image.asset(
-      imageUrl,
-      fit: BoxFit.cover,
-      errorBuilder:
-          (_, _, _) => Container(
-            color: AppColors.primaryDark,
-            alignment: Alignment.center,
-            child: Text(
-              fallbackLabel ?? '🧝',
-              style: const TextStyle(fontSize: 28, color: Colors.white70),
-            ),
-          ),
     );
   }
 }

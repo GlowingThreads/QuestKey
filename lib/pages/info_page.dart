@@ -6,48 +6,49 @@ import 'package:quest_key/pages/hero_creation_page.dart';
 import 'package:quest_key/services/storage.dart';
 import 'package:quest_key/state/app_state.dart';
 import 'package:quest_key/state/quest_list_provider.dart';
+import 'package:quest_key/theme/app_theme.dart';
+import 'package:quest_key/theme/iconography.dart';
 import 'package:quest_key/widgets/common/ui_kit.dart';
 
-/// Adventurer's guide: how the game works, hero management and the danger
-/// zone for clearing data.
+/// The Guide: how the game works, hero management and the danger zone.
 class InfoPage extends StatelessWidget {
   const InfoPage({super.key});
 
-  static const List<({IconData icon, String title, String body})> _howTo = [
+  static const List<({IconData icon, String title, String body})> _chapters = [
     (
-      icon: Icons.auto_fix_high,
+      icon: Icons.auto_fix_high_rounded,
       title: 'Forge quests',
       body:
-          'Turn any task into a quest on the Create tab. Pick a category, a '
-          'difficulty (more stars = more XP) and a due time.',
+          'Any task becomes a quest on the Create tab. Choose a category, set '
+          'the difficulty (harder quests pay more XP) and a due time.',
     ),
     (
-      icon: Icons.swipe_right_alt,
-      title: 'Complete them',
+      icon: Icons.swipe_right_alt_rounded,
+      title: 'See them through',
       body:
-          'Swipe a quest right or tap its ✓ to finish it and earn XP. Swipe '
-          'left to delete (you will be asked to confirm). Tap to edit.',
+          'Swipe a quest right, or tap its seal, to complete it and claim the '
+          'XP. Swipe left to strike it from the log. Tap to edit.',
     ),
     (
-      icon: Icons.trending_up,
-      title: 'Level up',
+      icon: Icons.military_tech_rounded,
+      title: 'Grow in power',
       body:
-          'Fill the XP bar to level up. Every level grants 3 stat points to '
-          'spend on the Hero tab, and unlocks new skills to learn.',
+          'Fill the experience ring to level up. Each level grants three '
+          'attribute points and opens new pages of the grimoire.',
     ),
     (
-      icon: Icons.local_fire_department,
-      title: 'Keep the streak',
+      icon: Icons.local_fire_department_rounded,
+      title: 'Keep the flame',
       body:
           'Complete at least one quest a day to build a streak. Streaks, '
-          'quest counts and stats unlock achievements, some of them hidden.',
+          'quest counts and attributes earn honours; some are hidden.',
     ),
     (
       icon: Icons.notifications_active_outlined,
       title: 'Reminders',
       body:
-          'Turn on "Remind me" for a quest and Quest Key notifies you 30 '
-          'minutes before it is due, even after a reboot.',
+          'Enable "Remind me" and Quest Key notifies you thirty minutes '
+          'before a quest is due, even after the device restarts.',
     ),
   ];
 
@@ -57,32 +58,60 @@ class InfoPage extends StatelessWidget {
 
     return Scaffold(
       body: PageBackground(
-        asset: 'assets/images/app_assets/info_bkg.png',
+        asset: Art.infoBackground,
         child: SafeArea(
           child: ListView(
-            padding: const EdgeInsets.fromLTRB(
-              AppPadding.xxl,
-              AppPadding.lg,
-              AppPadding.xxl,
-              110,
-            ),
+            padding: const EdgeInsets.fromLTRB(18, 14, 18, 120),
             children: [
               FadeSlideIn(
-                child: GlassPanel(
-                  glowColor: AppColors.accentPurple,
-                  child: Column(
+                child: ArcanePanel(
+                  glow: AppColors.amethystBright,
+                  child: Row(
                     children: [
-                      const Text('🗝️', style: TextStyle(fontSize: 40)),
-                      const SizedBox(height: AppPadding.sm),
-                      Text(
-                        'Quest Key',
-                        style: Theme.of(context).textTheme.headlineSmall,
+                      Container(
+                        width: 72,
+                        height: 72,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(14),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppColors.magenta.withValues(alpha: 0.4),
+                              blurRadius: 18,
+                            ),
+                          ],
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(14),
+                          child: Image.asset(
+                            Art.appIcon,
+                            errorBuilder:
+                                (_, _, _) => const GemRing(
+                                  icon: Icons.key_rounded,
+                                  size: 72,
+                                ),
+                          ),
+                        ),
                       ),
-                      const Text(
-                        'An RPG to-do list. Your tasks are quests; finishing '
-                        'them makes your hero stronger.',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(color: AppColors.textSecondary),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Quest Key',
+                              style: AppFonts.heading(size: 22),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'A to-do list written as an adventure. Your tasks are '
+                              'quests; finishing them makes your hero stronger.',
+                              style: AppFonts.body(
+                                size: 13,
+                                color: AppColors.inkMuted,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ],
                   ),
@@ -91,54 +120,54 @@ class InfoPage extends StatelessWidget {
               const SizedBox(height: AppPadding.lg),
               const FadeSlideIn(
                 delay: Duration(milliseconds: 80),
-                child: SectionHeader(
-                  icon: Icons.menu_book_outlined,
-                  title: "Adventurer's guide",
+                child: Row(
+                  children: [
+                    PortholeBadge(asset: Art.info, size: 52),
+                    SizedBox(width: 10),
+                    Expanded(
+                      child: SectionHeader(
+                        title: "Adventurer's Guide",
+                        rule: false,
+                      ),
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(height: AppPadding.sm),
-              for (var i = 0; i < _howTo.length; i++)
+              for (var i = 0; i < _chapters.length; i++)
                 FadeSlideIn(
                   delay: Duration(milliseconds: 120 + 50 * i),
-                  child: GlassPanel(
-                    margin: const EdgeInsets.only(bottom: AppPadding.sm),
-                    padding: const EdgeInsets.all(AppPadding.md),
-                    radius: AppRadius.md,
+                  child: ArcanePanel(
+                    ornate: false,
+                    radius: 10,
+                    margin: const EdgeInsets.only(bottom: 8),
+                    padding: const EdgeInsets.all(12),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Container(
-                          padding: const EdgeInsets.all(AppPadding.sm),
-                          decoration: BoxDecoration(
-                            color: AppColors.accentPurple.withValues(
-                              alpha: 0.5,
-                            ),
-                            borderRadius: BorderRadius.circular(AppRadius.sm),
-                          ),
-                          child: Icon(
-                            _howTo[i].icon,
-                            color: AppColors.accentGold,
-                            size: 20,
-                          ),
+                        GemRing(
+                          icon: _chapters[i].icon,
+                          color: AppColors.amethyst,
+                          size: 40,
                         ),
-                        const SizedBox(width: AppPadding.md),
+                        const SizedBox(width: 12),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                _howTo[i].title,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
+                                '${_roman(i + 1)}.  ${_chapters[i].title}',
+                                style: AppFonts.heading(
+                                  size: 13,
+                                  letterSpacing: 0.8,
                                 ),
                               ),
-                              const SizedBox(height: 2),
+                              const SizedBox(height: 3),
                               Text(
-                                _howTo[i].body,
-                                style: const TextStyle(
-                                  color: AppColors.textSecondary,
-                                  fontSize: AppFontSizes.xs,
-                                  height: 1.35,
+                                _chapters[i].body,
+                                style: AppFonts.body(
+                                  size: 13,
+                                  color: AppColors.inkMuted,
                                 ),
                               ),
                             ],
@@ -151,29 +180,30 @@ class InfoPage extends StatelessWidget {
               const SizedBox(height: AppPadding.lg),
               FadeSlideIn(
                 delay: const Duration(milliseconds: 420),
-                child: GlassPanel(
+                child: ArcanePanel(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const SectionHeader(
-                        icon: Icons.person_outline,
-                        title: 'Your hero',
+                        icon: Icons.person_outline_rounded,
+                        title: 'Your Hero',
                       ),
-                      const SizedBox(height: AppPadding.md),
+                      const SizedBox(height: 12),
                       QuestButton(
                         label:
-                            hasHero ? 'Create a new hero' : 'Create your hero',
-                        icon: Icons.person_add_alt_1,
+                            hasHero ? 'Summon a new hero' : 'Summon your hero',
+                        icon: Icons.person_add_alt_1_rounded,
                         onPressed: () => _openCreateHero(context),
                       ),
                       if (hasHero)
-                        const Padding(
-                          padding: EdgeInsets.only(top: AppPadding.sm),
+                        Padding(
+                          padding: const EdgeInsets.only(top: 8),
                           child: Text(
                             'Replaces your current hero and level. Quests are kept.',
-                            style: TextStyle(
-                              color: AppColors.textSecondary,
-                              fontSize: AppFontSizes.xs,
+                            style: AppFonts.body(
+                              size: 12,
+                              color: AppColors.inkMuted,
+                              style: FontStyle.italic,
                             ),
                           ),
                         ),
@@ -181,25 +211,24 @@ class InfoPage extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(height: AppPadding.lg),
+              const SizedBox(height: AppPadding.md),
               FadeSlideIn(
                 delay: const Duration(milliseconds: 480),
-                child: GlassPanel(
-                  borderColor: Colors.redAccent.withValues(alpha: 0.6),
+                child: ArcanePanel(
+                  accent: AppColors.ruby,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const SectionHeader(
                         icon: Icons.warning_amber_rounded,
-                        title: 'Danger zone',
-                        color: Colors.redAccent,
+                        title: 'Danger Zone',
+                        color: AppColors.ruby,
                       ),
-                      const SizedBox(height: AppPadding.md),
+                      const SizedBox(height: 12),
                       QuestButton(
-                        label: 'Clear hero and quest data',
+                        label: 'Erase hero and quests',
                         icon: Icons.delete_forever_outlined,
-                        colors: const [Color(0xFF7F0000), Color(0xFFD32F2F)],
-                        glow: Colors.redAccent,
+                        style: QuestButtonStyle.danger,
                         onPressed: () => _confirmClear(context),
                       ),
                     ],
@@ -207,14 +236,15 @@ class InfoPage extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: AppPadding.lg),
-              const FadeSlideIn(
-                delay: Duration(milliseconds: 540),
+              FadeSlideIn(
+                delay: const Duration(milliseconds: 540),
                 child: Text(
                   'Everything is stored on this device only.',
                   textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: AppColors.textSecondary,
-                    fontSize: AppFontSizes.xs,
+                  style: AppFonts.body(
+                    size: 12,
+                    color: AppColors.inkMuted,
+                    style: FontStyle.italic,
                   ),
                 ),
               ),
@@ -224,6 +254,9 @@ class InfoPage extends StatelessWidget {
       ),
     );
   }
+
+  static String _roman(int n) =>
+      const ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII'][n - 1];
 
   /// Opens the hero creator; asks first if it would replace an existing hero.
   Future<void> _openCreateHero(BuildContext context) async {
@@ -235,8 +268,8 @@ class InfoPage extends StatelessWidget {
             (context) => AlertDialog(
               title: const Text('Replace your hero?'),
               content: const Text(
-                'Creating a new hero replaces your current hero, level and '
-                'stats. Your quests are kept.',
+                'Summoning a new hero replaces your current hero, level and '
+                'attributes. Your quests are kept.',
               ),
               actions: [
                 TextButton(
@@ -279,8 +312,8 @@ class InfoPage extends StatelessWidget {
               TextButton(
                 onPressed: () => Navigator.pop(context, true),
                 child: const Text(
-                  'Yes, delete',
-                  style: TextStyle(color: Colors.redAccent),
+                  'Yes, erase',
+                  style: TextStyle(color: AppColors.ruby),
                 ),
               ),
             ],
@@ -292,7 +325,7 @@ class InfoPage extends StatelessWidget {
     appState.clearHero();
     await questProvider.loadQuestsFromStorage();
     messenger.showSnackBar(
-      const SnackBar(content: Text('Hero and quests cleared')),
+      const SnackBar(content: Text('Hero and quests erased')),
     );
   }
 }

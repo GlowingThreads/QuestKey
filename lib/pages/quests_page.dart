@@ -5,6 +5,8 @@ import 'package:quest_key/constants/app_dimens.dart';
 import 'package:quest_key/models/quest.dart';
 import 'package:quest_key/state/app_state.dart';
 import 'package:quest_key/state/quest_list_provider.dart';
+import 'package:quest_key/theme/app_theme.dart';
+import 'package:quest_key/theme/iconography.dart';
 import 'package:quest_key/widgets/common/ui_kit.dart';
 import 'package:quest_key/widgets/quest_list.dart';
 
@@ -19,15 +21,11 @@ class _QuestsPageState extends State<QuestsPage> {
   /// `null` means "All".
   QuestStatus? _filter = QuestStatus.inProgress;
 
-  static const List<({QuestStatus? status, IconData icon, String label})>
+  static const List<({QuestStatus? status, String asset, String label})>
   _filters = [
-    (
-      status: QuestStatus.inProgress,
-      icon: Icons.hourglass_top,
-      label: 'Active',
-    ),
-    (status: null, icon: Icons.all_inclusive, label: 'All'),
-    (status: QuestStatus.completed, icon: Icons.check_circle, label: 'Done'),
+    (status: QuestStatus.inProgress, asset: Art.todo, label: 'ACTIVE'),
+    (status: null, asset: Art.all, label: 'ALL'),
+    (status: QuestStatus.completed, asset: Art.finished, label: 'DONE'),
   ];
 
   @override
@@ -40,56 +38,65 @@ class _QuestsPageState extends State<QuestsPage> {
     return Scaffold(
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => context.read<AppState>().setIndex(2),
-        backgroundColor: AppColors.accentPurple,
-        foregroundColor: Colors.white,
-        icon: const Icon(Icons.add),
-        label: const Text('New quest'),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+          side: const BorderSide(color: AppColors.bronzeLight, width: 1.3),
+        ),
+        icon: const Icon(Icons.auto_fix_high_rounded),
+        label: Text(
+          'NEW QUEST',
+          style: AppFonts.label(size: 11, color: AppColors.gold),
+        ),
       ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       body: PageBackground(
-        asset: 'assets/images/app_assets/quests_bkg.png',
+        asset: Art.questsBackground,
         child: SafeArea(
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(
-              AppPadding.xxl,
-              AppPadding.lg,
-              AppPadding.xxl,
-              0,
-            ),
+            padding: const EdgeInsets.fromLTRB(18, 14, 18, 0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 FadeSlideIn(
                   child: Row(
                     children: [
+                      const PortholeBadge(asset: Art.questLog, size: 64),
+                      const SizedBox(width: 12),
                       Expanded(
-                        child: Text(
-                          'Quest Log',
-                          style: Theme.of(context).textTheme.headlineSmall,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Quest Log',
+                              style: AppFonts.heading(size: 22),
+                            ),
+                            const SizedBox(height: 4),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: AnimatedBar(
+                                    fraction: completion,
+                                    height: 6,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  '$done / $total',
+                                  style: AppFonts.body(
+                                    size: 12,
+                                    color: AppColors.inkMuted,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
                         ),
                       ),
-                      Text(
-                        '$done / $total done',
-                        style: const TextStyle(color: AppColors.textSecondary),
-                      ),
                     ],
                   ),
                 ),
-                const SizedBox(height: AppPadding.sm),
+                const SizedBox(height: AppPadding.md),
                 FadeSlideIn(
-                  delay: const Duration(milliseconds: 60),
-                  child: AnimatedBar(
-                    fraction: completion,
-                    height: 6,
-                    colors: const [
-                      AppColors.accentPurple,
-                      AppColors.accentGreen,
-                    ],
-                  ),
-                ),
-                const SizedBox(height: AppPadding.lg),
-                FadeSlideIn(
-                  delay: const Duration(milliseconds: 120),
+                  delay: const Duration(milliseconds: 80),
                   child: _FilterBar(
                     filters: _filters,
                     selected: _filter,
@@ -98,10 +105,10 @@ class _QuestsPageState extends State<QuestsPage> {
                     onSelected: (status) => setState(() => _filter = status),
                   ),
                 ),
-                const SizedBox(height: AppPadding.lg),
+                const SizedBox(height: AppPadding.sm),
                 Expanded(
                   child: FadeSlideIn(
-                    delay: const Duration(milliseconds: 180),
+                    delay: const Duration(milliseconds: 160),
                     child: AnimatedSwitcher(
                       duration: AppDurations.medium,
                       child: QuestList(
@@ -112,7 +119,7 @@ class _QuestsPageState extends State<QuestsPage> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 90),
+                const SizedBox(height: 92),
               ],
             ),
           ),
@@ -122,7 +129,7 @@ class _QuestsPageState extends State<QuestsPage> {
   }
 }
 
-/// Segmented filter with a sliding highlight and live counts.
+/// Three porthole seals; the chosen one lifts and glows.
 class _FilterBar extends StatelessWidget {
   const _FilterBar({
     required this.filters,
@@ -131,89 +138,82 @@ class _FilterBar extends StatelessWidget {
     required this.onSelected,
   });
 
-  final List<({QuestStatus? status, IconData icon, String label})> filters;
+  final List<({QuestStatus? status, String asset, String label})> filters;
   final QuestStatus? selected;
   final int Function(QuestStatus?) countFor;
   final ValueChanged<QuestStatus?> onSelected;
 
   @override
   Widget build(BuildContext context) {
-    final selectedIndex = filters.indexWhere((f) => f.status == selected);
-
-    return GlassPanel(
-      padding: const EdgeInsets.all(4),
-      radius: AppRadius.lg,
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final segmentWidth = constraints.maxWidth / filters.length;
-          return SizedBox(
-            height: 56,
-            child: Stack(
-              children: [
-                AnimatedPositioned(
-                  duration: AppDurations.medium,
-                  curve: Curves.easeOutCubic,
-                  left: segmentWidth * selectedIndex,
-                  top: 0,
-                  bottom: 0,
-                  width: segmentWidth,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: AppColors.accentPurple,
-                      borderRadius: BorderRadius.circular(AppRadius.md),
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppColors.shadowPurple.withValues(alpha: 0.4),
-                          blurRadius: 10,
-                        ),
-                      ],
-                    ),
+    return Row(
+      children: [
+        for (final filter in filters)
+          Expanded(
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () => onSelected(filter.status),
+              child: AnimatedContainer(
+                duration: AppDurations.medium,
+                curve: Curves.easeOutBack,
+                margin: const EdgeInsets.symmetric(horizontal: 4),
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                decoration: BoxDecoration(
+                  color:
+                      filter.status == selected
+                          ? AppColors.amethyst.withValues(alpha: 0.55)
+                          : AppColors.obsidian.withValues(alpha: 0.45),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color:
+                        filter.status == selected
+                            ? AppColors.teal
+                            : AppColors.bronze,
+                    width: filter.status == selected ? 1.6 : 1,
                   ),
+                  boxShadow:
+                      filter.status == selected
+                          ? [
+                            BoxShadow(
+                              color: AppColors.teal.withValues(alpha: 0.35),
+                              blurRadius: 14,
+                            ),
+                          ]
+                          : null,
                 ),
-                Row(
+                child: Column(
                   children: [
-                    for (final filter in filters)
-                      Expanded(
-                        child: InkWell(
-                          borderRadius: BorderRadius.circular(AppRadius.md),
-                          onTap: () => onSelected(filter.status),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                filter.icon,
-                                size: 18,
-                                color:
-                                    filter.status == selected
-                                        ? AppColors.accentGold
-                                        : AppColors.textSecondary,
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                '${filter.label} (${countFor(filter.status)})',
-                                style: TextStyle(
-                                  fontSize: AppFontSizes.xs,
-                                  fontWeight:
-                                      filter.status == selected
-                                          ? FontWeight.bold
-                                          : FontWeight.normal,
-                                  color:
-                                      filter.status == selected
-                                          ? Colors.white
-                                          : AppColors.textSecondary,
-                                ),
-                              ),
-                            ],
-                          ),
+                    AnimatedScale(
+                      scale: filter.status == selected ? 1.08 : 0.92,
+                      duration: AppDurations.medium,
+                      child: Opacity(
+                        opacity: filter.status == selected ? 1 : 0.7,
+                        child: Image.asset(
+                          filter.asset,
+                          width: 48,
+                          height: 48,
+                          errorBuilder:
+                              (_, _, _) =>
+                                  const Icon(Icons.circle_outlined, size: 40),
                         ),
                       ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${filter.label} · ${countFor(filter.status)}',
+                      style: AppFonts.label(
+                        size: 9,
+                        color:
+                            filter.status == selected
+                                ? AppColors.gold
+                                : AppColors.inkMuted,
+                      ),
+                    ),
                   ],
                 ),
-              ],
+              ),
             ),
-          );
-        },
-      ),
+          ),
+      ],
     );
   }
 }

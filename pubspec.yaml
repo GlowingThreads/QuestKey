@@ -42,6 +42,22 @@ flutter_launcher_icons:
 flutter:
   uses-material-design: true
 
+  # Bundled typefaces (SIL Open Font License, see assets/fonts/OFL-*.txt).
+  # Cinzel: display/headings. Spectral: body text.
+  fonts:
+    - family: Cinzel
+      fonts:
+        - asset: assets/fonts/Cinzel-Variable.ttf
+    - family: Spectral
+      fonts:
+        - asset: assets/fonts/Spectral-Regular.ttf
+        - asset: assets/fonts/Spectral-Italic.ttf
+          style: italic
+        - asset: assets/fonts/Spectral-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/Spectral-Bold.ttf
+          weight: 700
+
   # TODO(assets): The image files are NOT in the repository yet. The three
   # directories below exist only as `.gitkeep` placeholders so the build can
   # resolve the declarations. Copy the real `assets/images/*` folders in from

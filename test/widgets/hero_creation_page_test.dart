@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:quest_key/models/character_background.dart';
 import 'package:quest_key/models/class_values.dart';
 import 'package:quest_key/pages/hero_creation_page.dart';
+import 'package:quest_key/widgets/common/ui_kit.dart';
 import 'package:quest_key/services/in_memory_quest_storage.dart';
 import 'package:quest_key/state/app_state.dart';
 import 'package:quest_key/state/quest_list_provider.dart';
@@ -48,10 +49,10 @@ void main() {
     await pumpWizard(tester);
 
     expect(find.text('Welcome, adventurer'), findsOneWidget);
-    expect(find.text('Step 1 of 5'), findsOneWidget);
+    expect(find.text('STEP 1 OF 5'), findsOneWidget);
 
     await next(tester);
-    expect(find.text('Step 1 of 5'), findsOneWidget);
+    expect(find.text('STEP 1 OF 5'), findsOneWidget);
 
     await tester.enterText(
       find.widgetWithText(TextFormField, 'Hero name'),
@@ -64,14 +65,14 @@ void main() {
     await tester.pumpAndSettle();
     await next(tester);
 
-    expect(find.text('Step 2 of 5'), findsOneWidget);
+    expect(find.text('STEP 2 OF 5'), findsOneWidget);
     expect(find.text('Choose your class'), findsOneWidget);
   });
 
   testWidgets('rolling a random name fills both fields', (tester) async {
     await pumpWizard(tester);
 
-    await tester.tap(find.text('Roll a random name'));
+    await tester.tap(find.text('ROLL A RANDOM NAME'));
     await tester.pumpAndSettle();
 
     final name = tester.widget<TextFormField>(
@@ -99,7 +100,7 @@ void main() {
 
     // Class: Next stays disabled until one is picked.
     await next(tester);
-    expect(find.text('Step 2 of 5'), findsOneWidget);
+    expect(find.text('STEP 2 OF 5'), findsOneWidget);
     await tester.tap(find.text('Wizard'));
     await tester.pumpAndSettle();
     expect(find.text(wizard.description), findsOneWidget);
@@ -115,10 +116,10 @@ void main() {
     await next(tester);
 
     // Avatar
-    expect(find.text('Pick your portrait'), findsOneWidget);
+    expect(find.text('Choose your portrait'), findsOneWidget);
     await next(tester);
-    expect(find.text('Step 4 of 5'), findsOneWidget);
-    await tester.tap(find.byType(HeroAvatar).at(2));
+    expect(find.text('STEP 4 OF 5'), findsOneWidget);
+    await tester.tap(find.byType(FramedPortrait).at(2));
     await tester.pumpAndSettle();
     // The summon step has a looping glow, so pump a fixed duration instead
     // of pumpAndSettle.
@@ -126,10 +127,10 @@ void main() {
     await tester.pump(const Duration(milliseconds: 800));
 
     // Summon
-    expect(find.text('Step 5 of 5'), findsOneWidget);
+    expect(find.text('STEP 5 OF 5'), findsOneWidget);
     expect(find.text('Lyra'), findsOneWidget);
-    expect(find.text('🧙 Wizard'), findsOneWidget);
-    expect(find.text('📚 Scholar'), findsOneWidget);
+    expect(find.text('WIZARD'), findsOneWidget);
+    expect(find.text('SCHOLAR'), findsOneWidget);
     expect(appState.hero, isNull);
 
     await tester.tap(find.text('Begin Adventure'));
@@ -165,9 +166,9 @@ void main() {
     await tester.tap(find.text('Fighter'));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Back'));
+    await tester.tap(find.text('BACK'));
     await tester.pumpAndSettle();
-    expect(find.text('Step 1 of 5'), findsOneWidget);
+    expect(find.text('STEP 1 OF 5'), findsOneWidget);
     expect(find.text('Bo'), findsOneWidget);
 
     await next(tester);
