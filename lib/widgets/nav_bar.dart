@@ -31,7 +31,7 @@ class _CustomNavBarState extends State<CustomNavBar> {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: AppPadding.sm),
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         color: Colors.black26,
         border: Border(
           top: BorderSide(color: AppColors.borderLight, width: AppBorders.thin),
@@ -54,9 +54,10 @@ class _CustomNavBarState extends State<CustomNavBar> {
                     Container(
                       padding: const EdgeInsets.all(AppPadding.sm),
                       decoration: BoxDecoration(
-                        color: isSelected
-                            ? AppColors.accentPurple.withOpacity(0.3)
-                            : Colors.transparent,
+                        color:
+                            isSelected
+                                ? AppColors.accentPurple.withValues(alpha: 0.3)
+                                : Colors.transparent,
                         borderRadius: BorderRadius.circular(AppRadius.md),
                       ),
                       child: Image.asset(
@@ -69,12 +70,12 @@ class _CustomNavBarState extends State<CustomNavBar> {
                     Text(
                       navLabels[index],
                       style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        fontWeight: isSelected
-                            ? FontWeight.bold
-                            : FontWeight.normal,
-                        color: isSelected
-                            ? AppColors.textPrimary
-                            : AppColors.textSecondary,
+                        fontWeight:
+                            isSelected ? FontWeight.bold : FontWeight.normal,
+                        color:
+                            isSelected
+                                ? AppColors.textPrimary
+                                : AppColors.textSecondary,
                       ),
                     ),
                   ],

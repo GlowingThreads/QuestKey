@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:quest_key/models/quest.dart';
+import 'package:quest_key/state/quest_list_provider.dart';
 import 'package:quest_key/widgets/quest_list.dart';
 
 class QuestsPage extends StatefulWidget {
@@ -9,7 +12,8 @@ class QuestsPage extends StatefulWidget {
 }
 
 class _QuestsPageState extends State<QuestsPage> {
-  String _filter = 'In Progress';
+  /// `null` means "All".
+  QuestStatus? _filter = QuestStatus.inProgress;
 
   @override
   Widget build(BuildContext context) {
@@ -40,7 +44,12 @@ class _QuestsPageState extends State<QuestsPage> {
                   Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: const Color.fromARGB(255, 35, 9, 80).withAlpha(200),
+                      color: const Color.fromARGB(
+                        255,
+                        35,
+                        9,
+                        80,
+                      ).withAlpha(200),
                       border: Border.all(
                         color: const Color.fromARGB(99, 255, 255, 255),
                         width: 2,
@@ -52,11 +61,11 @@ class _QuestsPageState extends State<QuestsPage> {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          _filterIcon('todo.png', 'In Progress'),
+                          _filterIcon('todo.png', QuestStatus.inProgress),
                           const SizedBox(width: 12),
-                          _filterIcon('all.png', 'All'),
+                          _filterIcon('all.png', null),
                           const SizedBox(width: 12),
-                          _filterIcon('finished.png', 'Completed'),
+                          _filterIcon('finished.png', QuestStatus.completed),
                         ],
                       ),
                     ),
@@ -72,11 +81,7 @@ class _QuestsPageState extends State<QuestsPage> {
                   ),
                   const SizedBox(height: 10),
                   // Quest list
-                  Expanded(
-                    child: QuestList(
-                      filterStatus: _filter == 'All' ? null : _filter,
-                    ),
-                  ),
+                  Expanded(child: QuestList(filterStatus: _filter)),
                 ],
               ),
             ),
@@ -86,13 +91,16 @@ class _QuestsPageState extends State<QuestsPage> {
     );
   }
 
-  Widget _filterIcon(String assetName, String label) {
-    final isSelected = _filter == label;
+  Widget _filterIcon(String assetName, QuestStatus? status) {
+    final count =
+        context.watch<QuestListProvider>().getFilteredQuests(status).length;
+    final label = '${status?.label ?? 'All'} ($count)';
+    final isSelected = _filter == status;
 
     return GestureDetector(
       onTap: () {
         setState(() {
-          _filter = label;
+          _filter = status;
         });
       },
       child: Container(
@@ -115,6 +123,12 @@ class _QuestsPageState extends State<QuestsPage> {
                 'assets/images/app_assets/$assetName',
                 width: 60,
                 height: 60,
+                errorBuilder:
+                    (_, _, _) => const Icon(
+                      Icons.image_not_supported_outlined,
+                      size: 60,
+                      color: Colors.white38,
+                    ),
               ),
             ),
             const SizedBox(height: 8),

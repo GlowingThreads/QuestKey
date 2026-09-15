@@ -22,7 +22,7 @@ class HeroProfileCard extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.3),
+            color: Colors.black.withValues(alpha: 0.3),
             blurRadius: 8,
             offset: const Offset(0, 4),
           ),
@@ -61,10 +61,12 @@ class HeroProfileCard extends StatelessWidget {
                   children: [
                     Text(
                       hero.name,
-                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                            color: AppColors.textPrimary,
-                            fontWeight: FontWeight.bold,
-                          ),
+                      style: Theme.of(
+                        context,
+                      ).textTheme.headlineSmall?.copyWith(
+                        color: AppColors.textPrimary,
+                        fontWeight: FontWeight.bold,
+                      ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -72,9 +74,9 @@ class HeroProfileCard extends StatelessWidget {
                     Text(
                       '"${hero.motto}"',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: AppColors.textSecondary,
-                            fontStyle: FontStyle.italic,
-                          ),
+                        color: AppColors.textSecondary,
+                        fontStyle: FontStyle.italic,
+                      ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -95,9 +97,9 @@ class HeroProfileCard extends StatelessWidget {
                       child: Text(
                         '${hero.classes.className} Lv. ${hero.levelUp.level}',
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: AppColors.accentGreen,
-                              fontWeight: FontWeight.w600,
-                            ),
+                          color: AppColors.accentGreen,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
                   ],
@@ -107,10 +109,7 @@ class HeroProfileCard extends StatelessWidget {
           ),
           const SizedBox(height: AppPadding.xl),
           // Divider
-          Container(
-            height: 1,
-            color: AppColors.borderLight,
-          ),
+          Container(height: 1, color: AppColors.borderLight),
           const SizedBox(height: AppPadding.lg),
           // Resource stats
           Row(
@@ -160,7 +159,7 @@ class HeroProfileCard extends StatelessWidget {
         color: AppColors.primaryDarker,
         borderRadius: BorderRadius.circular(AppRadius.md),
         border: Border.all(
-          color: color.withOpacity(0.3),
+          color: color.withValues(alpha: 0.3),
           width: AppBorders.thin,
         ),
       ),
@@ -170,17 +169,17 @@ class HeroProfileCard extends StatelessWidget {
           const SizedBox(height: AppPadding.xs),
           Text(
             label,
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: AppColors.textSecondary,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.labelSmall?.copyWith(color: AppColors.textSecondary),
           ),
           const SizedBox(height: AppPadding.xs),
           Text(
             value,
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: color,
-                  fontWeight: FontWeight.bold,
-                ),
+              color: color,
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ],
       ),

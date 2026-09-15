@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:quest_key/state/app_state.dart';
 import 'package:quest_key/services/storage.dart';
+import 'package:quest_key/state/quest_list_provider.dart';
 import 'package:quest_key/pages/create_hero_page.dart';
 
 class InfoPage extends StatelessWidget {
@@ -33,7 +34,7 @@ class InfoPage extends StatelessWidget {
                   borderRadius: BorderRadius.circular(16.0),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.7),
+                      color: Colors.black.withValues(alpha: 0.7),
                       blurRadius: 10.0,
                       offset: const Offset(0, 4),
                     ),
@@ -73,20 +74,7 @@ class InfoPage extends StatelessWidget {
                     ),
                     const SizedBox(height: 30),
                     ElevatedButton(
-                      onPressed: () async {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder:
-                                (ctx) => CreateHeroPage(
-                                  onHeroCreated:
-                                      (
-                                        _,
-                                      ) {}, // <- empty callback to satisfy the required parameter
-                                ),
-                          ),
-                        );
-                      },
+                      onPressed: () => _openCreateHero(context),
                       style: ElevatedButton.styleFrom(
                         elevation: 4,
                         padding: const EdgeInsets.symmetric(
@@ -109,16 +97,25 @@ class InfoPage extends StatelessWidget {
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
-                        children: const [
-                          Icon(Icons.person_add, size: 20),
-                          SizedBox(width: 8),
-                          Text('Create Hero'),
+                        children: [
+                          const Icon(Icons.person_add, size: 20),
+                          const SizedBox(width: 8),
+                          Text(
+                            context.watch<AppState>().hasHero
+                                ? 'Create New Hero'
+                                : 'Create Hero',
+                          ),
                         ],
                       ),
                     ),
                     const SizedBox(height: 40),
                     ElevatedButton(
                       onPressed: () async {
+                        final appState = context.read<AppState>();
+                        final questProvider = context.read<QuestListProvider>();
+                        final messenger = ScaffoldMessenger.of(context);
+                        final navigator = Navigator.of(context);
+
                         final confirm = await showDialog<bool>(
                           context: context,
                           builder:
@@ -168,26 +165,16 @@ class InfoPage extends StatelessWidget {
                         if (confirm != true) return;
 
                         await StorageService.clearAllData();
+                        appState.clearHero();
+                        await questProvider.loadQuestsFromStorage();
 
-                        final appState = Provider.of<AppState>(
-                          context,
-                          listen: false,
-                        );
-                        appState.hero = null;
-
-                        context
-                            .read<QuestListProvider>()
-                            .loadQuestsFromStorage();
-
-                        ScaffoldMessenger.of(context).showSnackBar(
+                        messenger.showSnackBar(
                           const SnackBar(
                             content: Text('Hero and quests cleared'),
                           ),
                         );
 
-                        Navigator.of(
-                          context,
-                        ).popUntil((route) => route.isFirst);
+                        navigator.popUntil((route) => route.isFirst);
                       },
                       style: ElevatedButton.styleFrom(
                         elevation: 4,
@@ -223,6 +210,40 @@ class InfoPage extends StatelessWidget {
   }
 }
 
+/// Opens the hero creator; asks first if it would replace an existing hero.
+Future<void> _openCreateHero(BuildContext context) async {
+  final navigator = Navigator.of(context);
+  if (context.read<AppState>().hasHero) {
+    final replace = await showDialog<bool>(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Replace your hero?'),
+            content: const Text(
+              'Creating a new hero replaces your current hero, level and '
+              'stats. Your quests are kept.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('Replace'),
+              ),
+            ],
+          ),
+    );
+    if (replace != true) return;
+  }
+  await navigator.push(
+    MaterialPageRoute<void>(
+      builder: (ctx) => CreateHeroPage(onHeroCreated: (_) {}),
+    ),
+  );
+}
+
 // Info instructions
 const String _infoText = '''
 Create your hero and embark on quests!
@@ -235,9 +256,11 @@ Track your progress on the Hero Page.
 
 In the Quest Log you can:
 ✓ View ongoing and completed quests.
-↔ Swipe right to complete a quest.
-↔ Swipe left to delete a quest.
-✎ Long press a quest to edit it.
+→ Swipe right (or tap ✓) to complete a quest.
+← Swipe left to delete a quest (you'll be asked to confirm).
+✎ Tap a quest to edit it.
+
+Complete quests daily to build a streak, unlock achievements and learn skills on the Hero page.
 
 Tap "Create Hero" to begin your adventure!
 ''';

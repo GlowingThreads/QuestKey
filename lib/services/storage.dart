@@ -1,124 +1,115 @@
-//this is storage.dart
-//quest and hero servs
-import 'package:flutter/material.dart';
-import 'package:quest_key/models/quest.dart';
-import 'package:quest_key/models/character.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+// Persistence for quests and the hero.
 import 'dart:convert';
 
-class QuestListProvider with ChangeNotifier {
-  final List<Quest> _quests = [];
-  Quest? selectedQuest;
-  List<Quest> get quests => _quests;
+import 'package:quest_key/models/character.dart';
+import 'package:quest_key/models/quest.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-  //nullable for reset
-  void setSelectedQuest(Quest? quest) {
-    selectedQuest = quest;
-    notifyListeners();
-  }
-
-  void addQuest(Quest quest) {
-    _quests.add(quest);
-    saveQuestsToStorage();
-    notifyListeners();
-  }
-
-  void removeQuest(Quest quest) {
-    _quests.remove(quest);
-    saveQuestsToStorage();
-    notifyListeners();
-  }
-
-  void updateQuest(Quest quest) {
-    final index = _quests.indexWhere((quest) => quest.id == quest.id);
-    if (index != -1) {
-      _quests[index] = quest;
-      saveQuestsToStorage();
-      notifyListeners();
-    }
-  }
-
-  void updateQuestStatus(int questId, String status) {
-    final index = _quests.indexWhere((quest) => quest.id == questId);
-    if (index != -1) {
-      _quests[index] = _quests[index].copyWith(status: status);
-      saveQuestsToStorage();
-      notifyListeners();
-    }
-  }
-
-  void markQuestCompleted(Quest quest) {
-    final index = _quests.indexWhere((q) => q.id == quest.id);
-    if (index != -1) {
-      _quests[index] = quest.copyWith(status: 'Completed');
-      saveQuestsToStorage();
-      notifyListeners();
-    }
-  }
-
-  List<Quest> getFilteredQuests(String? filterStatus) {
-    if (filterStatus == null || filterStatus == 'All') {
-      return _quests;
-    }
-    return _quests.where((quest) => quest.status == filterStatus).toList();
-  }
-
-  Future<void> loadQuestsFromStorage() async {
-    final loadedQuests = await StorageService.loadQuests();
-    _quests.clear();
-    _quests.addAll(loadedQuests);
-    notifyListeners();
-  }
-
-  Future<void> saveQuestsToStorage() async {
-    await StorageService.saveQuests(_quests);
-  }
+/// Storage contract for quests and the hero.
+///
+/// The app uses [SharedPrefsQuestStorage]; tests can inject an in-memory
+/// implementation (see `InMemoryQuestStorage`).
+abstract class QuestStorage {
+  Future<void> saveQuests(List<Quest> quests);
+  Future<List<Quest>> loadQuests();
+  Future<void> deleteQuest(Quest quest);
+  Future<void> saveHero(HeroCharacter hero);
+  Future<HeroCharacter?> loadHero();
+  Future<void> clearAllData();
 }
 
-class StorageService {
-  static Future<void> saveQuests(List<Quest> quests) async {
+/// [QuestStorage] backed by `shared_preferences`.
+class SharedPrefsQuestStorage implements QuestStorage {
+  static const String questsKey = 'quests';
+  static const String heroKey = 'hero';
+  static const String heroExistsKey = 'heroExists';
+
+  @override
+  Future<void> saveQuests(List<Quest> quests) async {
     final prefs = await SharedPreferences.getInstance();
     final questListJson = jsonEncode(
       quests.map((quest) => quest.toJson()).toList(),
     );
-    await prefs.setString('quests', questListJson);
+    await prefs.setString(questsKey, questListJson);
   }
 
-  static Future<List<Quest>> loadQuests() async {
+  @override
+  Future<List<Quest>> loadQuests() async {
     final prefs = await SharedPreferences.getInstance();
-    final jsonString = prefs.getString('quests');
-
+    final jsonString = prefs.getString(questsKey);
     if (jsonString == null) return [];
 
-    final decoded = jsonDecode(jsonString) as List;
-    return decoded.map((quest) => Quest.fromJson(quest)).toList();
+    try {
+      final decoded = jsonDecode(jsonString);
+      if (decoded is! List) return [];
+      return decoded
+          .whereType<Map>()
+          .map((quest) => Quest.fromJson(Map<String, dynamic>.from(quest)))
+          .toList();
+    } on FormatException {
+      return [];
+    }
   }
 
-  static Future<void> deleteQuest(Quest quest) async {
+  @override
+  Future<void> deleteQuest(Quest quest) async {
     final currentQuests = await loadQuests();
-    currentQuests.removeWhere((quest) => quest.id == quest.id);
+    currentQuests.removeWhere((q) => q.id == quest.id);
     await saveQuests(currentQuests);
   }
 
-  static Future<void> saveHero(HeroCharacter hero) async {
+  @override
+  Future<void> saveHero(HeroCharacter hero) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('hero', jsonEncode(hero.toJson()));
+    await prefs.setString(heroKey, jsonEncode(hero.toJson()));
+    await prefs.setBool(heroExistsKey, true);
   }
 
-  static Future<HeroCharacter?> loadHero() async {
+  @override
+  Future<HeroCharacter?> loadHero() async {
     final prefs = await SharedPreferences.getInstance();
-    final heroString = prefs.getString('hero');
-
+    final heroString = prefs.getString(heroKey);
     if (heroString == null) return null;
 
-    final json = jsonDecode(heroString);
-    return HeroCharacter.fromJson(json);
+    try {
+      final json = jsonDecode(heroString);
+      if (json is! Map) return null;
+      return HeroCharacter.fromJson(Map<String, dynamic>.from(json));
+    } on FormatException {
+      return null;
+    }
   }
 
-  static Future<void> clearAllData() async {
+  @override
+  Future<void> clearAllData() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('hero');
-    await prefs.remove('quests');
-    await prefs.setBool('heroExists', false);
+    await prefs.remove(heroKey);
+    await prefs.remove(questsKey);
+    await prefs.setBool(heroExistsKey, false);
   }
+}
+
+/// Static-style facade over [StorageService.instance].
+///
+/// Existing call sites keep working unchanged; tests can swap the backing
+/// implementation with `StorageService.instance = InMemoryQuestStorage()`.
+class StorageService {
+  StorageService._();
+
+  /// The storage implementation used by the static helpers below and, by
+  /// default, by the providers.
+  static QuestStorage instance = SharedPrefsQuestStorage();
+
+  static Future<void> saveQuests(List<Quest> quests) =>
+      instance.saveQuests(quests);
+
+  static Future<List<Quest>> loadQuests() => instance.loadQuests();
+
+  static Future<void> deleteQuest(Quest quest) => instance.deleteQuest(quest);
+
+  static Future<void> saveHero(HeroCharacter hero) => instance.saveHero(hero);
+
+  static Future<HeroCharacter?> loadHero() => instance.loadHero();
+
+  static Future<void> clearAllData() => instance.clearAllData();
 }
