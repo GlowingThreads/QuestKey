@@ -75,13 +75,76 @@ All referenced from `lib/models/class_values.dart`.
 
 ## `assets/images/familiars/` (optional)
 
-The familiar on the Home tab is drawn procedurally, so nothing is required
-here. To replace a species with hand-drawn animation, add a **sprite strip**
-named after the species: `cat.png`, `hound.png` or `owl.png`.
+The familiar in the den on the Home tab is drawn procedurally, so nothing
+is required here. Two kinds of hand-made animation can replace the painter
+per species (`cat`, `hound`, `weasel`, `owl`); the app checks at runtime and
+falls back to the painter when a file is missing, so partial sets are fine.
 
-- One row of **8 square frames**, left to right (e.g. 8 × 256 px wide by
-  256 px tall). Transparent background.
-- Frames play at 8 frames per second as the idle loop; the hop on tap and
-  on quest completion is applied to the whole strip.
-- The app checks for the file at runtime; if it is missing the painter is
-  used, so partial sets are fine.
+### Option A: sprite sheet (`<species>.png` + `<species>.json`)
+
+A grid of equal frames with a manifest naming each animation's row:
+
+```json
+{
+  "frameWidth": 32,
+  "frameHeight": 32,
+  "fps": 8,
+  "facing": "right",
+  "animations": {
+    "idle":   {"row": 0, "frames": 4},
+    "walk":   {"row": 1, "frames": 6, "fps": 10},
+    "sit":    {"row": 2, "frames": 4},
+    "sleep":  {"row": 3, "frames": 4, "fps": 4},
+    "groom":  {"row": 4, "frames": 6},
+    "stretch":{"row": 5, "frames": 4},
+    "hop":    {"row": 6, "frames": 6, "loop": false, "start": 0}
+  }
+}
+```
+
+- `row` is the zero-based row in the sheet; `start` is the first column
+  (default 0); `frames` the number of columns to play.
+- `facing` is the direction the art looks as drawn (`right` or `left`); the
+  den mirrors it when the familiar turns.
+- Only `idle` is required. Missing animations borrow from others:
+  walk → run → idle; sit → idle; sleep → sit → idle; groom → sit → idle;
+  stretch → idle; hop → jump → walk → idle.
+- Pixel art is drawn without smoothing and scaled to fit the den, bottom
+  aligned. Transparent background.
+
+Free packs that fit this format (download them yourself; check each
+page's licence and credit the artist where it asks):
+
+| Species | Pack | Licence noted on the page |
+| --- | --- | --- |
+| cat | "Free Pixel Animation - Cat (6 loops)" by Zeenaz, itch.io | CC0 |
+| cat | "16 bit kitty free" by mxmaze, itch.io | CC BY 4.0 |
+| hound | "2d pixel art dog, spritesheet" by inmenus, itch.io | CC0 |
+| hound | "Dog Spritesheets", OpenGameArt | see page |
+| weasel | "2D Pixel Art Ferret Sprites" by Elthen, itch.io | free, credit Elthen |
+| owl | "Bird" by rmazanek, itch.io / OpenGameArt | CC0 |
+| owl | "Pixel Art Bird 16x16" by ma9ici4n, itch.io | free, no credit needed |
+
+Open the PNG, note the frame size and which row holds which animation,
+and write the manifest to match. Some packs ship one animation per file;
+stack them into one sheet (one animation per row) with any image editor.
+
+### Option B: Rive (`<species>.riv`)
+
+Export from the Rive editor with a state machine named `Familiar` (the
+default state machine is used if that name is absent) and any of these
+inputs:
+
+| Input | Type | Values |
+| --- | --- | --- |
+| `action` | number | 0 idle, 1 walk, 2 sit, 3 sleep, 4 groom, 5 stretch |
+| `walking` | boolean | true while crossing the den |
+| `mood` | number | 0 sleepy, 1 watchful, 2 content, 3 joyful |
+| `facingLeft` | boolean | set when facing left; without it the den mirrors the artboard |
+| `hop` | trigger | fired on a tap and on each completed quest |
+
+Only the inputs you wire are used. Movement across the den is done by the
+app, so the artboard should animate in place. The app uses Rive's pure-Dart
+runtime (package `rive` 0.13), which matches the pinned Flutter version and
+needs no native download; export from the editor without newer-only
+features such as layouts or data binding.

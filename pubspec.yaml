@@ -18,6 +18,7 @@ dependencies:
   flutter_timezone: ^4.1.0
   timezone: ^0.10.1
   intl: ^0.20.2
+  rive: ^0.13.0
 
 dev_dependencies:
   flutter_test:

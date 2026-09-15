@@ -1,5 +1,38 @@
 # Quest Key: gameplay and UX features
 
+## The den (Phase 12): a familiar that lives, not just blinks
+
+**Behaviour** (`lib/widgets/familiar/familiar_behaviour.dart`). A small
+stochastic state machine chooses what the familiar does: idle, walk to a
+random spot, sit, sleep (with drifting Zs), groom, stretch, hop. The mood
+tilts the odds (sleepy familiars mostly sleep; joyful ones never do, and
+hop on their own). It never walks twice in a row and always does something
+on arrival. Taps and completed quests startle it into a hop. Pure Dart,
+tested with a seeded random.
+
+**The den** (`familiar_stage.dart`). The hearth panel is now a wide box
+with a warm glow at the fireside and a floor rule; a ticker advances the
+behaviour and places the creature along the floor, mirrored when it faces
+left, with a shadow that shrinks as it hops.
+
+**Renderers** (`familiar_sprite.dart`), chosen per species at start-up:
+
+1. **Sprite sheet**: `<species>.png` plus a JSON manifest naming each
+   animation's row, frame count, speed and facing (`sprite_sheet.dart`).
+   Missing animations borrow from others so a pack with only idle, walk
+   and sleep still looks right. Pixel art is drawn without smoothing.
+2. **Rive**: `<species>.riv` with a `Familiar` state machine and optional
+   `action`, `walking`, `mood`, `facingLeft` and `hop` inputs
+   (`rive_familiar.dart`), on the pure-Dart `rive` 0.13 runtime. The
+   0.14 line was tried first and does not compile against the pinned
+   Flutter 3.29, so stay on 0.13 until the Flutter pin moves.
+3. **Painter**: the built-in shadow creatures, now with walk (leg swing,
+   bob, lean), sleep (lying, eyes shut), groom (head dip, paw up) and
+   stretch poses, plus a fourth species, the **weasel**, drawn in profile.
+
+`assets/REQUIRED_ASSETS.md` lists free packs for each species and the exact
+manifest format.
+
 ## Familiars and the Save Codex (Phase 11)
 
 **Familiars** (`lib/models/familiar.dart`, `lib/widgets/familiar/`). The
