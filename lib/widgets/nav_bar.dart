@@ -81,7 +81,9 @@ class _NavItem extends StatelessWidget {
           message: item.label,
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 260),
-            curve: Curves.easeOutBack,
+            // Decorations (shadows) must not overshoot: a blur radius below
+            // zero asserts. Only the scale below uses an overshooting curve.
+            curve: Curves.easeOutCubic,
             transform: Matrix4.translationValues(0, selected ? -8 : 0, 0),
             width: 62,
             height: 62,

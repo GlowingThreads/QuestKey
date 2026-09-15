@@ -281,8 +281,18 @@ class InfoPage extends StatelessWidget {
     );
   }
 
-  static String _roman(int n) =>
-      const ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII'][n - 1];
+  static String _roman(int n) {
+    const numerals = [(10, 'X'), (9, 'IX'), (5, 'V'), (4, 'IV'), (1, 'I')];
+    var value = n;
+    final buffer = StringBuffer();
+    for (final (arabic, roman) in numerals) {
+      while (value >= arabic) {
+        buffer.write(roman);
+        value -= arabic;
+      }
+    }
+    return buffer.toString();
+  }
 
   /// Opens the hero creator; asks first if it would replace an existing hero.
   Future<void> _openCreateHero(BuildContext context) async {
