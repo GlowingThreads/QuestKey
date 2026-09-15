@@ -11,9 +11,10 @@ import 'package:quest_key/theme/app_theme.dart';
 import 'package:quest_key/widgets/achievement_unlocked_dialog.dart';
 import 'package:quest_key/widgets/common/ui_kit.dart';
 import 'package:quest_key/widgets/familiar/familiar_sprite.dart';
+import 'package:quest_key/widgets/familiar/familiar_stage.dart';
 
-/// The hearth on the Home tab: the familiar, its mood and its bond, or the
-/// stray waiting to be adopted.
+/// The hearth on the Home tab: the familiar's den, its mood and its bond,
+/// or the stray waiting to be adopted.
 class HearthPanel extends StatelessWidget {
   const HearthPanel({super.key, required this.hero});
 
@@ -34,74 +35,71 @@ class HearthPanel extends StatelessWidget {
     final next = familiar.nextTierBond;
 
     return ArcanePanel(
-      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
+      padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          FamiliarSprite(
+          FamiliarStage(
             species: familiar.species,
             mood: mood,
-            size: 92,
             hopTrigger: hero.questsCompleted,
             onTap: () => _pet(context),
           ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(
-                      child: Text(
-                        familiar.name,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: AppFonts.heading(size: 16, letterSpacing: 0.6),
-                      ),
-                    ),
-                    if (familiar.bonusPercent > 0)
-                      RuneTag(
-                        text: '+${familiar.bonusPercent}% XP',
-                        color: AppColors.gold,
-                        filled: true,
-                      ),
-                  ],
-                ),
-                Text(
-                  'SHADOW ${familiar.species.label.toUpperCase()} · ${familiar.tierTitle.toUpperCase()}',
-                  style: AppFonts.label(size: 9, color: AppColors.teal),
-                ),
-                const SizedBox(height: 5),
-                Text(
-                  familiarLine(familiar, mood),
-                  style: AppFonts.body(
-                    size: 12.5,
-                    color: AppColors.inkMuted,
-                    style: FontStyle.italic,
-                  ),
-                ),
-                const SizedBox(height: 7),
-                Row(
-                  children: [
-                    Expanded(
-                      child: AnimatedBar(
-                        fraction: familiar.tierProgress,
-                        height: 5,
-                        colors: const [AppColors.amethyst, AppColors.magenta],
-                      ),
-                    ),
-                    const SizedBox(width: 8),
                     Text(
-                      next == null
-                          ? 'BOND ${familiar.bond}'
-                          : 'BOND ${familiar.bond}/$next',
-                      style: AppFonts.label(size: 8, color: AppColors.inkMuted),
+                      familiar.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppFonts.heading(size: 16, letterSpacing: 0.6),
+                    ),
+                    Text(
+                      'SHADOW ${familiar.species.label.toUpperCase()} · ${familiar.tierTitle.toUpperCase()}',
+                      style: AppFonts.label(size: 9, color: AppColors.teal),
                     ),
                   ],
                 ),
-              ],
+              ),
+              if (familiar.bonusPercent > 0)
+                RuneTag(
+                  text: '+${familiar.bonusPercent}% XP',
+                  color: AppColors.gold,
+                  filled: true,
+                ),
+            ],
+          ),
+          const SizedBox(height: 5),
+          Text(
+            familiarLine(familiar, mood),
+            style: AppFonts.body(
+              size: 12.5,
+              color: AppColors.inkMuted,
+              style: FontStyle.italic,
             ),
+          ),
+          const SizedBox(height: 7),
+          Row(
+            children: [
+              Expanded(
+                child: AnimatedBar(
+                  fraction: familiar.tierProgress,
+                  height: 5,
+                  colors: const [AppColors.amethyst, AppColors.magenta],
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                next == null
+                    ? 'BOND ${familiar.bond}'
+                    : 'BOND ${familiar.bond}/$next',
+                style: AppFonts.label(size: 8, color: AppColors.inkMuted),
+              ),
+            ],
           ),
         ],
       ),
@@ -181,15 +179,10 @@ Future<void> showAdoptFamiliarDialog(BuildContext context) async {
   );
   if (choice == null || !context.mounted) return;
   final messenger = ScaffoldMessenger.of(context);
-  final unlocked = await context.read<AppState>().adoptFamiliar(
-    choice.$1,
-    choice.$2,
-  );
-  final name =
-      context.mounted ? context.read<AppState>().hero?.familiar?.name : null;
-  messenger.showSnackBar(
-    SnackBar(content: Text('${name ?? choice.$1.label} settles by the fire.')),
-  );
+  final appState = context.read<AppState>();
+  final unlocked = await appState.adoptFamiliar(choice.$1, choice.$2);
+  final name = appState.hero?.familiar?.name ?? choice.$1.label;
+  messenger.showSnackBar(SnackBar(content: Text('$name settles by the fire.')));
   if (!context.mounted) return;
   await showAchievementsUnlocked(context, unlocked);
 }
@@ -222,99 +215,102 @@ class _AdoptDialogState extends State<_AdoptDialog> {
   Widget build(BuildContext context) {
     return Dialog(
       backgroundColor: Colors.transparent,
-      insetPadding: const EdgeInsets.symmetric(horizontal: 24),
+      insetPadding: const EdgeInsets.symmetric(horizontal: 20),
       child: ArcanePanel(
         accent: AppColors.gold,
         glow: AppColors.amethystBright,
         fillOpacity: 0.97,
-        padding: const EdgeInsets.fromLTRB(18, 18, 18, 14),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'ADOPT A FAMILIAR',
-              style: AppFonts.heading(
-                size: 14,
-                color: AppColors.gold,
-                letterSpacing: 2.4,
-              ),
-            ),
-            const SizedBox(height: 8),
-            const RuneDivider(color: AppColors.gold),
-            const SizedBox(height: 12),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                for (final species in FamiliarSpecies.values)
-                  _SpeciesChoice(
-                    species: species,
-                    selected: species == _species,
-                    onTap:
-                        () => setState(() {
-                          _species = species;
-                          _name.text = _randomName(species);
-                        }),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            Text(
-              _species.lore,
-              style: AppFonts.body(
-                size: 13,
-                color: AppColors.inkMuted,
-                style: FontStyle.italic,
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _name,
-              maxLength: 16,
-              textCapitalization: TextCapitalization.words,
-              decoration: InputDecoration(
-                labelText: 'Name',
-                counterText: '',
-                suffixIcon: IconButton(
-                  tooltip: 'Roll a name',
-                  icon: const Icon(Icons.casino_rounded),
-                  onPressed:
-                      () => setState(() => _name.text = _randomName(_species)),
+        padding: const EdgeInsets.fromLTRB(16, 18, 16, 14),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'ADOPT A FAMILIAR',
+                style: AppFonts.heading(
+                  size: 14,
+                  color: AppColors.gold,
+                  letterSpacing: 2.4,
                 ),
               ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'A familiar grows a bond with every quest you finish and, once '
-              'bonded, lends a little XP to each one.',
-              style: AppFonts.body(size: 12, color: AppColors.inkMuted),
-            ),
-            const SizedBox(height: 14),
-            Row(
-              children: [
-                Expanded(
-                  child: QuestButton(
-                    label: 'Not yet',
-                    compact: true,
-                    style: QuestButtonStyle.ghost,
-                    onPressed: () => Navigator.of(context).pop(),
-                  ),
+              const SizedBox(height: 8),
+              const RuneDivider(color: AppColors.gold),
+              const SizedBox(height: 12),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  for (final species in FamiliarSpecies.values)
+                    _SpeciesChoice(
+                      species: species,
+                      selected: species == _species,
+                      onTap:
+                          () => setState(() {
+                            _species = species;
+                            _name.text = _randomName(species);
+                          }),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Text(
+                _species.lore,
+                style: AppFonts.body(
+                  size: 13,
+                  color: AppColors.inkMuted,
+                  style: FontStyle.italic,
                 ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: QuestButton(
-                    label: 'Adopt',
-                    compact: true,
-                    style: QuestButtonStyle.gold,
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _name,
+                maxLength: 16,
+                textCapitalization: TextCapitalization.words,
+                decoration: InputDecoration(
+                  labelText: 'Name',
+                  counterText: '',
+                  suffixIcon: IconButton(
+                    tooltip: 'Roll a name',
+                    icon: const Icon(Icons.casino_rounded),
                     onPressed:
-                        () => Navigator.of(
-                          context,
-                        ).pop((_species, _name.text.trim())),
+                        () =>
+                            setState(() => _name.text = _randomName(_species)),
                   ),
                 ),
-              ],
-            ),
-          ],
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'A familiar grows a bond with every quest you finish and, once '
+                'bonded, lends a little XP to each one.',
+                style: AppFonts.body(size: 12, color: AppColors.inkMuted),
+              ),
+              const SizedBox(height: 14),
+              Row(
+                children: [
+                  Expanded(
+                    child: QuestButton(
+                      label: 'Not yet',
+                      compact: true,
+                      style: QuestButtonStyle.ghost,
+                      onPressed: () => Navigator.of(context).pop(),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: QuestButton(
+                      label: 'Adopt',
+                      compact: true,
+                      style: QuestButtonStyle.gold,
+                      onPressed:
+                          () => Navigator.of(
+                            context,
+                          ).pop((_species, _name.text.trim())),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -340,7 +336,7 @@ class _SpeciesChoice extends StatelessWidget {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 220),
         curve: Curves.easeOutCubic,
-        padding: const EdgeInsets.fromLTRB(6, 6, 6, 4),
+        padding: const EdgeInsets.fromLTRB(4, 6, 4, 4),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(12),
           color:
@@ -358,13 +354,13 @@ class _SpeciesChoice extends StatelessWidget {
             FamiliarSprite(
               species: species,
               mood: selected ? FamiliarMood.joyful : FamiliarMood.watchful,
-              size: 72,
+              size: 60,
               dimmed: !selected,
             ),
             Text(
               species.label.toUpperCase(),
               style: AppFonts.label(
-                size: 9,
+                size: 8,
                 color: selected ? AppColors.gold : AppColors.inkMuted,
               ),
             ),

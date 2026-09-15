@@ -11,6 +11,7 @@ import 'package:quest_key/models/character.dart';
 enum FamiliarSpecies {
   cat('Cat', 'A shadow cat. Aloof, then suddenly not.'),
   hound('Hound', 'A shadow hound. Loyal past all reason.'),
+  weasel('Weasel', 'A shadow weasel. Into everything, especially your bag.'),
   owl('Owl', 'A shadow owl. Sees what you would rather not.');
 
   const FamiliarSpecies(this.label, this.lore);
@@ -173,6 +174,14 @@ String familiarLine(Familiar familiar, FamiliarMood mood) {
       '$n thumps its tail. One quest is enough to be a hero to a hound.',
     (FamiliarSpecies.hound, FamiliarMood.joyful) =>
       '$n cannot sit still. The streak burns and so does its tail.',
+    (FamiliarSpecies.weasel, FamiliarMood.sleepy) =>
+      '$n has poured itself into your boot to sleep.',
+    (FamiliarSpecies.weasel, FamiliarMood.watchful) =>
+      '$n keeps checking the quest log, then checking you.',
+    (FamiliarSpecies.weasel, FamiliarMood.content) =>
+      '$n does a small victory dance. It is mostly wriggling.',
+    (FamiliarSpecies.weasel, FamiliarMood.joyful) =>
+      '$n is doing laps of the hearth. The streak has gone to its head.',
     (FamiliarSpecies.owl, FamiliarMood.sleepy) =>
       '$n has closed one eye. It is saving the other for you.',
     (FamiliarSpecies.owl, FamiliarMood.watchful) =>
@@ -188,6 +197,7 @@ String familiarLine(Familiar familiar, FamiliarMood mood) {
 String familiarPettedLine(Familiar familiar) => switch (familiar.species) {
   FamiliarSpecies.cat => '${familiar.name} allows it. Briefly.',
   FamiliarSpecies.hound => '${familiar.name} leans its whole weight on you.',
+  FamiliarSpecies.weasel => '${familiar.name} chatters and steals a button.',
   FamiliarSpecies.owl => '${familiar.name} fluffs up to twice its size.',
 };
 
@@ -195,5 +205,6 @@ String familiarPettedLine(Familiar familiar) => switch (familiar.species) {
 const Map<FamiliarSpecies, List<String>> familiarNames = {
   FamiliarSpecies.cat: ['Nyx', 'Soot', 'Vesper', 'Ash', 'Grimalkin', 'Pyre'],
   FamiliarSpecies.hound: ['Barrow', 'Ember', 'Gnash', 'Wolfram', 'Brand'],
+  FamiliarSpecies.weasel: ['Pip', 'Ferrous', 'Nettle', 'Sprocket', 'Tallow'],
   FamiliarSpecies.owl: ['Umbra', 'Sable', 'Quill', 'Moth', 'Noctis', 'Vigil'],
 };
