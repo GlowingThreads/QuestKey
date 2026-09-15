@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:quest_key/constants/app_colors.dart';
 import 'package:quest_key/constants/app_dimens.dart';
 import 'package:quest_key/models/character.dart';
-import 'package:quest_key/pages/hero_creation_page.dart';
+import 'package:quest_key/theme/app_theme.dart';
 import 'package:quest_key/widgets/common/ui_kit.dart';
 
-/// Compact hero card for the Home tab.
+/// Character sheet card: framed portrait, name and titles, mana orb with
+/// level and XP ring, resource bars.
 class HeroProfileCard extends StatelessWidget {
   final HeroCharacter hero;
 
@@ -13,109 +14,110 @@ class HeroProfileCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GlassPanel(
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
+    final hasPoints = hero.levelUp.statPoints > 0;
+    final background = hero.background;
+
+    return ArcanePanel(
+      glow: hasPoints ? AppColors.gold : null,
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
+      child: Column(
         children: [
-          Container(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(AppRadius.md),
-              border: Border.all(color: AppColors.accentGold, width: 1.5),
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.accentGold.withValues(alpha: 0.25),
-                  blurRadius: 12,
-                ),
-              ],
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(AppRadius.md - 1),
-              child: SizedBox(
-                height: AppImageSizes.heroAvatar,
-                width: AppImageSizes.heroAvatar,
-                child: HeroAvatar(imageUrl: hero.imageUrl),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              FramedPortrait(
+                imageUrl: hero.imageUrl,
+                size: 92,
+                glow: hasPoints ? AppColors.gold : null,
               ),
-            ),
-          ),
-          const SizedBox(width: AppPadding.lg),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(
-                      child: Text(
-                        hero.name,
-                        style: Theme.of(context).textTheme.titleLarge,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                    Text(
+                      hero.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppFonts.heading(size: 19, letterSpacing: 0.8),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      background == null
+                          ? hero.classes.className
+                          : '${hero.classes.className} · ${background.name}',
+                      style: AppFonts.label(size: 10, color: AppColors.teal),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      '"${hero.motto}"',
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppFonts.body(
+                        size: 13,
+                        color: AppColors.inkMuted,
+                        style: FontStyle.italic,
                       ),
                     ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: AppPadding.sm,
-                        vertical: 2,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppColors.accentGold.withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(AppRadius.sm),
-                        border: Border.all(color: AppColors.accentGold),
-                      ),
-                      child: Text(
-                        'Lv. ${hero.levelUp.level}',
-                        style: const TextStyle(
-                          color: AppColors.accentGold,
-                          fontWeight: FontWeight.bold,
-                          fontSize: AppFontSizes.xs,
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        _MiniStat(
+                          Icons.emoji_events_rounded,
+                          hero.questsCompleted,
+                          'QUESTS',
                         ),
-                      ),
+                        const SizedBox(width: 14),
+                        _MiniStat(
+                          Icons.local_fire_department_rounded,
+                          hero.currentStreak,
+                          'STREAK',
+                        ),
+                      ],
                     ),
                   ],
                 ),
-                Text(
-                  '${classEmoji(hero.classes.className)} '
-                  '${hero.classes.className}'
-                  '${hero.background == null ? '' : ' · ${hero.background!.name}'}',
-                  style: const TextStyle(
-                    color: AppColors.accentGreen,
-                    fontSize: AppFontSizes.xs,
-                    fontWeight: FontWeight.w600,
-                  ),
+              ),
+              const SizedBox(width: 8),
+              ManaOrb(
+                level: hero.levelUp.level,
+                progress: hero.levelUp.progress,
+                size: 78,
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          const RuneDivider(),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: _Resource(
+                  label: 'HP',
+                  value: hero.health,
+                  max: 100 + hero.levelUp.level * 5,
+                  colors: const [Color(0xFF7A1E1E), AppColors.ruby],
                 ),
-                const SizedBox(height: AppPadding.xs),
-                Text(
-                  '"${hero.motto}"',
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: AppColors.textSecondary,
-                    fontStyle: FontStyle.italic,
-                    fontSize: AppFontSizes.xs,
-                  ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _Resource(
+                  label: 'MP',
+                  value: hero.mana,
+                  max: 50 + hero.levelUp.level * 5,
+                  colors: const [Color(0xFF1E3A8A), AppColors.arcaneBlue],
                 ),
-                const SizedBox(height: AppPadding.sm),
-                Row(
-                  children: [
-                    _MiniStat(Icons.favorite, hero.health, Colors.redAccent),
-                    const SizedBox(width: AppPadding.md),
-                    _MiniStat(Icons.bolt, hero.mana, Colors.lightBlueAccent),
-                    const SizedBox(width: AppPadding.md),
-                    _MiniStat(
-                      Icons.flash_on,
-                      hero.stamina,
-                      Colors.orangeAccent,
-                    ),
-                    const Spacer(),
-                    _MiniStat(
-                      Icons.emoji_events,
-                      hero.questsCompleted,
-                      AppColors.accentGold,
-                    ),
-                  ],
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _Resource(
+                  label: 'STA',
+                  value: hero.stamina,
+                  max: 75 + hero.levelUp.level * 8,
+                  colors: const [Color(0xFF7A4A10), AppColors.gold],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ],
       ),
@@ -124,28 +126,90 @@ class HeroProfileCard extends StatelessWidget {
 }
 
 class _MiniStat extends StatelessWidget {
-  const _MiniStat(this.icon, this.value, this.color);
+  const _MiniStat(this.icon, this.value, this.label);
 
   final IconData icon;
   final int value;
-  final Color color;
+  final String label;
 
   @override
   Widget build(BuildContext context) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 14, color: color),
-        const SizedBox(width: 3),
+        Icon(icon, size: 14, color: AppColors.gold),
+        const SizedBox(width: 4),
         AnimatedCount(
           value: value,
-          style: TextStyle(
-            color: color,
-            fontWeight: FontWeight.bold,
-            fontSize: AppFontSizes.xs,
-          ),
+          style: AppFonts.body(size: 13, weight: FontWeight.w700),
         ),
+        const SizedBox(width: 3),
+        Text(label, style: AppFonts.label(size: 8, color: AppColors.inkMuted)),
       ],
     );
   }
 }
+
+class _Resource extends StatelessWidget {
+  const _Resource({
+    required this.label,
+    required this.value,
+    required this.max,
+    required this.colors,
+  });
+
+  final String label;
+  final int value;
+  final int max;
+  final List<Color> colors;
+
+  @override
+  Widget build(BuildContext context) {
+    final safeMax = max <= 0 ? 1 : (value > max ? value : max);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(label, style: AppFonts.label(size: 9, color: colors.last)),
+            Text(
+              '$value/$safeMax',
+              style: AppFonts.body(size: 11, color: AppColors.inkMuted),
+            ),
+          ],
+        ),
+        const SizedBox(height: 3),
+        AnimatedBar(fraction: value / safeMax, height: 7, colors: colors),
+      ],
+    );
+  }
+}
+
+/// Legacy wrapper kept for older call sites.
+class HeroAvatar extends StatelessWidget {
+  const HeroAvatar({super.key, required this.imageUrl, this.fallbackLabel});
+
+  final String imageUrl;
+  final String? fallbackLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    return Image.asset(
+      imageUrl,
+      fit: BoxFit.cover,
+      errorBuilder:
+          (_, _, _) => Container(
+            color: AppColors.amethyst,
+            alignment: Alignment.center,
+            child: Text(
+              fallbackLabel ?? '?',
+              style: AppFonts.heading(size: 22),
+            ),
+          ),
+    );
+  }
+}
+
+/// Convenience for pages that only need the gap constant.
+const double heroCardGap = AppPadding.lg;

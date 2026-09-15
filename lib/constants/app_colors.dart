@@ -1,55 +1,56 @@
 import 'package:flutter/material.dart';
 
+/// Colour language of the app, taken from the artwork: obsidian and deep
+/// amethyst grounds, bronze frames, teal gems, gold highlights.
 class AppColors {
-  // Primary colors
-  static const Color primaryDark = Color.fromARGB(255, 29, 17, 62);
-  static const Color primaryDarker = Color.fromARGB(255, 20, 12, 46);
+  // Grounds
+  static const Color obsidian = Color(0xFF0B0718);
+  static const Color midnight = Color(0xFF140C2E);
+  static const Color amethyst = Color(0xFF3A1C71);
+  static const Color amethystBright = Color(0xFF7B3FE4);
+  static const Color magenta = Color(0xFFC542F5);
 
-  // Background colors
-  static const Color bgDark = Color.fromARGB(128, 0, 0, 0);
-  static const Color bgDarkTransparent = Color.fromARGB(100, 29, 17, 62);
-  static const Color bgOverlay = Color.fromARGB(128, 2, 2, 2);
-  static const Color bgPurple = Color.fromARGB(128, 128, 0, 128);
+  // Metals and gems
+  static const Color bronze = Color(0xFF8C6239);
+  static const Color bronzeLight = Color(0xFFC89B5C);
+  static const Color gold = Color(0xFFE8C46A);
+  static const Color teal = Color(0xFF2EE6C5);
+  static const Color arcaneBlue = Color(0xFF4FC3F7);
+  static const Color ruby = Color(0xFFE05A5A);
 
-  // Status colors
-  static const Color completedGreen = Color.fromARGB(128, 23, 135, 81);
-  static const Color deleteRed = Color.fromARGB(128, 139, 21, 12);
-  static const Color completeGreen = Color.fromARGB(128, 86, 183, 118);
+  // Text
+  static const Color ink = Color(0xFFF3ECDC);
+  static const Color inkMuted = Color(0xFFB8AFC9);
+  static const Color parchment = Color(0xFFEFE4C8);
 
-  // Text colors
-  static const Color textPrimary = Colors.white;
-  static const Color textSecondary = Colors.white70;
-  static const Color textTertiary = Color.fromARGB(199, 255, 255, 255);
-
-  // Accent colors
-  static const Color accentGreen = Color.fromARGB(255, 59, 251, 148);
-  static const Color accentGold = Color.fromARGB(255, 255, 191, 0);
-  static const Color accentAmber = Colors.amberAccent;
-  static const Color accentPurple = Colors.deepPurple;
-
-  // Border colors
-  static const Color borderLight = Colors.white24;
-  static const Color borderMedium = Color.fromARGB(100, 255, 255, 255);
-  static const Color borderTeal = Color.fromARGB(60, 22, 255, 174);
-
-  // Gradient colors
+  // ---- Legacy names kept so older widgets keep compiling ----
+  static const Color primaryDark = midnight;
+  static const Color primaryDarker = obsidian;
+  static const Color bgDark = Color(0xCC140C2E);
+  static const Color bgDarkTransparent = Color(0x99140C2E);
+  static const Color bgOverlay = Color(0xB30B0718);
+  static const Color bgPurple = Color(0xB33A1C71);
+  static const Color completedGreen = Color(0x991F6B5C);
+  static const Color deleteRed = Color(0xB37A1E1E);
+  static const Color completeGreen = Color(0xB31F8F86);
+  static const Color textPrimary = ink;
+  static const Color textSecondary = inkMuted;
+  static const Color textTertiary = Color(0xCCF3ECDC);
+  static const Color accentGreen = teal;
+  static const Color accentGold = gold;
+  static const Color accentAmber = gold;
+  static const Color accentPurple = amethystBright;
+  static const Color borderLight = Color(0x668C6239);
+  static const Color borderMedium = Color(0x99C89B5C);
+  static const Color borderTeal = Color(0x552EE6C5);
   static const List<Color> xpGradient = [
-    Color.fromARGB(255, 98, 0, 234),
-    Color.fromARGB(255, 186, 104, 200),
-    Color.fromARGB(255, 255, 171, 255),
-    Color.fromARGB(255, 255, 255, 255),
+    amethyst,
+    amethystBright,
+    magenta,
+    gold,
   ];
-
-  static const List<Color> statGradient = [
-    Colors.redAccent,
-    Colors.deepOrange,
-    Colors.orange,
-    Colors.yellowAccent,
-    Colors.white70,
-  ];
-
-  // Shadow colors
-  static const Color shadowPurple = Color.fromARGB(225, 230, 112, 251);
-  static const Color shadowGold = Color.fromARGB(128, 255, 191, 0);
-  static const Color shadowGreen = Colors.lightGreenAccent;
+  static const List<Color> statGradient = [bronze, bronzeLight, gold];
+  static const Color shadowPurple = Color(0xE07B3FE4);
+  static const Color shadowGold = Color(0x80E8C46A);
+  static const Color shadowGreen = teal;
 }

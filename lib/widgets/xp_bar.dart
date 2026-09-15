@@ -1,136 +1,54 @@
 import 'package:flutter/material.dart';
 import 'package:quest_key/constants/app_colors.dart';
-import 'package:quest_key/constants/app_dimens.dart';
+import 'package:quest_key/theme/app_theme.dart';
+import 'package:quest_key/widgets/common/ui_kit.dart';
 
-class XpBar extends StatefulWidget {
+/// Experience bar in a bronze frame.
+class XpBar extends StatelessWidget {
   final int currentXp;
   final int maxXp;
 
   const XpBar({super.key, required this.currentXp, required this.maxXp});
 
   @override
-  State<XpBar> createState() => _XpBarState();
-}
-
-class _XpBarState extends State<XpBar> with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _progressAnimation;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(duration: AppDurations.long, vsync: this);
-    _setupAnimation();
-    _controller.forward();
-  }
-
-  @override
-  void didUpdateWidget(XpBar oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.currentXp != widget.currentXp) {
-      _setupAnimation();
-      _controller.forward(from: 0.0);
-    }
-  }
-
-  void _setupAnimation() {
-    final progress = (widget.currentXp / widget.maxXp).clamp(0.0, 1.0);
-    _progressAnimation = Tween<double>(
-      begin: 0.0,
-      end: progress,
-    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final progress = (widget.currentXp / widget.maxXp).clamp(0.0, 1.0);
-    final percentage = (progress * 100).toStringAsFixed(1);
+    final progress = maxXp == 0 ? 0.0 : (currentXp / maxXp).clamp(0.0, 1.0);
+    final percentage = (progress * 100).toStringAsFixed(0);
 
-    return Container(
-      padding: const EdgeInsets.all(AppPadding.xl),
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: AppColors.bgDark,
-        borderRadius: BorderRadius.circular(AppRadius.xl),
-        border: Border.all(
-          color: AppColors.borderLight,
-          width: AppBorders.medium,
-        ),
-      ),
+    return ArcanePanel(
+      ornate: false,
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 14),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                'Experience Points',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: AppColors.textPrimary,
-                  fontWeight: FontWeight.bold,
-                ),
+              const Icon(
+                Icons.auto_awesome_rounded,
+                size: 14,
+                color: AppColors.gold,
               ),
+              const SizedBox(width: 6),
               Text(
-                '$percentage%',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: AppColors.textSecondary,
-                  fontSize: AppFontSizes.sm,
-                ),
+                'EXPERIENCE',
+                style: AppFonts.label(size: 10, color: AppColors.gold),
+              ),
+              const Spacer(),
+              Text(
+                '$currentXp / $maxXp XP  ·  $percentage%',
+                style: AppFonts.body(size: 12, color: AppColors.inkMuted),
               ),
             ],
           ),
-          const SizedBox(height: AppPadding.sm),
+          const SizedBox(height: 8),
+          AnimatedBar(fraction: progress, height: 12),
+          const SizedBox(height: 6),
           Text(
-            '${widget.currentXp} / ${widget.maxXp} XP',
-            style: Theme.of(
-              context,
-            ).textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
-          ),
-          const SizedBox(height: AppPadding.lg),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(AppRadius.md),
-            child: Container(
-              height: AppHeights.xpBar,
-              decoration: BoxDecoration(
-                color: AppColors.primaryDarker,
-                borderRadius: BorderRadius.circular(AppRadius.md),
-              ),
-              child: Stack(
-                children: [
-                  // Animated progress bar
-                  AnimatedBuilder(
-                    animation: _progressAnimation,
-                    builder: (context, child) {
-                      return FractionallySizedBox(
-                        alignment: Alignment.centerLeft,
-                        widthFactor: _progressAnimation.value,
-                        child: Container(
-                          height: AppHeights.xpBar,
-                          decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: AppColors.xpGradient,
-                            ),
-                            borderRadius: BorderRadius.circular(AppRadius.md),
-                            boxShadow: [
-                              const BoxShadow(
-                                color: AppColors.shadowPurple,
-                                blurRadius: 8,
-                                spreadRadius: 1,
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ],
-              ),
+            '${maxXp - currentXp} XP to the next level',
+            style: AppFonts.body(
+              size: 12,
+              color: AppColors.inkMuted,
+              style: FontStyle.italic,
             ),
           ),
         ],

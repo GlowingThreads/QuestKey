@@ -123,7 +123,7 @@ void main() {
 
     expect(find.text('Slay the inbox'), findsNWidgets(2)); // field + preview
     expect(find.text('Hard · +200 XP'), findsOneWidget);
-    expect(find.textContaining('★★★★ +200 XP'), findsOneWidget);
+    expect(find.text('HARD · 200 XP'), findsOneWidget);
   });
 
   testWidgets('a quick-start template fills the form and category', (
@@ -131,7 +131,7 @@ void main() {
   ) async {
     await pumpPage(tester);
 
-    await tapVisible(tester, find.text('💧 Drink water'));
+    await tapVisible(tester, find.text('Drink water'));
     await tapVisible(tester, find.text('Today 6 pm'));
     await tapVisible(tester, find.text('Forge Quest'));
 
@@ -146,7 +146,7 @@ void main() {
     await pumpPage(tester);
 
     await enterDetails(tester, 'Essay', 'Write the intro');
-    await tapVisible(tester, find.text('📚 Study'));
+    await tapVisible(tester, find.text('Study'));
     await tapVisible(tester, find.byKey(const ValueKey('difficulty_star_3')));
     await tapVisible(tester, find.text('Tomorrow 9 am'));
     await tapVisible(tester, find.text('Forge Quest'));

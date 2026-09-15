@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:quest_key/constants/app_colors.dart';
-import 'package:quest_key/constants/app_dimens.dart';
+import 'package:quest_key/theme/app_theme.dart';
+import 'package:quest_key/widgets/common/ui_kit.dart';
 
-class StatBar extends StatefulWidget {
+/// One attribute row: name, value, bronze bar and an optional "+" gem.
+class StatBar extends StatelessWidget {
   final String label;
   final int value;
   final VoidCallback? onAdd;
@@ -14,143 +16,61 @@ class StatBar extends StatefulWidget {
     this.onAdd,
   });
 
-  @override
-  State<StatBar> createState() => _StatBarState();
-}
-
-class _StatBarState extends State<StatBar> with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _fillAnimation;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(duration: AppDurations.long, vsync: this);
-    _setupAnimation();
-    _controller.forward();
-  }
-
-  @override
-  void didUpdateWidget(StatBar oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.value != widget.value) {
-      _setupAnimation();
-      _controller.forward(from: 0.0);
-    }
-  }
-
-  void _setupAnimation() {
-    final fillPercent = (widget.value / 20).clamp(0.0, 1.0);
-    _fillAnimation = Tween<double>(
-      begin: 0.0,
-      end: fillPercent,
-    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
+  static const int _maxStat = 20;
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: AppPadding.md),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: Text(
-                  widget.label,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppColors.textPrimary,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
+          SizedBox(
+            width: 104,
+            child: Text(
+              label,
+              style: AppFonts.label(size: 10, color: AppColors.ink),
+            ),
+          ),
+          Expanded(
+            child: AnimatedBar(
+              fraction: value / _maxStat,
+              height: 9,
+              colors: AppColors.statGradient,
+            ),
+          ),
+          const SizedBox(width: 10),
+          SizedBox(
+            width: 26,
+            child: Text(
+              '$value',
+              textAlign: TextAlign.right,
+              style: AppFonts.body(
+                size: 14,
+                weight: FontWeight.w700,
+                color: AppColors.gold,
               ),
-              Text(
-                '${widget.value}',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: AppColors.textSecondary,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              if (widget.onAdd != null) ...[
-                const SizedBox(width: AppPadding.md),
-                SizedBox(
-                  width: 28,
-                  height: 28,
-                  child: Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      onTap: widget.onAdd,
-                      borderRadius: BorderRadius.circular(14),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          border: Border.all(
-                            color: AppColors.borderLight,
-                            width: AppBorders.thin,
-                          ),
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                        child: const Icon(
-                          Icons.add,
-                          color: AppColors.textPrimary,
-                          size: AppIconSizes.sm,
+            ),
+          ),
+          const SizedBox(width: 8),
+          SizedBox(
+            width: 30,
+            height: 30,
+            child:
+                onAdd == null
+                    ? const SizedBox.shrink()
+                    : Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: onAdd,
+                        customBorder: const CircleBorder(),
+                        child: const GemRing(
+                          icon: Icons.add_rounded,
+                          color: AppColors.teal,
+                          size: 30,
+                          iconColor: AppColors.obsidian,
                         ),
                       ),
                     ),
-                  ),
-                ),
-              ],
-            ],
-          ),
-          const SizedBox(height: AppPadding.md),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(AppRadius.md),
-            child: Container(
-              height: AppHeights.statBar,
-              decoration: BoxDecoration(
-                color: AppColors.primaryDarker,
-                borderRadius: BorderRadius.circular(AppRadius.md),
-              ),
-              child: Stack(
-                children: [
-                  // Animated filled bar
-                  AnimatedBuilder(
-                    animation: _fillAnimation,
-                    builder: (context, child) {
-                      return FractionallySizedBox(
-                        alignment: Alignment.centerLeft,
-                        widthFactor: _fillAnimation.value,
-                        child: Container(
-                          height: AppHeights.statBar,
-                          decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: AppColors.statGradient,
-                            ),
-                            borderRadius: BorderRadius.circular(AppRadius.md),
-                            boxShadow: [
-                              BoxShadow(
-                                color: AppColors.shadowGreen.withValues(
-                                  alpha: 0.6,
-                                ),
-                                blurRadius: 8,
-                                spreadRadius: 1,
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ],
-              ),
-            ),
           ),
         ],
       ),

@@ -1,5 +1,27 @@
 # Quest Key: gameplay and UX features
 
+## Art-directed UI (Phase 8)
+
+Built on the committed artwork instead of emoji and stock Material chips:
+
+- Palette from the illustrations (obsidian, amethyst, bronze, teal gems,
+  gold) in `lib/constants/app_colors.dart`; bundled OFL fonts, Cinzel for
+  display and Spectral for reading text (`assets/fonts`, `AppFonts`).
+- `lib/widgets/common/ui_kit.dart`: `ArcanePanel` (bronze double frame with
+  gem-set corner brackets), `GemRing`, `RuneTag`, `RuneDivider`,
+  `PortholeBadge` (the hand-lettered badge art), `FramedPortrait`,
+  `ManaOrb` (level + XP ring), `StatRadar` (seven-axis attribute sigil),
+  `AnimatedBar`, `QuestButton`, `PageBackground` with vignette.
+- `lib/theme/iconography.dart` maps categories, origins, skills and
+  achievements to icons and the badge/background art paths.
+- Nav bar uses the porthole badges as the tabs (their art carries the
+  labels). Level-up uses the gold arrow with a rotating sunburst; quest
+  completion releases golden embers; the class step of the hero wizard
+  shows the class glyph tiles and a radar of starting attributes.
+- Skills and achievements are still cosmetic: see the roadmap discussion in
+  the pull request for the planned mana / spell mechanics.
+
+
 ## UI upgrade (Phase 7)
 
 - **Shared theme** (`lib/theme/app_theme.dart`): one dark-fantasy palette,

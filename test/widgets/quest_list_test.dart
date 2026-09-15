@@ -66,7 +66,7 @@ void main() {
     tester,
   ) async {
     await pumpList(tester, filter: QuestStatus.completed);
-    expect(find.textContaining('No completed quests yet'), findsOneWidget);
+    expect(find.textContaining('No quests completed yet'), findsOneWidget);
   });
 
   testWidgets('swiping right completes the quest and awards XP', (
@@ -78,7 +78,7 @@ void main() {
     await tester.pumpAndSettle();
 
     // First completion unlocks an achievement; the dialog is shown.
-    expect(find.text('Achievement unlocked!'), findsOneWidget);
+    expect(find.text('ACHIEVEMENT UNLOCKED'), findsOneWidget);
     expect(find.text('Quest Initiate'), findsOneWidget);
     await tester.tap(find.text('Nice!'));
     await tester.pumpAndSettle();
@@ -165,7 +165,7 @@ void main() {
       DismissDirection.horizontal,
       DismissDirection.endToStart,
     ]);
-    expect(find.text('Done'), findsOneWidget);
+    expect(find.text('DONE'), findsOneWidget);
   });
 
   testWidgets('on the "All" view completing keeps the quest in the list', (

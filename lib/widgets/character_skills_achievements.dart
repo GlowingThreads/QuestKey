@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:quest_key/constants/app_colors.dart';
-import 'package:quest_key/constants/app_dimens.dart';
 import 'package:quest_key/models/character.dart';
 import 'package:quest_key/models/character_achievement.dart';
 import 'package:quest_key/models/character_skill.dart';
 import 'package:quest_key/state/app_state.dart';
+import 'package:quest_key/theme/app_theme.dart';
+import 'package:quest_key/theme/iconography.dart';
+import 'package:quest_key/widgets/common/ui_kit.dart';
 
-/// Skills the hero can learn and achievements it can earn, with progress.
+/// Grimoire (skills to learn) and Hall of Honours (achievements).
 class CharacterSkillsAchievements extends StatefulWidget {
   final HeroCharacter hero;
 
@@ -21,13 +23,10 @@ class CharacterSkillsAchievements extends StatefulWidget {
 class _CharacterSkillsAchievementsState
     extends State<CharacterSkillsAchievements>
     with TickerProviderStateMixin {
-  late TabController _tabController;
-
-  @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(length: 2, vsync: this);
-  }
+  late final TabController _tabController = TabController(
+    length: 2,
+    vsync: this,
+  );
 
   @override
   void dispose() {
@@ -38,31 +37,30 @@ class _CharacterSkillsAchievementsState
   @override
   Widget build(BuildContext context) {
     final hero = widget.hero;
-    final unlockedCount = hero.unlockedAchievements.length;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.bgOverlay,
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-        border: Border.all(
-          color: AppColors.borderLight,
-          width: AppBorders.thin,
-        ),
-      ),
+    return ArcanePanel(
+      padding: EdgeInsets.zero,
       child: Column(
         children: [
           TabBar(
             controller: _tabController,
-            labelColor: AppColors.textPrimary,
-            unselectedLabelColor: AppColors.textSecondary,
-            indicatorColor: AppColors.accentGreen,
+            labelStyle: AppFonts.label(size: 11, color: AppColors.gold),
+            unselectedLabelStyle: AppFonts.label(
+              size: 11,
+              color: AppColors.inkMuted,
+            ),
+            labelColor: AppColors.gold,
+            unselectedLabelColor: AppColors.inkMuted,
+            indicatorColor: AppColors.teal,
+            dividerColor: AppColors.bronze,
             tabs: [
               Tab(
                 text:
-                    'Skills (${hero.learnedSkills.length}/${allSkills.length})',
+                    'GRIMOIRE ${hero.learnedSkills.length}/${allSkills.length}',
               ),
               Tab(
-                text: 'Achievements ($unlockedCount/${allAchievements.length})',
+                text:
+                    'HONOURS ${hero.unlockedAchievements.length}/${allAchievements.length}',
               ),
             ],
           ),
@@ -81,101 +79,76 @@ class _CharacterSkillsAchievementsState
     final skills = [...allSkills]
       ..sort((a, b) => a.levelRequired.compareTo(b.levelRequired));
 
-    return ListView.builder(
-      padding: const EdgeInsets.all(AppPadding.lg),
+    return ListView.separated(
+      padding: const EdgeInsets.all(14),
       itemCount: skills.length,
+      separatorBuilder: (_, _) => const SizedBox(height: 8),
       itemBuilder: (context, index) {
         final skill = skills[index];
         final learned = hero.hasSkill(skill.id);
         final canLearn = !learned && hero.canLearnSkill(skill);
-        final color = _getCategoryColor(skill.category);
+        final color = skillCategoryColor(skill.category);
 
         return Opacity(
           opacity: learned || canLearn ? 1 : 0.55,
           child: Container(
-            margin: const EdgeInsets.only(bottom: AppPadding.md),
-            padding: const EdgeInsets.all(AppPadding.lg),
+            padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: AppColors.primaryDarker,
-              borderRadius: BorderRadius.circular(AppRadius.md),
+              color: AppColors.obsidian.withValues(alpha: 0.5),
+              borderRadius: BorderRadius.circular(10),
               border: Border.all(
-                color: learned ? color : AppColors.borderLight,
-                width: learned ? AppBorders.medium : AppBorders.thin,
+                color: learned ? color : AppColors.bronze,
+                width: learned ? 1.4 : 1,
               ),
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            child: Row(
               children: [
-                Row(
-                  children: [
-                    Text(skill.icon, style: const TextStyle(fontSize: 24)),
-                    const SizedBox(width: AppPadding.md),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            skill.name,
-                            style: Theme.of(
-                              context,
-                            ).textTheme.bodyLarge?.copyWith(
-                              color: AppColors.textPrimary,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          Text(
-                            _requirementsLabel(skill, hero),
-                            style: Theme.of(
-                              context,
-                            ).textTheme.labelSmall?.copyWith(
-                              color:
-                                  canLearn || learned
-                                      ? AppColors.accentGreen
-                                      : AppColors.textSecondary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    if (learned)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: AppPadding.sm,
-                          vertical: AppPadding.xs,
-                        ),
-                        decoration: BoxDecoration(
-                          color: color.withValues(alpha: 0.25),
-                          borderRadius: BorderRadius.circular(AppRadius.sm),
-                          border: Border.all(color: color),
-                        ),
-                        child: Text(
-                          'Learned',
-                          style: Theme.of(
-                            context,
-                          ).textTheme.labelSmall?.copyWith(color: color),
-                        ),
-                      )
-                    else
-                      FilledButton(
-                        onPressed:
-                            canLearn ? () => _learn(context, skill) : null,
-                        style: FilledButton.styleFrom(
-                          backgroundColor: AppColors.accentPurple,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: AppPadding.md,
-                          ),
-                        ),
-                        child: const Text('Learn'),
-                      ),
-                  ],
+                GemRing(
+                  icon: skillIcon(skill.id),
+                  color: color,
+                  size: 42,
+                  dimmed: !learned && !canLearn,
                 ),
-                const SizedBox(height: AppPadding.sm),
-                Text(
-                  skill.description,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: AppColors.textSecondary,
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        skill.name,
+                        style: AppFonts.heading(size: 13, letterSpacing: 0.6),
+                      ),
+                      Text(
+                        _requirementsLabel(skill, hero),
+                        style: AppFonts.label(
+                          size: 9,
+                          color:
+                              canLearn || learned
+                                  ? AppColors.teal
+                                  : AppColors.inkMuted,
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        skill.description,
+                        style: AppFonts.body(
+                          size: 12,
+                          color: AppColors.inkMuted,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
+                const SizedBox(width: 8),
+                if (learned)
+                  RuneTag(text: 'LEARNED', color: color, filled: true)
+                else
+                  QuestButton(
+                    label: 'Learn',
+                    compact: true,
+                    expand: false,
+                    onPressed: canLearn ? () => _learn(context, skill) : null,
+                  ),
               ],
             ),
           ),
@@ -185,13 +158,14 @@ class _CharacterSkillsAchievementsState
   }
 
   String _requirementsLabel(CharacterSkill skill, HeroCharacter hero) {
-    final parts = <String>['Lv. ${skill.levelRequired}'];
+    final parts = <String>['LV ${skill.levelRequired}'];
     for (final req in skill.requirements) {
       final split = req.split(':');
       if (split.length == 2) {
-        final stat = split[0];
         final needed = int.tryParse(split[1]) ?? 0;
-        parts.add('$stat ${hero.statValue(stat)}/$needed');
+        parts.add(
+          '${statAbbreviation(split[0])} ${hero.statValue(split[0])}/$needed',
+        );
       }
     }
     return parts.join(' · ');
@@ -201,140 +175,71 @@ class _CharacterSkillsAchievementsState
     final messenger = ScaffoldMessenger.of(context);
     final learned = await context.read<AppState>().learnSkill(skill);
     if (!learned) return;
-    messenger.showSnackBar(
-      SnackBar(content: Text('${skill.icon} Learned ${skill.name}!')),
-    );
+    messenger.showSnackBar(SnackBar(content: Text('Learned ${skill.name}.')));
   }
 
   Widget _buildAchievementsTab(HeroCharacter hero) {
     return GridView.builder(
-      padding: const EdgeInsets.all(AppPadding.lg),
+      padding: const EdgeInsets.all(14),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        crossAxisSpacing: AppPadding.md,
-        mainAxisSpacing: AppPadding.md,
-        childAspectRatio: 1.15,
+        crossAxisCount: 3,
+        crossAxisSpacing: 10,
+        mainAxisSpacing: 10,
+        childAspectRatio: 0.82,
       ),
       itemCount: allAchievements.length,
       itemBuilder: (context, index) {
         final achievement = allAchievements[index];
         final unlocked = hero.hasAchievement(achievement.id);
         final secret = achievement.hidden && !unlocked;
+        final color =
+            unlocked ? rarityColor(achievement.rarityScore) : AppColors.bronze;
 
-        return _buildAchievementCard(
-          context,
-          icon: secret ? '❓' : achievement.icon,
-          name: secret ? '???' : achievement.name,
-          description:
+        return Tooltip(
+          message:
               secret
-                  ? 'Hidden achievement. Keep questing!'
+                  ? 'A hidden honour. Keep questing.'
                   : achievement.description,
-          rarityColor:
-              unlocked
-                  ? _getRarityColor(achievement.rarityScore)
-                  : AppColors.borderLight,
-          unlocked: unlocked,
+          triggerMode: TooltipTriggerMode.tap,
+          child: Opacity(
+            opacity: unlocked ? 1 : 0.5,
+            child: Column(
+              children: [
+                unlocked
+                    ? PulseGlow(
+                      color: color,
+                      radius: 10,
+                      child: GemRing(
+                        icon: achievementIcon(achievement.id),
+                        color: color,
+                        size: 50,
+                      ),
+                    )
+                    : GemRing(
+                      icon:
+                          secret
+                              ? Icons.question_mark_rounded
+                              : Icons.lock_outline_rounded,
+                      color: AppColors.midnight,
+                      size: 50,
+                      dimmed: true,
+                    ),
+                const SizedBox(height: 6),
+                Text(
+                  secret ? '???' : achievement.name,
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppFonts.label(
+                    size: 8,
+                    color: unlocked ? AppColors.ink : AppColors.inkMuted,
+                  ),
+                ),
+              ],
+            ),
+          ),
         );
       },
     );
-  }
-
-  Widget _buildAchievementCard(
-    BuildContext context, {
-    required String icon,
-    required String name,
-    required String description,
-    required Color rarityColor,
-    required bool unlocked,
-  }) {
-    return Opacity(
-      opacity: unlocked ? 1 : 0.55,
-      child: Container(
-        decoration: BoxDecoration(
-          color: AppColors.primaryDarker,
-          borderRadius: BorderRadius.circular(AppRadius.md),
-          border: Border.all(color: rarityColor, width: AppBorders.medium),
-          boxShadow:
-              unlocked
-                  ? [
-                    BoxShadow(
-                      color: rarityColor.withValues(alpha: 0.3),
-                      blurRadius: 8,
-                      spreadRadius: 1,
-                    ),
-                  ]
-                  : null,
-        ),
-        child: Stack(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(AppPadding.sm),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(icon, style: const TextStyle(fontSize: 36)),
-                  const SizedBox(height: AppPadding.sm),
-                  Text(
-                    name,
-                    textAlign: TextAlign.center,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: AppColors.textPrimary,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Positioned(
-              top: AppPadding.sm,
-              right: AppPadding.sm,
-              child: Tooltip(
-                message: description,
-                triggerMode: TooltipTriggerMode.tap,
-                child: Icon(
-                  unlocked ? Icons.info_outline : Icons.lock_outline,
-                  color: rarityColor,
-                  size: 20,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Color _getCategoryColor(String category) {
-    switch (category) {
-      case 'combat':
-        return Colors.red[400]!;
-      case 'magic':
-        return Colors.purple[400]!;
-      case 'utility':
-        return Colors.blue[400]!;
-      case 'passive':
-        return Colors.green[400]!;
-      default:
-        return AppColors.borderLight;
-    }
-  }
-
-  Color _getRarityColor(int rarityScore) {
-    switch (rarityScore) {
-      case 1:
-        return Colors.grey[400]!;
-      case 2:
-        return Colors.blue[400]!;
-      case 3:
-        return Colors.purple[400]!;
-      case 4:
-        return Colors.orange[400]!;
-      case 5:
-        return Colors.red[400]!;
-      default:
-        return AppColors.borderLight;
-    }
   }
 }

@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:quest_key/constants/app_colors.dart';
-import 'package:quest_key/constants/app_dimens.dart';
+import 'package:quest_key/theme/iconography.dart';
 
+/// Bottom navigation built from the porthole badge illustrations. The art
+/// carries its own lettering, so no text labels are drawn; the active
+/// badge lifts, brightens and glows teal.
 class CustomNavBar extends StatelessWidget {
   final int currentIndex;
   final ValueChanged<int> onTap;
@@ -14,47 +17,27 @@ class CustomNavBar extends StatelessWidget {
   });
 
   static const List<({String asset, IconData icon, String label})> _items = [
-    (
-      asset: 'assets/images/app_assets/home.png',
-      icon: Icons.home_rounded,
-      label: 'Home',
-    ),
-    (
-      asset: 'assets/images/app_assets/quest_log.png',
-      icon: Icons.list_alt_rounded,
-      label: 'Quests',
-    ),
-    (
-      asset: 'assets/images/app_assets/create.png',
-      icon: Icons.add_circle_rounded,
-      label: 'Create',
-    ),
-    (
-      asset: 'assets/images/app_assets/hero.png',
-      icon: Icons.person_rounded,
-      label: 'Hero',
-    ),
-    (
-      asset: 'assets/images/app_assets/info.png',
-      icon: Icons.menu_book_rounded,
-      label: 'Guide',
-    ),
+    (asset: Art.home, icon: Icons.home_rounded, label: 'Home'),
+    (asset: Art.questLog, icon: Icons.list_alt_rounded, label: 'Quests'),
+    (asset: Art.create, icon: Icons.add_circle_rounded, label: 'Create'),
+    (asset: Art.hero, icon: Icons.person_rounded, label: 'Hero'),
+    (asset: Art.info, icon: Icons.menu_book_rounded, label: 'Guide'),
   ];
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: EdgeInsets.only(
-        top: AppPadding.sm,
-        bottom: AppPadding.sm + MediaQuery.paddingOf(context).bottom,
+        top: 10,
+        bottom: 8 + MediaQuery.paddingOf(context).bottom,
       ),
       decoration: const BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [Color(0xE6140C2E), Color(0xFF0B0718)],
+          colors: [Color(0xD9140C2E), Color(0xFF0B0718)],
         ),
-        border: Border(top: BorderSide(color: AppColors.borderLight)),
+        border: Border(top: BorderSide(color: AppColors.bronze, width: 1.2)),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -87,74 +70,53 @@ class _NavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      behavior: HitTestBehavior.opaque,
-      child: Tooltip(
-        message: item.label,
-        child: AnimatedContainer(
-          duration: AppDurations.short,
-          curve: Curves.easeOut,
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppPadding.md,
-            vertical: AppPadding.xs,
-          ),
-          decoration: BoxDecoration(
-            color:
-                selected
-                    ? AppColors.accentPurple.withValues(alpha: 0.35)
-                    : Colors.transparent,
-            borderRadius: BorderRadius.circular(AppRadius.lg),
-            border: Border.all(
-              color:
+    return Semantics(
+      button: true,
+      selected: selected,
+      label: item.label,
+      child: GestureDetector(
+        onTap: onTap,
+        behavior: HitTestBehavior.opaque,
+        child: Tooltip(
+          message: item.label,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 260),
+            curve: Curves.easeOutBack,
+            transform: Matrix4.translationValues(0, selected ? -8 : 0, 0),
+            width: 62,
+            height: 62,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              boxShadow:
                   selected
-                      ? AppColors.accentGold.withValues(alpha: 0.6)
-                      : Colors.transparent,
-            ),
-            boxShadow:
-                selected
-                    ? [
-                      BoxShadow(
-                        color: AppColors.shadowPurple.withValues(alpha: 0.35),
-                        blurRadius: 12,
-                      ),
-                    ]
-                    : null,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              AnimatedScale(
-                scale: selected ? 1.15 : 1,
-                duration: AppDurations.short,
-                child: AnimatedOpacity(
-                  opacity: selected ? AppOpacity.full : AppOpacity.medium,
-                  duration: AppDurations.short,
-                  child: Image.asset(
-                    item.asset,
-                    height: AppIconSizes.md,
-                    width: AppIconSizes.md,
-                    errorBuilder:
-                        (_, _, _) => Icon(
-                          item.icon,
-                          size: AppIconSizes.md,
-                          color: selected ? AppColors.accentGold : Colors.white,
+                      ? [
+                        BoxShadow(
+                          color: AppColors.teal.withValues(alpha: 0.55),
+                          blurRadius: 18,
+                          spreadRadius: 1,
                         ),
-                  ),
+                      ]
+                      : null,
+            ),
+            child: AnimatedScale(
+              scale: selected ? 1.12 : 0.92,
+              duration: const Duration(milliseconds: 260),
+              curve: Curves.easeOutBack,
+              child: AnimatedOpacity(
+                opacity: selected ? 1 : 0.62,
+                duration: const Duration(milliseconds: 200),
+                child: Image.asset(
+                  item.asset,
+                  fit: BoxFit.contain,
+                  errorBuilder:
+                      (_, _, _) => Icon(
+                        item.icon,
+                        size: 30,
+                        color: selected ? AppColors.gold : AppColors.ink,
+                      ),
                 ),
               ),
-              const SizedBox(height: AppPadding.xs),
-              AnimatedDefaultTextStyle(
-                duration: AppDurations.short,
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: selected ? FontWeight.bold : FontWeight.normal,
-                  color:
-                      selected ? AppColors.accentGold : AppColors.textSecondary,
-                ),
-                child: Text(item.label),
-              ),
-            ],
+            ),
           ),
         ),
       ),

@@ -6,9 +6,11 @@ import 'package:quest_key/constants/app_dimens.dart';
 import 'package:quest_key/models/quest.dart';
 import 'package:quest_key/state/app_state.dart';
 import 'package:quest_key/state/quest_list_provider.dart';
+import 'package:quest_key/theme/app_theme.dart';
+import 'package:quest_key/theme/iconography.dart';
 import 'package:quest_key/widgets/common/ui_kit.dart';
 
-/// "Forge a quest": create or edit a quest with a live preview.
+/// Forge a quest: create or edit a quest with a live preview of its tile.
 class CreateQuestPage extends StatefulWidget {
   const CreateQuestPage({super.key});
 
@@ -17,57 +19,42 @@ class CreateQuestPage extends StatefulWidget {
 }
 
 class _QuestTemplate {
-  const _QuestTemplate(this.emoji, this.title, this.description, this.category);
+  const _QuestTemplate(this.title, this.description, this.category);
 
-  final String emoji;
   final String title;
   final String description;
   final QuestCategory category;
-
-  String get chipLabel => '$emoji $title';
 }
 
 class _CreateQuestPageState extends State<CreateQuestPage> {
-  /// One-tap starting points for common everyday quests.
   static const List<_QuestTemplate> _templates = [
     _QuestTemplate(
-      '💧',
       'Drink water',
       'Drink 8 glasses of water today',
       QuestCategory.health,
     ),
     _QuestTemplate(
-      '🏃',
       'Exercise',
       'Move your body for at least 20 minutes',
       QuestCategory.health,
     ),
+    _QuestTemplate('Read', 'Read 10 pages of a book', QuestCategory.study),
     _QuestTemplate(
-      '📖',
-      'Read',
-      'Read 10 pages of a book',
-      QuestCategory.study,
-    ),
-    _QuestTemplate(
-      '🧹',
       'Tidy up',
       'Clean one room or your workspace',
       QuestCategory.home,
     ),
     _QuestTemplate(
-      '📞',
       'Reach out',
       'Check in with a friend or family member',
       QuestCategory.social,
     ),
     _QuestTemplate(
-      '🧘',
       'Unwind',
       'Ten minutes of stretching or meditation',
       QuestCategory.health,
     ),
     _QuestTemplate(
-      '✍️',
       'Create',
       'Spend 30 minutes on a creative project',
       QuestCategory.creative,
@@ -121,20 +108,15 @@ class _CreateQuestPageState extends State<CreateQuestPage> {
 
     return Scaffold(
       body: PageBackground(
-        asset: 'assets/images/app_assets/create_bkg.png',
+        asset: Art.createBackground,
         child: SafeArea(
           child: Form(
             key: _formKey,
             child: ListView(
-              padding: const EdgeInsets.fromLTRB(
-                AppPadding.xl,
-                AppPadding.lg,
-                AppPadding.xl,
-                120,
-              ),
+              padding: const EdgeInsets.fromLTRB(18, 14, 18, 120),
               children: [
                 FadeSlideIn(child: _header()),
-                const SizedBox(height: AppPadding.lg),
+                const SizedBox(height: AppPadding.md),
                 if (!_isEditing) ...[
                   FadeSlideIn(
                     delay: const Duration(milliseconds: 60),
@@ -172,7 +154,10 @@ class _CreateQuestPageState extends State<CreateQuestPage> {
                   child: QuestButton(
                     label: _isEditing ? 'Save Changes' : 'Forge Quest',
                     icon:
-                        _isEditing ? Icons.save_outlined : Icons.auto_fix_high,
+                        _isEditing
+                            ? Icons.save_outlined
+                            : Icons.auto_fix_high_rounded,
+                    style: QuestButtonStyle.gold,
                     onPressed: _submitting ? null : _submitForm,
                   ),
                 ),
@@ -194,33 +179,25 @@ class _CreateQuestPageState extends State<CreateQuestPage> {
   Widget _header() {
     return Row(
       children: [
-        Container(
-          padding: const EdgeInsets.all(AppPadding.md),
-          decoration: BoxDecoration(
-            color: AppColors.accentPurple.withValues(alpha: 0.6),
-            borderRadius: BorderRadius.circular(AppRadius.md),
-            border: Border.all(color: AppColors.borderLight),
-          ),
-          child: Icon(
-            _isEditing ? Icons.edit_note : Icons.auto_fix_high,
-            color: AppColors.accentGold,
-            size: AppIconSizes.lg,
-          ),
-        ),
-        const SizedBox(width: AppPadding.md),
+        const PortholeBadge(asset: Art.create, size: 64),
+        const SizedBox(width: 12),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 _isEditing ? 'Edit Quest' : 'Forge a Quest',
-                style: Theme.of(context).textTheme.headlineSmall,
+                style: AppFonts.heading(size: 22),
               ),
               Text(
                 _isEditing
                     ? 'Adjust the details, then save.'
                     : 'Turn a task into an adventure.',
-                style: const TextStyle(color: AppColors.textSecondary),
+                style: AppFonts.body(
+                  size: 13,
+                  color: AppColors.inkMuted,
+                  style: FontStyle.italic,
+                ),
               ),
             ],
           ),
@@ -233,29 +210,21 @@ class _CreateQuestPageState extends State<CreateQuestPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Padding(
-          padding: EdgeInsets.only(left: AppPadding.xs, bottom: AppPadding.xs),
-          child: Text(
-            'QUICK START',
-            style: TextStyle(
-              color: AppColors.textSecondary,
-              fontSize: AppFontSizes.xs,
-              letterSpacing: 1.2,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
+        Padding(
+          padding: const EdgeInsets.only(left: 4, bottom: 6),
+          child: Text('QUICK START', style: AppFonts.label(size: 10)),
         ),
         SizedBox(
           height: 40,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             itemCount: _templates.length,
-            separatorBuilder: (_, _) => const SizedBox(width: AppPadding.sm),
+            separatorBuilder: (_, _) => const SizedBox(width: 8),
             itemBuilder: (context, index) {
               final template = _templates[index];
-              return ActionChip(
-                label: Text(template.chipLabel),
-                onPressed: () => _applyTemplate(template),
+              return _TemplateChip(
+                template: template,
+                onTap: () => _applyTemplate(template),
               );
             },
           ),
@@ -265,16 +234,20 @@ class _CreateQuestPageState extends State<CreateQuestPage> {
   }
 
   Widget _detailsPanel() {
-    return GlassPanel(
+    return ArcanePanel(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SectionHeader(icon: Icons.edit_outlined, title: 'The quest'),
-          const SizedBox(height: AppPadding.md),
+          const SectionHeader(
+            icon: Icons.history_edu_rounded,
+            title: 'The Quest',
+          ),
+          const SizedBox(height: 12),
           TextFormField(
             controller: _titleController,
             textCapitalization: TextCapitalization.sentences,
             maxLength: 60,
+            style: AppFonts.body(size: 16, weight: FontWeight.w600),
             decoration: const InputDecoration(
               labelText: 'Quest Name',
               hintText: 'e.g. Finish the report',
@@ -288,12 +261,13 @@ class _CreateQuestPageState extends State<CreateQuestPage> {
               return null;
             },
           ),
-          const SizedBox(height: AppPadding.md),
+          const SizedBox(height: 12),
           TextFormField(
             controller: _descriptionController,
             textCapitalization: TextCapitalization.sentences,
             maxLines: 4,
             minLines: 2,
+            style: AppFonts.body(size: 15),
             decoration: const InputDecoration(
               labelText: 'Quest Description',
               hintText: 'What does "done" look like?',
@@ -313,24 +287,29 @@ class _CreateQuestPageState extends State<CreateQuestPage> {
   }
 
   Widget _categoryPanel() {
-    return GlassPanel(
+    return ArcanePanel(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SectionHeader(icon: Icons.category_outlined, title: 'Category'),
-          const SizedBox(height: AppPadding.md),
+          SectionHeader(
+            icon: Icons.category_outlined,
+            title: 'Category',
+            trailing: RuneTag(
+              text: _category.label.toUpperCase(),
+              color: categoryColor(_category),
+              filled: true,
+            ),
+          ),
+          const SizedBox(height: 12),
           Wrap(
-            spacing: AppPadding.sm,
-            runSpacing: AppPadding.sm,
+            spacing: 6,
+            runSpacing: 10,
             children: [
               for (final category in QuestCategory.values)
-                ChoiceChip(
-                  label: Text('${category.icon} ${category.label}'),
+                _CategoryPick(
+                  category: category,
                   selected: _category == category,
-                  selectedColor: Color(
-                    category.colorValue,
-                  ).withValues(alpha: 0.85),
-                  onSelected: (_) => setState(() => _category = category),
+                  onTap: () => setState(() => _category = category),
                 ),
             ],
           ),
@@ -340,7 +319,7 @@ class _CreateQuestPageState extends State<CreateQuestPage> {
   }
 
   Widget _difficultyPanel() {
-    return GlassPanel(
+    return ArcanePanel(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -352,44 +331,30 @@ class _CreateQuestPageState extends State<CreateQuestPage> {
               child: Text(
                 '${difficultyLabel(_difficulty)} · +${xpForDifficulty(_difficulty)} XP',
                 key: ValueKey<int>(_difficulty),
-                style: const TextStyle(
-                  color: AppColors.accentGold,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: AppFonts.label(size: 11, color: AppColors.gold),
               ),
             ),
           ),
-          const SizedBox(height: AppPadding.sm),
+          const SizedBox(height: 14),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              for (var star = minDifficulty; star <= maxDifficulty; star++)
-                IconButton(
-                  key: ValueKey('difficulty_star_$star'),
-                  tooltip: difficultyLabel(star),
-                  onPressed: () => setState(() => _difficulty = star),
-                  iconSize: 36,
-                  icon: AnimatedScale(
-                    scale: star <= _difficulty ? 1.15 : 1,
-                    duration: AppDurations.short,
-                    child: Icon(
-                      star <= _difficulty
-                          ? Icons.star_rounded
-                          : Icons.star_outline_rounded,
-                      color:
-                          star <= _difficulty
-                              ? AppColors.accentGold
-                              : Colors.white38,
-                    ),
-                  ),
+              for (var rune = minDifficulty; rune <= maxDifficulty; rune++)
+                _DifficultyRune(
+                  key: ValueKey('difficulty_star_$rune'),
+                  lit: rune <= _difficulty,
+                  label: difficultyLabel(rune),
+                  onTap: () => setState(() => _difficulty = rune),
                 ),
             ],
           ),
-          const Text(
-            'Harder quests earn more XP.',
-            style: TextStyle(
-              color: AppColors.textSecondary,
-              fontSize: AppFontSizes.xs,
+          const SizedBox(height: 6),
+          Text(
+            'Harder quests reward more experience.',
+            style: AppFonts.body(
+              size: 12,
+              color: AppColors.inkMuted,
+              style: FontStyle.italic,
             ),
           ),
         ],
@@ -399,80 +364,88 @@ class _CreateQuestPageState extends State<CreateQuestPage> {
 
   Widget _schedulePanel() {
     final due = _dueDateTime;
-    return GlassPanel(
+    return ArcanePanel(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const SectionHeader(icon: Icons.event_outlined, title: 'Due'),
-          const SizedBox(height: AppPadding.md),
+          const SizedBox(height: 12),
           InkWell(
             onTap: _pickDateTime,
-            borderRadius: BorderRadius.circular(AppRadius.md),
+            borderRadius: BorderRadius.circular(8),
             child: AnimatedContainer(
               duration: AppDurations.short,
-              padding: const EdgeInsets.all(AppPadding.md),
+              padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.black38,
-                borderRadius: BorderRadius.circular(AppRadius.md),
+                color: AppColors.obsidian.withValues(alpha: 0.55),
+                borderRadius: BorderRadius.circular(8),
                 border: Border.all(
-                  color: due == null ? Colors.white24 : AppColors.accentGold,
+                  color: due == null ? AppColors.bronze : AppColors.gold,
                 ),
               ),
               child: Row(
                 children: [
                   Icon(
-                    Icons.calendar_month,
-                    color: due == null ? Colors.white54 : AppColors.accentGold,
+                    Icons.calendar_month_rounded,
+                    color: due == null ? AppColors.bronzeLight : AppColors.gold,
                   ),
-                  const SizedBox(width: AppPadding.md),
+                  const SizedBox(width: 12),
                   Expanded(
                     child: Text(
                       due == null
                           ? 'Pick date & time'
                           : DateFormat('EEE, MMM d · h:mm a').format(due),
-                      style: TextStyle(
-                        color: due == null ? Colors.white70 : Colors.white,
-                        fontWeight:
-                            due == null ? FontWeight.normal : FontWeight.bold,
+                      style: AppFonts.body(
+                        size: 15,
+                        weight: due == null ? FontWeight.w400 : FontWeight.w600,
+                        color: due == null ? AppColors.inkMuted : AppColors.ink,
                       ),
                     ),
                   ),
-                  const Icon(Icons.chevron_right, color: Colors.white54),
+                  const Icon(
+                    Icons.chevron_right_rounded,
+                    color: AppColors.bronzeLight,
+                  ),
                 ],
               ),
             ),
           ),
-          const SizedBox(height: AppPadding.sm),
+          const SizedBox(height: 10),
           Wrap(
-            spacing: AppPadding.sm,
-            runSpacing: AppPadding.xs,
+            spacing: 8,
+            runSpacing: 6,
             children: [
-              ActionChip(
-                label: const Text('Today 6 pm'),
-                onPressed: () => _setDue(_todayAt(18)),
+              _ShortcutChip(
+                label: 'Today 6 pm',
+                onTap: () => _setDue(_todayAt(18)),
               ),
-              ActionChip(
-                label: const Text('Tomorrow 9 am'),
-                onPressed:
-                    () => _setDue(_todayAt(9).add(const Duration(days: 1))),
+              _ShortcutChip(
+                label: 'Tomorrow 9 am',
+                onTap: () => _setDue(_todayAt(9).add(const Duration(days: 1))),
               ),
-              ActionChip(
-                label: const Text('In a week'),
-                onPressed:
-                    () => _setDue(_todayAt(18).add(const Duration(days: 7))),
+              _ShortcutChip(
+                label: 'In a week',
+                onTap: () => _setDue(_todayAt(18).add(const Duration(days: 7))),
               ),
             ],
           ),
-          const SizedBox(height: AppPadding.sm),
+          const SizedBox(height: 8),
           SwitchListTile(
             value: _remindMe,
             onChanged: _onRemindMeChanged,
             contentPadding: EdgeInsets.zero,
-            secondary: const Icon(Icons.notifications_active_outlined),
-            title: const Text('Remind me when due'),
-            subtitle: const Text(
-              'Notifies you 30 minutes before the due time',
-              style: TextStyle(color: AppColors.textSecondary),
+            secondary: const Icon(
+              Icons.notifications_active_outlined,
+              color: AppColors.bronzeLight,
+            ),
+            title: Text('Remind me when due', style: AppFonts.body(size: 15)),
+            subtitle: Text(
+              'Thirty minutes before the due time',
+              style: AppFonts.body(
+                size: 12,
+                color: AppColors.inkMuted,
+                style: FontStyle.italic,
+              ),
             ),
           ),
         ],
@@ -490,51 +463,25 @@ class _CreateQuestPageState extends State<CreateQuestPage> {
             ? 'Your objective appears here'
             : _descriptionController.text.trim();
     final due = _dueDateTime;
-    final now = DateTime.now();
-    final color = Color(_category.colorValue);
+    final color = categoryColor(_category);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Padding(
-          padding: EdgeInsets.only(left: AppPadding.xs, bottom: AppPadding.xs),
-          child: Text(
-            'PREVIEW',
-            style: TextStyle(
-              color: AppColors.textSecondary,
-              fontSize: AppFontSizes.xs,
-              letterSpacing: 1.2,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
+        Padding(
+          padding: const EdgeInsets.only(left: 4, bottom: 6),
+          child: Text('PREVIEW', style: AppFonts.label(size: 10)),
         ),
-        AnimatedContainer(
-          duration: AppDurations.medium,
-          padding: const EdgeInsets.all(AppPadding.md),
-          decoration: BoxDecoration(
-            color: AppColors.bgPurple,
-            borderRadius: BorderRadius.circular(AppRadius.sm),
-            border: Border.all(color: color.withValues(alpha: 0.8)),
-            boxShadow: [
-              BoxShadow(color: color.withValues(alpha: 0.25), blurRadius: 12),
-            ],
-          ),
+        ArcanePanel(
+          ornate: false,
+          radius: 10,
+          accent: color,
+          glow: color,
+          padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
           child: Row(
             children: [
-              Container(
-                width: AppImageSizes.questIcon,
-                height: AppImageSizes.questIcon,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.85),
-                  borderRadius: BorderRadius.circular(AppRadius.sm),
-                ),
-                child: Text(
-                  _category.icon,
-                  style: const TextStyle(fontSize: 24),
-                ),
-              ),
-              const SizedBox(width: AppPadding.md),
+              GemRing(icon: categoryIcon(_category), color: color, size: 46),
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -543,26 +490,39 @@ class _CreateQuestPageState extends State<CreateQuestPage> {
                       title,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontWeight: FontWeight.bold),
+                      style: AppFonts.body(size: 16, weight: FontWeight.w600),
                     ),
                     Text(
                       description,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: AppColors.textTertiary,
-                        fontSize: AppFontSizes.xs,
+                      style: AppFonts.body(
+                        size: 13,
+                        color: AppColors.inkMuted,
+                        style: FontStyle.italic,
                       ),
                     ),
-                    const SizedBox(height: AppPadding.xs),
-                    Text(
-                      '${'★' * _difficulty} +${xpForDifficulty(_difficulty)} XP'
-                      '${due == null ? '' : ' · ${Quest.formatTimeRemaining(due.difference(now))}'}',
-                      style: const TextStyle(
-                        color: AppColors.accentGold,
-                        fontSize: AppFontSizes.xs,
-                        fontWeight: FontWeight.w600,
-                      ),
+                    const SizedBox(height: 6),
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 4,
+                      children: [
+                        RuneTag(
+                          text:
+                              due == null
+                                  ? 'NO DUE DATE'
+                                  : Quest.formatTimeRemaining(
+                                    due.difference(DateTime.now()),
+                                  ).toUpperCase(),
+                          color: AppColors.bronzeLight,
+                          icon: Icons.hourglass_bottom_rounded,
+                        ),
+                        RuneTag(
+                          text:
+                              '${difficultyLabel(_difficulty).toUpperCase()} · ${xpForDifficulty(_difficulty)} XP',
+                          color: AppColors.gold,
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -647,14 +607,13 @@ class _CreateQuestPageState extends State<CreateQuestPage> {
       SnackBar(
         content: Text(switch (outcome) {
           QuestSaveOutcome.reminderInPast =>
-            'Quest saved. The due time is less than 30 minutes away, so no '
-                'reminder was scheduled.',
+            'Quest saved. The due time is less than 30 minutes away, so no reminder was scheduled.',
           QuestSaveOutcome.reminderScheduled =>
             wasEditing
                 ? 'Quest updated. Reminder set.'
-                : '"${quest.title}" forged! Reminder set.',
+                : '"${quest.title}" forged. Reminder set.',
           QuestSaveOutcome.saved =>
-            wasEditing ? 'Quest updated.' : '"${quest.title}" forged!',
+            wasEditing ? 'Quest updated.' : '"${quest.title}" forged.',
         }),
       ),
     );
@@ -682,8 +641,8 @@ class _CreateQuestPageState extends State<CreateQuestPage> {
       messenger.showSnackBar(
         const SnackBar(
           content: Text(
-            'Notifications are turned off for Quest Key, so reminders can\'t '
-            'be scheduled. Enable them in system settings to use reminders.',
+            'Notifications are turned off for Quest Key, so reminders can\'t be '
+            'scheduled. Enable them in system settings to use reminders.',
           ),
         ),
       );
@@ -715,6 +674,193 @@ class _CreateQuestPageState extends State<CreateQuestPage> {
         pickedDate.day,
         pickedTime.hour,
         pickedTime.minute,
+      ),
+    );
+  }
+}
+
+class _TemplateChip extends StatelessWidget {
+  const _TemplateChip({required this.template, required this.onTap});
+
+  final _QuestTemplate template;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = categoryColor(template.category);
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(20),
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(6, 4, 14, 4),
+          decoration: BoxDecoration(
+            color: AppColors.obsidian.withValues(alpha: 0.6),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: AppColors.bronze),
+          ),
+          child: Row(
+            children: [
+              GemRing(
+                icon: categoryIcon(template.category),
+                color: color,
+                size: 28,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                template.title,
+                style: AppFonts.body(size: 14, weight: FontWeight.w600),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ShortcutChip extends StatelessWidget {
+  const _ShortcutChip({required this.label, required this.onTap});
+
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(6),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+          decoration: BoxDecoration(
+            color: AppColors.obsidian.withValues(alpha: 0.6),
+            borderRadius: BorderRadius.circular(6),
+            border: Border.all(color: AppColors.bronze),
+          ),
+          child: Text(
+            label,
+            style: AppFonts.body(size: 13, color: AppColors.ink),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CategoryPick extends StatelessWidget {
+  const _CategoryPick({
+    required this.category,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final QuestCategory category;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: SizedBox(
+        width: 68,
+        child: Column(
+          children: [
+            AnimatedScale(
+              scale: selected ? 1.12 : 1,
+              duration: AppDurations.short,
+              child: GemRing(
+                icon: categoryIcon(category),
+                color: categoryColor(category),
+                size: 44,
+                selected: selected,
+                dimmed: !selected,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              category.label,
+              style: AppFonts.label(
+                size: 8,
+                color: selected ? AppColors.gold : AppColors.inkMuted,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// One of five diamond runes that light up with difficulty.
+class _DifficultyRune extends StatelessWidget {
+  const _DifficultyRune({
+    super.key,
+    required this.lit,
+    required this.label,
+    required this.onTap,
+  });
+
+  final bool lit;
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: label,
+      child: GestureDetector(
+        onTap: onTap,
+        behavior: HitTestBehavior.opaque,
+        child: SizedBox(
+          width: 48,
+          height: 48,
+          child: Center(
+            child: AnimatedScale(
+              scale: lit ? 1.15 : 1,
+              duration: AppDurations.short,
+              child: Transform.rotate(
+                angle: 0.785398,
+                child: AnimatedContainer(
+                  duration: AppDurations.short,
+                  width: 24,
+                  height: 24,
+                  decoration: BoxDecoration(
+                    gradient:
+                        lit
+                            ? const LinearGradient(
+                              colors: [
+                                Color(0xFFFFF0B8),
+                                AppColors.gold,
+                                Color(0xFF9A7226),
+                              ],
+                            )
+                            : null,
+                    color:
+                        lit ? null : AppColors.obsidian.withValues(alpha: 0.6),
+                    border: Border.all(
+                      color: lit ? AppColors.gold : AppColors.bronze,
+                      width: 1.4,
+                    ),
+                    boxShadow:
+                        lit
+                            ? [
+                              BoxShadow(
+                                color: AppColors.gold.withValues(alpha: 0.6),
+                                blurRadius: 12,
+                              ),
+                            ]
+                            : null,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
