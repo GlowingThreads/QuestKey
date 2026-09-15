@@ -61,16 +61,48 @@ IconData originIcon(String? backgroundId) => switch (backgroundId) {
 };
 
 IconData achievementIcon(String id) => switch (id) {
+  // The Road
   'first_quest' => Icons.auto_awesome_rounded,
   'first_level' => Icons.trending_up_rounded,
+  'streak_3' => Icons.local_fire_department_outlined,
+  'level_five' => Icons.military_tech_rounded,
   'quest_master' => Icons.workspace_premium_rounded,
   'level_ten' => Icons.emoji_events_rounded,
-  'stat_master' => Icons.bolt_rounded,
+  'quest_50' => Icons.shield_rounded,
+  'quest_100' => Icons.account_balance_rounded,
+  'level_twenty' => Icons.star_rounded,
+  'title_worn' => Icons.badge_rounded,
+  // Trials
   'speedrunner' => Icons.speed_rounded,
   'perfectionist' => Icons.diamond_rounded,
+  'streak_30' => Icons.whatshot_rounded,
+  'epic_first' => Icons.pets_rounded,
+  'punctual' => Icons.timer_rounded,
+  'lucky_strike' => Icons.casino_rounded,
+  'crit_10' => Icons.casino_outlined,
+  'boss_slayer' => Icons.security_rounded,
+  'boss_5' => Icons.gavel_rounded,
+  'torch_bearer' => Icons.local_fire_department_rounded,
+  'bulwark' => Icons.shield_moon_rounded,
+  'secret_hidden' => Icons.nightlight_round,
+  'early_bird' => Icons.wb_twilight_rounded,
+  'weekend_warrior' => Icons.holiday_village_rounded,
+  'ashes' => Icons.flare_rounded,
+  // Mastery
+  'stat_master' => Icons.bolt_rounded,
   'balanced_hero' => Icons.balance_rounded,
   'specialist' => Icons.gps_fixed_rounded,
-  'secret_hidden' => Icons.nightlight_round,
+  'paragon' => Icons.hexagon_rounded,
+  'first_skill' => Icons.history_edu_rounded,
+  'spell_caster' => Icons.auto_fix_high_rounded,
+  'spell_master' => Icons.auto_awesome_motion_rounded,
+  'spell_100' => Icons.blur_on_rounded,
+  'enchanter' => Icons.auto_awesome_outlined,
+  'loremaster' => Icons.menu_book_rounded,
+  // Wayfaring
+  'encounter_victor' => Icons.map_rounded,
+  'wayfarer' => Icons.explore_rounded,
+  'well_rounded' => Icons.public_rounded,
   _ => Icons.star_rounded,
 };
 
@@ -83,6 +115,17 @@ IconData skillIcon(String id) => switch (id) {
   'shield_bash' => Icons.shield_rounded,
   'mana_shield' => Icons.blur_circular_rounded,
   'whirlwind' => Icons.cyclone_rounded,
+  'meditate' => Icons.self_improvement_rounded,
+  'second_wind' => Icons.favorite_rounded,
+  'enchant' => Icons.auto_awesome_rounded,
+  'battle_cry' => Icons.campaign_rounded,
+  'chronoshift' => Icons.hourglass_top_rounded,
+  'foresight' => Icons.remove_red_eye_rounded,
+  'berserk' => Icons.bloodtype_rounded,
+  'divine_favour' => Icons.church_rounded,
+  'scholars_focus' => Icons.menu_book_rounded,
+  'iron_will' => Icons.link_rounded,
+  'keen_edge' => Icons.content_cut_rounded,
   _ => Icons.auto_fix_high_rounded,
 };
 
@@ -92,6 +135,31 @@ Color skillCategoryColor(String category) => switch (category) {
   'utility' => const Color(0xFF4FC3F7),
   'passive' => const Color(0xFF2EE6C5),
   _ => const Color(0xFFC89B5C),
+};
+
+/// Heading for a skill school in the grimoire.
+String skillSchoolLabel(String category) => switch (category) {
+  'combat' => 'Martial Arts',
+  'magic' => 'Arcana',
+  'utility' => 'Craft',
+  'passive' => 'Disciplines',
+  _ => category,
+};
+
+IconData skillSchoolIcon(String category) => switch (category) {
+  'combat' => Icons.gavel_rounded,
+  'magic' => Icons.auto_awesome_rounded,
+  'utility' => Icons.handyman_rounded,
+  'passive' => Icons.self_improvement_rounded,
+  _ => Icons.star_rounded,
+};
+
+IconData achievementCategoryIcon(String category) => switch (category) {
+  'progress' => Icons.signpost_rounded,
+  'challenge' => Icons.local_fire_department_rounded,
+  'mastery' => Icons.school_rounded,
+  'exploration' => Icons.explore_rounded,
+  _ => Icons.star_rounded,
 };
 
 Color rarityColor(int rarityScore) => switch (rarityScore) {

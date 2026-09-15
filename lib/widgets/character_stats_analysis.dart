@@ -115,6 +115,51 @@ class CharacterStatsAnalysis extends StatelessWidget {
               style: FontStyle.italic,
             ),
           ),
+          if (hero.passives.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            const RuneDivider(),
+            const SizedBox(height: 10),
+            Text(
+              'DISCIPLINES',
+              style: AppFonts.label(size: 9, color: AppColors.teal),
+            ),
+            const SizedBox(height: 6),
+            for (final passive in hero.passives)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 6),
+                child: Row(
+                  children: [
+                    GemRing(
+                      icon: skillIcon(passive.skill.id),
+                      color: skillCategoryColor('passive'),
+                      size: 30,
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            passive.skill.name,
+                            style: AppFonts.heading(
+                              size: 12,
+                              letterSpacing: 0.4,
+                            ),
+                          ),
+                          Text(
+                            passive.skill.description,
+                            style: AppFonts.body(
+                              size: 12,
+                              color: AppColors.inkMuted,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+          ],
           if (background != null) ...[
             const SizedBox(height: 12),
             const RuneDivider(),

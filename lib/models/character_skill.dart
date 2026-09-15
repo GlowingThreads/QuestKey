@@ -1,4 +1,13 @@
-/// Character skills and abilities
+/// Character skills and abilities.
+///
+/// A skill is either *active* (it maps to a [Spell] in `spells.dart` and is
+/// cast for mana or stamina) or *passive* (category `passive`: always on
+/// once learned, with its effect wired into the rules that it changes).
+library;
+
+/// Schools a skill can belong to, in display order.
+const List<String> skillSchools = ['combat', 'magic', 'utility', 'passive'];
+
 class CharacterSkill {
   final String id;
   final String name;
@@ -6,7 +15,7 @@ class CharacterSkill {
   final String icon;
   final String category; // 'combat', 'magic', 'utility', 'passive'
   final int levelRequired;
-  final int costPerUse; // mana or stamina cost
+  final int costPerUse; // mana or stamina cost (0 for passives)
   final List<String> requirements; // stat requirements
 
   const CharacterSkill({
@@ -19,6 +28,9 @@ class CharacterSkill {
     required this.costPerUse,
     required this.requirements,
   });
+
+  /// Passive skills are never cast; they change a rule permanently.
+  bool get isPassive => category == 'passive';
 
   Map<String, dynamic> toJson() {
     return {
@@ -47,7 +59,10 @@ class CharacterSkill {
   }
 }
 
-/// Skills learned by characters
+/// Every skill a hero can learn.
+///
+/// The first eight are the original catalogue and keep their ids so saved
+/// heroes load unchanged. The rest were added with the wider grimoire.
 final List<CharacterSkill> allSkills = [
   const CharacterSkill(
     id: 'power_strike',
@@ -129,7 +144,125 @@ final List<CharacterSkill> allSkills = [
     costPerUse: 35,
     requirements: ['strength:8', 'dexterity:7'],
   ),
+
+  // ------------------------------------------------------------ new actives
+  const CharacterSkill(
+    id: 'meditate',
+    name: 'Meditate',
+    description: 'Still the body to gather the mind.',
+    icon: '🧘',
+    category: 'utility',
+    levelRequired: 2,
+    costPerUse: 15,
+    requirements: ['wisdom:5'],
+  ),
+  const CharacterSkill(
+    id: 'second_wind',
+    name: 'Second Wind',
+    description: 'Draw on reserves the body forgot it had.',
+    icon: '🌬️',
+    category: 'combat',
+    levelRequired: 4,
+    costPerUse: 15,
+    requirements: ['constitution:6'],
+  ),
+  const CharacterSkill(
+    id: 'enchant',
+    name: 'Enchant',
+    description: 'Lay a glamour on a task so its reward shines brighter.',
+    icon: '💫',
+    category: 'magic',
+    levelRequired: 4,
+    costPerUse: 20,
+    requirements: ['intelligence:6'],
+  ),
+  const CharacterSkill(
+    id: 'battle_cry',
+    name: 'Battle Cry',
+    description: 'A roar that rallies everyone within earshot.',
+    icon: '📯',
+    category: 'combat',
+    levelRequired: 5,
+    costPerUse: 20,
+    requirements: ['charisma:6'],
+  ),
+  const CharacterSkill(
+    id: 'chronoshift',
+    name: 'Chronoshift',
+    description: 'Bend the hourglass and buy a little time.',
+    icon: '⏳',
+    category: 'magic',
+    levelRequired: 6,
+    costPerUse: 20,
+    requirements: ['intelligence:7', 'wisdom:6'],
+  ),
+  const CharacterSkill(
+    id: 'foresight',
+    name: 'Foresight',
+    description: 'Glimpse the outcome before the dice fall.',
+    icon: '👁️',
+    category: 'utility',
+    levelRequired: 8,
+    costPerUse: 40,
+    requirements: ['luck:7'],
+  ),
+  const CharacterSkill(
+    id: 'berserk',
+    name: 'Berserk',
+    description: 'Trade caution for fury.',
+    icon: '🩸',
+    category: 'combat',
+    levelRequired: 9,
+    costPerUse: 30,
+    requirements: ['strength:9'],
+  ),
+  const CharacterSkill(
+    id: 'divine_favour',
+    name: 'Divine Favour',
+    description: 'A prayer answered in full.',
+    icon: '🕊️',
+    category: 'magic',
+    levelRequired: 10,
+    costPerUse: 45,
+    requirements: ['wisdom:9'],
+  ),
+
+  // ------------------------------------------------------------ passives
+  const CharacterSkill(
+    id: 'scholars_focus',
+    name: "Scholar's Focus",
+    description: 'Study and Creative quests pay +10% XP.',
+    icon: '📖',
+    category: 'passive',
+    levelRequired: 3,
+    costPerUse: 0,
+    requirements: ['intelligence:5', 'wisdom:5'],
+  ),
+  const CharacterSkill(
+    id: 'iron_will',
+    name: 'Iron Will',
+    description: 'A missed day burns 15% of the torch instead of 25%.',
+    icon: '⛓️',
+    category: 'passive',
+    levelRequired: 5,
+    costPerUse: 0,
+    requirements: ['constitution:8'],
+  ),
+  const CharacterSkill(
+    id: 'keen_edge',
+    name: 'Keen Edge',
+    description: 'Critical chance +5%.',
+    icon: '🗡️',
+    category: 'passive',
+    levelRequired: 7,
+    costPerUse: 0,
+    requirements: ['dexterity:8', 'luck:5'],
+  ),
 ];
+
+/// Active skills only (those that map to a spell).
+List<CharacterSkill> get activeSkills =>
+    allSkills.where((s) => !s.isPassive).toList();
 
 /// Track learned skills per character
 class LearnedSkill {

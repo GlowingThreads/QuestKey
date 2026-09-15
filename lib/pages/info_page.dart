@@ -42,7 +42,8 @@ class InfoPage extends StatelessWidget {
       title: 'Keep the flame',
       body:
           'Complete at least one quest a day to build a streak. Streaks, '
-          'quest counts and attributes earn honours; some are hidden.',
+          'quest counts, punctuality and attributes press honours in wax; '
+          'some are hidden. Tap one to wear it as your title.',
     ),
     (
       icon: Icons.auto_fix_high_rounded,
@@ -50,8 +51,9 @@ class InfoPage extends StatelessWidget {
       body:
           'Learned skills are spells. They cost mana or stamina, which refill '
           'each dawn and a little with every quest. Long-press a quest or tap '
-          'its wand to mend, snooze or burn it; cast buffs and shields from '
-          'the grimoire.',
+          'its wand to mend, snooze, enchant, shift or burn it; cast buffs, '
+          'shields and prayers from the grimoire. Disciplines are passive and '
+          'always on.',
     ),
     (
       icon: Icons.whatshot_rounded,

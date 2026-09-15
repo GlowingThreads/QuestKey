@@ -3,6 +3,7 @@ import 'package:quest_key/constants/app_colors.dart';
 import 'package:quest_key/models/character_achievement.dart';
 import 'package:quest_key/theme/app_theme.dart';
 import 'package:quest_key/theme/iconography.dart';
+import 'package:quest_key/widgets/common/sigils.dart';
 import 'package:quest_key/widgets/common/ui_kit.dart';
 
 /// Shows a dialog listing newly unlocked [achievements]. No-op when empty.
@@ -56,11 +57,11 @@ class AchievementUnlockedDialog extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(vertical: 6),
                 child: Row(
                   children: [
-                    GemRing(
+                    WaxSeal(
                       icon: achievementIcon(achievement.id),
                       color: rarityColor(achievement.rarityScore),
-                      size: 48,
-                      selected: true,
+                      size: 54,
+                      glow: true,
                     ),
                     const SizedBox(width: 14),
                     Expanded(
@@ -80,6 +81,25 @@ class AchievementUnlockedDialog extends StatelessWidget {
                               size: 13,
                               color: AppColors.inkMuted,
                             ),
+                          ),
+                          const SizedBox(height: 4),
+                          Row(
+                            children: [
+                              RarityPips(
+                                rarity: achievement.rarityScore,
+                                color: rarityColor(achievement.rarityScore),
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                rarityLabel(
+                                  achievement.rarityScore,
+                                ).toUpperCase(),
+                                style: AppFonts.label(
+                                  size: 8,
+                                  color: rarityColor(achievement.rarityScore),
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),

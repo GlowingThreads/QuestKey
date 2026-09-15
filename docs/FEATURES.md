@@ -1,5 +1,71 @@
 # Quest Key: gameplay and UX features
 
+## The wider grimoire (Phase 10)
+
+**Nineteen skills** (`lib/models/character_skill.dart`), grouped into four
+schools in the grimoire: Martial Arts, Arcana, Craft and Disciplines. The
+original eight keep their ids, so saved heroes load unchanged.
+
+New active spells (`lib/models/spells.dart`, executed in
+`lib/state/spellbook.dart`):
+
+| Skill | Cost | Effect |
+| --- | --- | --- |
+| Meditate | 15 STA | Restore 35% of max MP |
+| Second Wind (Rally) | 15 MP | Restore 40% of max STA |
+| Enchant | 20 MP | Target quest pays +25% XP on completion (once per quest) |
+| Battle Cry (Roar) | 20 STA | Rallied: +15% XP on every quest until midnight; not consumed |
+| Chronoshift (Shift) | 20 MP | Target quest's due date moves two days later, stays visible |
+| Foresight (Foresee) | 40 MP | Next completion is a guaranteed critical (×2) |
+| Berserk (Rage) | 30 STA + 10% HP | Next Epic quest today pays +100% XP |
+| Divine Favour (Pray) | 45 MP | Torch to full HP and one shield charge |
+
+Passive disciplines have no spell; they change a rule permanently once
+learned and are listed on the Attribute Sigil panel:
+
+| Discipline | Effect |
+| --- | --- |
+| Scholar's Focus | +10% XP on Study and Creative quests |
+| Iron Will | A missed day burns 15% of the torch instead of 25% |
+| Keen Edge | +5% critical chance |
+
+`Quest.enchantPercent` is a new, backward-compatible field (default 0).
+`BuffType` gains `rallied`, `foresight` and `berserk`; `rallied` persists
+through completions. The completion summary reads `FORESEEN ×2` when
+Foresight, not the dice, made the critical.
+
+**Thirty-eight honours** (`lib/models/character_achievement.dart`) in four
+halls: The Road (progress), Trials (challenge), Mastery and Wayfaring. New:
+Kindling (3-day streak), Adept (level 5), Seasoned (50 quests), Centurion
+(100), Champion (level 20), Heraldry (wear a title), Eternal Flame (30-day
+streak), Dragonheart (an Epic quest), Clockwork (10 on-time completions),
+Blessed by Fortune (10 criticals), Dragonslayer (5 bosses), Bulwark (three
+shield charges), Paragon (10 in every attribute), Apprentice (first skill),
+Grand Magus (100 spells), Gilded Hand (complete an enchanted quest),
+Loremaster (every skill), Wayfarer (10 encounters), Well Travelled (a quest
+in every category), plus hidden Dawn Patrol (5–7 am), Weekend Warrior (3
+quests on a weekend day) and From the Ashes (lose the flame). The hero now
+records `onTimeCompletions` and `categoriesCompleted`; the daily rest passes
+`flameWentOut` to the rules. Learning a skill and wearing a title now
+evaluate honours too.
+
+**Visual elements** (`lib/widgets/common/sigils.dart`,
+`lib/widgets/spell_flash.dart`):
+
+- `WaxSeal`: scalloped, embossed seal coloured by rarity; locked honours are
+  unpressed grey wax, the worn title glows. `RarityPips` read Common to
+  Legendary under each seal and in the unlock dialog.
+- `ArcaneCircle`: concentric runic rings with a hexagram that slowly turn
+  behind learned and castable spells, and hold still when they cannot be
+  cast.
+- `TorchFlame`: a flickering flame beside the torch bar on the hero card and
+  in the rest banner; its height and colour follow HP (gold when full, low
+  and red when dying).
+- `showSpellFlash`: on every cast a runic ring expands over the screen with
+  the spell's incantation ("Ash keeps no debts.") in the school's colour.
+- The grimoire and Hall of Honours are grouped under school and hall
+  headers with per-group counts and an overall progress bar.
+
 ## Game mechanics (Phase 9): skills and honours now do things
 
 **Resources.** HP, MP and Stamina are pools, not decorations. Maximums grow

@@ -4,6 +4,7 @@ import 'package:quest_key/constants/app_dimens.dart';
 import 'package:quest_key/models/character.dart';
 import 'package:quest_key/models/spells.dart';
 import 'package:quest_key/theme/app_theme.dart';
+import 'package:quest_key/widgets/common/sigils.dart';
 import 'package:quest_key/widgets/common/ui_kit.dart';
 
 /// Character sheet card: framed portrait, name and titles, mana orb with
@@ -106,14 +107,17 @@ class HeroProfileCard extends StatelessWidget {
               runSpacing: 4,
               children: [
                 for (final buff in buffs)
-                  RuneTag(
-                    text:
-                        buff.type == BuffType.haste
-                            ? 'HASTE · ${buff.expiresAt.difference(now).inMinutes}M'
-                            : buff.type.label.toUpperCase(),
-                    color: AppColors.magenta,
-                    icon: Icons.bolt_rounded,
-                    filled: true,
+                  Tooltip(
+                    message: buff.type.description,
+                    child: RuneTag(
+                      text:
+                          buff.type == BuffType.haste
+                              ? 'HASTE · ${buff.expiresAt.difference(now).inMinutes}M'
+                              : buff.type.label.toUpperCase(),
+                      color: _buffColor(buff.type),
+                      icon: _buffIcon(buff.type),
+                      filled: true,
+                    ),
                   ),
                 if (hero.shieldCharges > 0)
                   RuneTag(
@@ -129,7 +133,21 @@ class HeroProfileCard extends StatelessWidget {
           const RuneDivider(),
           const SizedBox(height: 10),
           Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
             children: [
+              Tooltip(
+                message:
+                    hero.hasSkill('iron_will')
+                        ? 'Iron Will: a missed day burns 15% of the torch.'
+                        : 'A missed day burns 25% of the torch; at zero the streak is lost.',
+                child: TorchFlame(
+                  fraction:
+                      hero.maxHealth == 0 ? 0 : hero.health / hero.maxHealth,
+                  width: 22,
+                  height: 36,
+                ),
+              ),
+              const SizedBox(width: 6),
               Expanded(
                 child: _Resource(
                   label: 'TORCH',
@@ -163,6 +181,22 @@ class HeroProfileCard extends StatelessWidget {
     );
   }
 }
+
+Color _buffColor(BuffType type) => switch (type) {
+  BuffType.empowered => AppColors.magenta,
+  BuffType.haste => AppColors.arcaneBlue,
+  BuffType.rallied => AppColors.gold,
+  BuffType.foresight => AppColors.teal,
+  BuffType.berserk => AppColors.ruby,
+};
+
+IconData _buffIcon(BuffType type) => switch (type) {
+  BuffType.empowered => Icons.bolt_rounded,
+  BuffType.haste => Icons.air_rounded,
+  BuffType.rallied => Icons.campaign_rounded,
+  BuffType.foresight => Icons.remove_red_eye_rounded,
+  BuffType.berserk => Icons.bloodtype_rounded,
+};
 
 class _MiniStat extends StatelessWidget {
   const _MiniStat(this.icon, this.value, this.label);

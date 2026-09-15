@@ -10,6 +10,7 @@ import 'package:quest_key/widgets/encounter_card.dart';
 import 'package:quest_key/state/quest_list_provider.dart';
 import 'package:quest_key/theme/app_theme.dart';
 import 'package:quest_key/theme/iconography.dart';
+import 'package:quest_key/widgets/common/sigils.dart';
 import 'package:quest_key/widgets/common/ui_kit.dart';
 import 'package:quest_key/widgets/hero_info.dart';
 import 'package:quest_key/widgets/quest_list.dart';
@@ -181,11 +182,13 @@ class _RestBanner extends StatelessWidget {
       padding: const EdgeInsets.all(12),
       child: Row(
         children: [
-          Icon(
-            out
-                ? Icons.local_fire_department_outlined
-                : Icons.local_fire_department_rounded,
-            color: out ? AppColors.ruby : AppColors.gold,
+          TorchFlame(
+            fraction:
+                report.hero.maxHealth == 0
+                    ? 0
+                    : report.hero.health / report.hero.maxHealth,
+            width: 22,
+            height: 36,
           ),
           const SizedBox(width: 10),
           Expanded(child: Text(text, style: AppFonts.body(size: 13))),

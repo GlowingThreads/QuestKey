@@ -10,8 +10,10 @@ import 'package:quest_key/theme/app_theme.dart';
 import 'package:quest_key/theme/iconography.dart';
 import 'package:quest_key/widgets/achievement_unlocked_dialog.dart';
 import 'package:quest_key/widgets/celebration_overlay.dart';
+import 'package:quest_key/widgets/common/sigils.dart';
 import 'package:quest_key/widgets/common/ui_kit.dart';
 import 'package:quest_key/widgets/lvl_notifcation.dart';
+import 'package:quest_key/widgets/spell_flash.dart';
 
 /// Opens the spellbook. With a [target] it lists quest spells for that
 /// quest; without one it lists self-cast spells (buffs, shields, sweeps).
@@ -48,6 +50,14 @@ Future<void> presentSpellResult(
     ),
   );
   if (!result.success) return;
+  final spell = result.spell;
+  if (spell != null) {
+    showSpellFlash(
+      context,
+      color: skillCategoryColor(spell.skill.category),
+      incantation: spell.incantation,
+    );
+  }
   if (result.xpGained > 0) showCelebration(context);
 
   final hero = context.read<AppState>().hero;
@@ -220,11 +230,16 @@ class _SpellRow extends StatelessWidget {
       ),
       child: Row(
         children: [
-          GemRing(
-            icon: skillIcon(skill.id),
+          ArcaneCircle(
             color: color,
-            size: 42,
-            dimmed: !castable,
+            size: 52,
+            active: castable,
+            child: GemRing(
+              icon: skillIcon(skill.id),
+              color: color,
+              size: 36,
+              dimmed: !castable,
+            ),
           ),
           const SizedBox(width: 12),
           Expanded(

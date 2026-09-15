@@ -14,6 +14,7 @@ class SpellResult {
     this.xpGained = 0,
     this.leveledUp = false,
     this.unlocked = const [],
+    this.spell,
   });
 
   final bool success;
@@ -21,6 +22,9 @@ class SpellResult {
   final int xpGained;
   final bool leveledUp;
   final List<CharacterAchievement> unlocked;
+
+  /// The spell that was cast (null for a refused cast).
+  final Spell? spell;
 }
 
 /// Executes spells against the hero and the quest list.
@@ -34,7 +38,7 @@ class Spellbook {
 
   HeroCharacter? get hero => appState.hero;
 
-  /// Spells the hero has learned.
+  /// Spells the hero has learned (passive skills have none).
   List<Spell> get known {
     final h = hero;
     if (h == null) return const [];
@@ -70,22 +74,13 @@ class Spellbook {
     final now = appState.now();
     switch (spell.target) {
       case SpellTarget.self:
-        if (spell.skillId == 'power_strike' &&
-            h.hasBuff(BuffType.empowered, now)) {
-          return 'Already empowered.';
-        }
-        if (spell.skillId == 'swift_strike' && h.hasBuff(BuffType.haste, now)) {
-          return 'Haste is already active.';
-        }
-        if ((spell.skillId == 'shield_bash' ||
-                spell.skillId == 'mana_shield') &&
-            h.shieldCharges >= Spell.maxShieldCharges) {
-          return 'Shields are already at full strength.';
-        }
-        return null;
+        return _selfBlockedReason(spell, h, now);
       case SpellTarget.quest:
         if (target == null) return 'Choose a quest.';
         if (target.isCompleted) return 'That quest is already done.';
+        if (spell.skillId == 'enchant' && target.isEnchanted) {
+          return 'Already enchanted.';
+        }
         return null;
       case SpellTarget.overdueQuest:
         if (target == null) return 'Choose a quest.';
@@ -100,6 +95,45 @@ class Spellbook {
     }
   }
 
+  String? _selfBlockedReason(Spell spell, HeroCharacter h, DateTime now) {
+    switch (spell.skillId) {
+      case 'power_strike':
+        return h.hasBuff(BuffType.empowered, now) ? 'Already empowered.' : null;
+      case 'swift_strike':
+        return h.hasBuff(BuffType.haste, now)
+            ? 'Haste is already active.'
+            : null;
+      case 'battle_cry':
+        return h.hasBuff(BuffType.rallied, now) ? 'Already rallied.' : null;
+      case 'foresight':
+        return h.hasBuff(BuffType.foresight, now)
+            ? 'Foresight is already active.'
+            : null;
+      case 'berserk':
+        if (h.hasBuff(BuffType.berserk, now)) return 'Already berserk.';
+        if (h.health <= (h.maxHealth * berserkSelfDamage).round()) {
+          return 'The torch is too low to rage.';
+        }
+        return null;
+      case 'shield_bash':
+      case 'mana_shield':
+        return h.shieldCharges >= Spell.maxShieldCharges
+            ? 'Shields are already at full strength.'
+            : null;
+      case 'meditate':
+        return h.mana >= h.maxMana ? 'Mana is already full.' : null;
+      case 'second_wind':
+        return h.stamina >= h.maxStamina ? 'Stamina is already full.' : null;
+      case 'divine_favour':
+        return h.health >= h.maxHealth &&
+                h.shieldCharges >= Spell.maxShieldCharges
+            ? 'Nothing left to restore.'
+            : null;
+      default:
+        return null;
+    }
+  }
+
   /// Casts [spell]. Spends the resource, applies the effect, records the
   /// use and unlocks any honours earned.
   Future<SpellResult> cast(Spell spell, {Quest? target}) async {
@@ -108,6 +142,11 @@ class Spellbook {
 
     final now = appState.now();
     final cost = costOf(spell);
+    final midnight = DateTime(
+      now.year,
+      now.month,
+      now.day,
+    ).add(const Duration(days: 1));
 
     // Pay first, then apply. Honours earned by paying (e.g. Spellweaver)
     // are merged into the result.
@@ -119,23 +158,30 @@ class Spellbook {
       ...more.where((a) => !paid.any((p) => p.id == a.id)),
     ];
 
+    SpellResult done(
+      String message, {
+      List<CharacterAchievement> unlocked = const [],
+      int xp = 0,
+      bool leveled = false,
+    }) => SpellResult(
+      success: true,
+      message: message,
+      unlocked: merge(unlocked),
+      xpGained: xp,
+      leveledUp: leveled,
+      spell: spell,
+    );
+
     switch (spell.skillId) {
       case 'power_strike':
-        final midnight = DateTime(
-          now.year,
-          now.month,
-          now.day,
-        ).add(const Duration(days: 1));
         final unlocked = await appState.updateHero(
           (hero) => hero.withBuff(
             ActiveBuff(type: BuffType.empowered, expiresAt: midnight),
           ),
         );
-        return SpellResult(
-          success: true,
-          message:
-              'You feel empowered. Your next Hard or Epic quest pays +$empoweredPercent% XP today.',
-          unlocked: merge(unlocked),
+        return done(
+          'You feel empowered. Your next Hard or Epic quest pays +$empoweredPercent% XP today.',
+          unlocked: unlocked,
         );
 
       case 'swift_strike':
@@ -147,11 +193,45 @@ class Spellbook {
             ),
           ),
         );
-        return SpellResult(
-          success: true,
-          message:
-              'Haste! Finish a quest within the hour for +$hastePercent% XP.',
-          unlocked: merge(unlocked),
+        return done(
+          'Haste! Finish a quest within the hour for +$hastePercent% XP.',
+          unlocked: unlocked,
+        );
+
+      case 'battle_cry':
+        final unlocked = await appState.updateHero(
+          (hero) => hero.withBuff(
+            ActiveBuff(type: BuffType.rallied, expiresAt: midnight),
+          ),
+        );
+        return done(
+          'Your cry echoes. Every quest until midnight pays +$ralliedPercent% XP.',
+          unlocked: unlocked,
+        );
+
+      case 'foresight':
+        final unlocked = await appState.updateHero(
+          (hero) => hero.withBuff(
+            ActiveBuff(type: BuffType.foresight, expiresAt: midnight),
+          ),
+        );
+        return done(
+          'The dice have already fallen. Your next completion is a critical.',
+          unlocked: unlocked,
+        );
+
+      case 'berserk':
+        final dmg = (appState.hero!.maxHealth * berserkSelfDamage).round();
+        final unlocked = await appState.updateHero(
+          (hero) => hero
+              .damage(dmg)
+              .withBuff(
+                ActiveBuff(type: BuffType.berserk, expiresAt: midnight),
+              ),
+        );
+        return done(
+          'Fury takes you. The torch loses $dmg HP; your next Epic quest pays +$berserkPercent% XP.',
+          unlocked: unlocked,
         );
 
       case 'shield_bash':
@@ -161,11 +241,38 @@ class Spellbook {
           (hero) => hero.addShieldCharges(charges),
         );
         final total = appState.hero!.shieldCharges;
-        return SpellResult(
-          success: true,
-          message:
-              'Shields raised: $total ${total == 1 ? 'charge' : 'charges'} will guard your torch.',
-          unlocked: merge(unlocked),
+        return done(
+          'Shields raised: $total ${total == 1 ? 'charge' : 'charges'} will guard your torch.',
+          unlocked: unlocked,
+        );
+
+      case 'meditate':
+        final amount = (appState.hero!.maxMana * meditateFraction).round();
+        final unlocked = await appState.updateHero(
+          (hero) => hero.restore(mana: amount),
+        );
+        return done(
+          'You breathe, and the well refills: +$amount MP.',
+          unlocked: unlocked,
+        );
+
+      case 'second_wind':
+        final amount = (appState.hero!.maxStamina * secondWindFraction).round();
+        final unlocked = await appState.updateHero(
+          (hero) => hero.restore(stamina: amount),
+        );
+        return done(
+          'Second wind: +$amount STA. Not done yet.',
+          unlocked: unlocked,
+        );
+
+      case 'divine_favour':
+        final unlocked = await appState.updateHero(
+          (hero) => hero.restore(health: hero.maxHealth).addShieldCharges(1),
+        );
+        return done(
+          'Light floods the torch. HP is full and a shield stands with you.',
+          unlocked: unlocked,
         );
 
       case 'heal':
@@ -177,30 +284,37 @@ class Spellbook {
         final unlocked = await appState.updateHero(
           (hero) => hero.restore(health: (hero.maxHealth * 0.3).round()),
         );
-        return SpellResult(
-          success: true,
-          message:
-              '"${quest.title}" is mended and due tomorrow. Your torch burns brighter.',
-          unlocked: merge(unlocked),
+        return done(
+          '"${quest.title}" is mended and due tomorrow. Your torch burns brighter.',
+          unlocked: unlocked,
         );
 
       case 'stealth':
         final quest = target!;
-        final tomorrowStart = DateTime(
-          now.year,
-          now.month,
-          now.day,
-        ).add(const Duration(days: 1));
         await quests.updateQuest(
           quest.copyWith(
             dueDate: quest.dueDate.add(const Duration(days: 1)),
-            snoozedUntil: tomorrowStart,
+            snoozedUntil: midnight,
           ),
         );
-        return SpellResult(
-          success: true,
-          message: '"${quest.title}" slips into the shadows until tomorrow.',
-          unlocked: merge(const []),
+        return done('"${quest.title}" slips into the shadows until tomorrow.');
+
+      case 'chronoshift':
+        final quest = target!;
+        await quests.updateQuest(
+          quest.copyWith(dueDate: quest.dueDate.add(const Duration(days: 2))),
+        );
+        return done(
+          'The sand runs backward. "${quest.title}" is now due two days later.',
+        );
+
+      case 'enchant':
+        final quest = target!;
+        await quests.updateQuest(
+          quest.copyWith(enchantPercent: enchantPercent),
+        );
+        return done(
+          '"${quest.title}" glimmers. It will pay +$enchantPercent% XP when done.',
         );
 
       case 'fireball':
@@ -209,13 +323,11 @@ class Spellbook {
         await quests.removeQuest(quest);
         final leveledUp = await appState.awardXp(xp);
         final unlocked = await appState.updateHero((hero) => hero);
-        return SpellResult(
-          success: true,
-          message:
-              '"${quest.title}" burns to ash. You salvage $xp XP from the embers.',
-          xpGained: xp,
-          leveledUp: leveledUp,
-          unlocked: merge(unlocked),
+        return done(
+          '"${quest.title}" burns to ash. You salvage $xp XP from the embers.',
+          unlocked: unlocked,
+          xp: xp,
+          leveled: leveledUp,
         );
 
       case 'whirlwind':
@@ -236,22 +348,16 @@ class Spellbook {
           leveled = leveled || result.leveledUp;
           unlocked.addAll(result.unlockedAchievements);
         }
-        return SpellResult(
-          success: true,
-          message:
-              'Whirlwind! ${targets.length} trivial ${targets.length == 1 ? 'quest' : 'quests'} swept away for $total XP.',
-          xpGained: total,
-          leveledUp: leveled,
-          unlocked: merge(unlocked),
+        return done(
+          'Whirlwind! ${targets.length} trivial ${targets.length == 1 ? 'quest' : 'quests'} swept away for $total XP.',
+          unlocked: unlocked,
+          xp: total,
+          leveled: leveled,
         );
 
       default:
         final unlocked = await appState.updateHero((hero) => hero);
-        return SpellResult(
-          success: true,
-          message: 'The spell fizzles harmlessly.',
-          unlocked: merge(unlocked),
-        );
+        return done('The spell fizzles harmlessly.', unlocked: unlocked);
     }
   }
 }

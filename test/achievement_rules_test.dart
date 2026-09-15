@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:quest_key/models/achievement_rules.dart';
 import 'package:quest_key/models/character.dart';
 import 'package:quest_key/models/character_achievement.dart';
+import 'package:quest_key/models/character_skill.dart';
 import 'package:quest_key/models/class_values.dart';
 import 'package:quest_key/models/level_up.dart';
 import 'package:quest_key/models/quest.dart';
@@ -185,26 +186,106 @@ void main() {
   });
 
   test('every predefined achievement has a rule', () {
-    // A hero that satisfies everything at once.
-    final hero = _hero(
-      questsCompleted: 10,
-      currentStreak: 10,
+    // A hero that satisfies everything at once (Night Owl and Dawn Patrol
+    // need different hours, so the second is checked separately).
+    var hero = _hero(
+      questsCompleted: 100,
+      currentStreak: 30,
       allStats: 10,
-      levelUp: const LevelUp(level: 10, statPoints: 0),
+      levelUp: const LevelUp(level: 20, statPoints: 0),
     ).copyWith(
-      spellsCast: 25,
-      criticalHits: 1,
-      encountersResolved: 1,
-      bossesSlain: 1,
+      spellsCast: 100,
+      criticalHits: 10,
+      encountersResolved: 10,
+      bossesSlain: 5,
+      onTimeCompletions: 10,
+      shieldCharges: 3,
+      categoriesCompleted: QuestCategory.values.map((c) => c.name).toList(),
+      learnedSkills: [for (final s in allSkills) LearnedSkill(skill: s)],
     );
-    final quest = Quest(id: 1, title: 't', description: 'd', dueDate: noon);
+    hero = hero
+        .unlockAchievements([allAchievements.first])
+        .copyWith(titleAchievementId: allAchievements.first.id);
+    final quest = Quest(
+      id: 1,
+      title: 't',
+      description: 'd',
+      dueDate: noon,
+      difficulty: 5,
+      enchantPercent: 25,
+    );
+    final saturdayNight = DateTime(2030, 1, 5, 1); // a Saturday, 1 am
     final unlocked = evaluateAchievements(
       hero,
-      now: DateTime(2030, 1, 1, 1),
+      now: saturdayNight,
       completedToday: 5,
       justCompleted: quest,
       survivedMissedDay: true,
+      flameWentOut: true,
     );
-    expect(_ids(unlocked).toSet(), allAchievements.map((a) => a.id).toSet());
+    final expected =
+        allAchievements
+            .map((a) => a.id)
+            .where((id) => id != 'early_bird' && id != 'first_quest')
+            .toSet();
+    expect(_ids(unlocked).toSet(), expected);
+
+    final dawn = evaluateAchievements(
+      hero,
+      now: DateTime(2030, 1, 5, 6),
+      justCompleted: quest,
+    );
+    expect(_ids(dawn), contains('early_bird'));
+    expect(_ids(dawn), isNot(contains('secret_hidden')));
+  });
+
+  test('punctual, well travelled and heraldry follow the new counters', () {
+    expect(
+      _ids(
+        evaluateAchievements(
+          _hero().copyWith(onTimeCompletions: 10),
+          now: noon,
+        ),
+      ),
+      contains('punctual'),
+    );
+    expect(
+      _ids(
+        evaluateAchievements(_hero().copyWith(onTimeCompletions: 9), now: noon),
+      ),
+      isNot(contains('punctual')),
+    );
+    final travelled = _hero().copyWith(
+      categoriesCompleted:
+          QuestCategory.values
+              .where((c) => c != QuestCategory.other)
+              .map((c) => c.name)
+              .toList(),
+    );
+    expect(
+      _ids(evaluateAchievements(travelled, now: noon)),
+      contains('well_rounded'),
+    );
+    final almost = _hero().copyWith(
+      categoriesCompleted: [
+        'health',
+        'work',
+        'study',
+        'home',
+        'social',
+        'creative',
+      ],
+    );
+    expect(
+      _ids(evaluateAchievements(almost, now: noon)),
+      isNot(contains('well_rounded')),
+    );
+    final titled = _hero(questsCompleted: 1)
+        .unlockAchievements([allAchievements.first])
+        .copyWith(titleAchievementId: 'first_quest');
+    expect(
+      _ids(evaluateAchievements(titled, now: noon)),
+      contains('title_worn'),
+    );
   });
 }
