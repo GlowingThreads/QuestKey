@@ -573,19 +573,19 @@ class ManaOrb extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      '$level',
-                      style: AppFonts.heading(
-                        size: size * 0.32,
-                        color: AppColors.ink,
-                        letterSpacing: 0,
-                      ),
-                    ),
-                    Text(
                       caption ?? 'LEVEL',
                       style: AppFonts.label(
                         size: size * 0.1,
                         color: AppColors.gold,
                       ),
+                    ),
+                    Text(
+                      '$level',
+                      style: AppFonts.heading(
+                        size: size * 0.32,
+                        color: AppColors.ink,
+                        letterSpacing: 0,
+                      ).copyWith(height: 1.05),
                     ),
                   ],
                 ),
