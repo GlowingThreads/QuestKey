@@ -4,6 +4,7 @@ import 'package:quest_key/models/character.dart';
 import 'package:quest_key/models/character_achievement.dart';
 import 'package:quest_key/models/character_skill.dart';
 import 'package:quest_key/models/class_values.dart';
+import 'package:quest_key/models/familiar.dart';
 import 'package:quest_key/models/level_up.dart';
 import 'package:quest_key/models/quest.dart';
 
@@ -202,6 +203,12 @@ void main() {
       shieldCharges: 3,
       categoriesCompleted: QuestCategory.values.map((c) => c.name).toList(),
       learnedSkills: [for (final s in allSkills) LearnedSkill(skill: s)],
+      familiar: Familiar(
+        species: FamiliarSpecies.cat,
+        name: 'Nyx',
+        adoptedOn: noon,
+        bond: 60,
+      ),
     );
     hero = hero
         .unlockAchievements([allAchievements.first])

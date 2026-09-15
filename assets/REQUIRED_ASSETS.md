@@ -72,3 +72,16 @@ All referenced from `lib/models/class_values.dart`.
 | --- | --- |
 | `assets/icon/app_icon.png` | `flutter_launcher_icons` config in `pubspec.yaml` (1024×1024 PNG recommended) |
 | `assets/icon/app_icon_foreground.png` | Adaptive icon foreground layer (transparent background, safe zone centred) |
+
+## `assets/images/familiars/` (optional)
+
+The familiar on the Home tab is drawn procedurally, so nothing is required
+here. To replace a species with hand-drawn animation, add a **sprite strip**
+named after the species: `cat.png`, `hound.png` or `owl.png`.
+
+- One row of **8 square frames**, left to right (e.g. 8 × 256 px wide by
+  256 px tall). Transparent background.
+- Frames play at 8 frames per second as the idle loop; the hop on tap and
+  on quest completion is applied to the whole strip.
+- The app checks for the file at runtime; if it is missing the painter is
+  used, so partial sets are fine.

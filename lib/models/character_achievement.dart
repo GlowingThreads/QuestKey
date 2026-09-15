@@ -421,6 +421,22 @@ final List<CharacterAchievement> allAchievements = [
     category: 'exploration',
     rarityScore: 3,
   ),
+  const CharacterAchievement(
+    id: 'hearth_friend',
+    name: 'Hearth Friend',
+    description: 'Adopt a familiar.',
+    icon: '🐾',
+    category: 'exploration',
+    rarityScore: 1,
+  ),
+  const CharacterAchievement(
+    id: 'kindred',
+    name: 'Kindred Spirit',
+    description: 'Raise a familiar to Soulbound.',
+    icon: '🌙',
+    category: 'exploration',
+    rarityScore: 4,
+  ),
 ];
 
 /// Honours grouped by category, in [achievementCategoryLabels] order.

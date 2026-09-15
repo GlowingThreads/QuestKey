@@ -6,6 +6,7 @@ import 'package:quest_key/models/achievement_rules.dart';
 import 'package:quest_key/models/character.dart';
 import 'package:quest_key/models/character_achievement.dart';
 import 'package:quest_key/models/character_skill.dart';
+import 'package:quest_key/models/familiar.dart';
 import 'package:quest_key/models/quest.dart';
 import 'package:quest_key/models/rewards.dart';
 import 'package:quest_key/services/storage.dart';
@@ -242,6 +243,35 @@ class AppState extends ChangeNotifier {
               ? h.copyWith(clearTitle: true)
               : h.copyWith(titleAchievementId: achievementId),
     );
+  }
+
+  /// Adopts a familiar (replacing any existing one) and returns the honours
+  /// unlocked by doing so.
+  Future<List<CharacterAchievement>> adoptFamiliar(
+    FamiliarSpecies species,
+    String name,
+  ) {
+    final trimmed = name.trim();
+    return updateHero(
+      (h) => h.copyWith(
+        familiar: Familiar(
+          species: species,
+          name: trimmed.isEmpty ? species.label : trimmed,
+          adoptedOn: _now(),
+        ),
+      ),
+    );
+  }
+
+  /// Pets the familiar: bumps its count and returns its reply, or `null`
+  /// when there is no familiar.
+  Future<String?> petFamiliar() async {
+    final f = hero?.familiar;
+    if (f == null) return null;
+    await updateHero(
+      (h) => h.copyWith(familiar: f.copyWith(timesPetted: f.timesPetted + 1)),
+    );
+    return familiarPettedLine(f);
   }
 
   void dismissRestReport() {
