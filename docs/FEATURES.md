@@ -30,6 +30,13 @@ immediately to `shared_preferences`, and now:
 - `android:allowBackup="true"` is explicit, so the save rides Android Auto
   Backup across reinstalls on the same account.
 
+**Attribute sigil.** `StatRadar` is now a magic circle: bronze rings with
+runic ticks and a band of seeded glyph script that turn slowly against each
+other on the Hero page, a faint heptagram binding the seven axes, seal
+nodes on the outer ring carrying the attribute abbreviations, and the
+hero's values as a glowing gradient shape with gem nodes over the class
+baseline in bronze.
+
 **Save Codex** (Guide tab). *Copy save* puts the whole save (hero, quests,
 encounter) on the clipboard as one JSON document; *Restore save* pastes one
 back after validating it in full. Nothing is written unless the document
