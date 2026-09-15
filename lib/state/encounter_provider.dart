@@ -234,6 +234,13 @@ class EncounterProvider extends ChangeNotifier {
     );
   }
 
+  /// Drops the cached encounter and reads it back from storage (after a
+  /// save is restored).
+  Future<void> reload() async {
+    _encounter = null;
+    await refresh();
+  }
+
   /// Forgets everything (used when the hero is erased).
   Future<void> clear() async {
     _encounter = null;

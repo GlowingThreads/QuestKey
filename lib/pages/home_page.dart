@@ -7,6 +7,7 @@ import 'package:quest_key/models/quest.dart';
 import 'package:quest_key/state/app_state.dart';
 import 'package:quest_key/state/encounter_provider.dart';
 import 'package:quest_key/widgets/encounter_card.dart';
+import 'package:quest_key/widgets/familiar/hearth_panel.dart';
 import 'package:quest_key/state/quest_list_provider.dart';
 import 'package:quest_key/theme/app_theme.dart';
 import 'package:quest_key/theme/iconography.dart';
@@ -93,6 +94,11 @@ class HomePage extends StatelessWidget {
                 FadeSlideIn(
                   delay: const Duration(milliseconds: 160),
                   child: _Ledger(hero: hero, quests: quests),
+                ),
+                const SizedBox(height: AppPadding.md),
+                FadeSlideIn(
+                  delay: const Duration(milliseconds: 190),
+                  child: HearthPanel(hero: hero),
                 ),
                 if (rest != null && rest.missedDays > 0) ...[
                   const SizedBox(height: AppPadding.md),

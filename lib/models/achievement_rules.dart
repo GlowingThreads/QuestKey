@@ -132,6 +132,10 @@ List<CharacterAchievement> evaluateAchievements(
         return hero.encountersResolved >= 10;
       case 'well_rounded':
         return categories.every(hero.categoriesCompleted.contains);
+      case 'hearth_friend':
+        return hero.familiar != null;
+      case 'kindred':
+        return hero.familiar?.isSoulbound ?? false;
       default:
         return false;
     }

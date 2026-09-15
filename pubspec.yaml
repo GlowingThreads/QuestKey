@@ -67,3 +67,5 @@ flutter:
     - assets/images/app_assets/
     - assets/images/character_images/
     - assets/images/class_images/
+    # Optional sprite strips for familiars (see assets/REQUIRED_ASSETS.md).
+    - assets/images/familiars/

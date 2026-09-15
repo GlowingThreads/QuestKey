@@ -696,8 +696,12 @@ class _OrbPainter extends CustomPainter {
   bool shouldRepaint(_OrbPainter old) => old.progress != progress;
 }
 
-/// Seven-axis radar chart of the hero's attributes.
-class StatRadar extends StatelessWidget {
+/// The attribute sigil: the hero's seven attributes drawn as a magic
+/// circle. Bronze rings carry runic ticks and a band of glyph script, a
+/// faint heptagram binds the seven axes, seal nodes on the outer ring name
+/// each attribute, and the hero's values form a glowing shape inside. With
+/// [animate] the rings turn slowly against each other.
+class StatRadar extends StatefulWidget {
   const StatRadar({
     super.key,
     required this.values,
@@ -705,6 +709,7 @@ class StatRadar extends StatelessWidget {
     this.size = 200,
     this.color = AppColors.teal,
     this.compare,
+    this.animate = false,
   });
 
   /// Stat name → value, in display order.
@@ -713,89 +718,230 @@ class StatRadar extends StatelessWidget {
   final double size;
   final Color color;
 
-  /// Optional second polygon (e.g. base class stats) drawn in bronze.
+  /// Optional second shape (e.g. base class stats) drawn in bronze.
   final Map<String, int>? compare;
+
+  /// Turn the rings slowly. Leave off where the widget must settle.
+  final bool animate;
+
+  @override
+  State<StatRadar> createState() => _StatRadarState();
+}
+
+class _StatRadarState extends State<StatRadar>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _turn = AnimationController(
+    vsync: this,
+    duration: const Duration(seconds: 90),
+  );
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.animate) _turn.repeat();
+  }
+
+  @override
+  void didUpdateWidget(StatRadar old) {
+    super.didUpdateWidget(old);
+    if (widget.animate && !_turn.isAnimating) {
+      _turn.repeat();
+    } else if (!widget.animate && _turn.isAnimating) {
+      _turn.stop();
+    }
+  }
+
+  @override
+  void dispose() {
+    _turn.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return TweenAnimationBuilder<double>(
       tween: Tween<double>(begin: 0, end: 1),
-      duration: const Duration(milliseconds: 700),
+      duration: const Duration(milliseconds: 900),
       curve: Curves.easeOutCubic,
       builder:
-          (context, t, _) => SizedBox(
-            width: size,
-            height: size,
-            child: CustomPaint(
-              painter: _RadarPainter(
-                values: values,
-                compare: compare,
-                maxValue: maxValue,
-                color: color,
-                t: t,
-              ),
-            ),
+          (context, t, _) => AnimatedBuilder(
+            animation: _turn,
+            builder:
+                (context, _) => SizedBox(
+                  width: widget.size,
+                  height: widget.size,
+                  child: CustomPaint(
+                    painter: _SigilPainter(
+                      values: widget.values,
+                      compare: widget.compare,
+                      maxValue: widget.maxValue,
+                      color: widget.color,
+                      t: t,
+                      turn: _turn.value,
+                    ),
+                  ),
+                ),
           ),
     );
   }
 }
 
-class _RadarPainter extends CustomPainter {
-  _RadarPainter({
+class _SigilPainter extends CustomPainter {
+  _SigilPainter({
     required this.values,
     required this.compare,
     required this.maxValue,
     required this.color,
     required this.t,
+    required this.turn,
   });
 
   final Map<String, int> values;
   final Map<String, int>? compare;
   final int maxValue;
   final Color color;
+
+  /// Entrance progress 0–1.
   final double t;
+
+  /// Ring rotation 0–1 (one full turn).
+  final double turn;
 
   @override
   void paint(Canvas canvas, Size size) {
     final c = size.center(Offset.zero);
-    final r = size.shortestSide / 2 - 22;
+    final outer = size.shortestSide / 2 - 2;
+    final nodeR = math.max(10.0, outer * 0.11);
+    // Radius of the attribute axes; the seal nodes sit on the outer ring.
+    final r = outer - nodeR * 2.1;
     final n = values.length;
     if (n < 3) return;
+    final reveal = Curves.easeOut.transform(t);
 
-    Offset point(int i, double fraction) {
-      final a = -math.pi / 2 + i * 2 * math.pi / n;
-      return c + Offset(math.cos(a), math.sin(a)) * r * fraction;
-    }
+    Offset at(double angle, double radius) =>
+        c + Offset(math.cos(angle), math.sin(angle)) * radius;
+    double axis(int i) => -math.pi / 2 + i * 2 * math.pi / n;
+    Offset point(int i, double fraction) => at(axis(i), r * fraction);
 
-    // Web rings and spokes.
-    final web =
+    final bronze = AppColors.bronze.withValues(alpha: 0.7 * reveal);
+    final bronzeLight = AppColors.bronzeLight.withValues(alpha: 0.9 * reveal);
+    final thin =
         Paint()
           ..style = PaintingStyle.stroke
           ..strokeWidth = 0.8
-          ..color = AppColors.bronze.withValues(alpha: 0.6);
-    for (var ring = 1; ring <= 4; ring++) {
-      final path = Path();
-      for (var i = 0; i < n; i++) {
-        final p = point(i, ring / 4);
-        if (i == 0) {
-          path.moveTo(p.dx, p.dy);
-        } else {
-          path.lineTo(p.dx, p.dy);
-        }
-      }
-      path.close();
-      canvas.drawPath(path, web);
-    }
-    for (var i = 0; i < n; i++) {
-      canvas.drawLine(c, point(i, 1), web);
+          ..color = bronze;
+
+    // Dark disc so the sigil sits on its own ground.
+    canvas.drawCircle(
+      c,
+      outer,
+      Paint()
+        ..shader = RadialGradient(
+          colors: [
+            AppColors.midnight.withValues(alpha: 0.85),
+            AppColors.obsidian.withValues(alpha: 0.6),
+          ],
+        ).createShader(Rect.fromCircle(center: c, radius: outer)),
+    );
+
+    // ---- Outer ring: double line with runic ticks, turning clockwise.
+    final ringR = outer - nodeR;
+    canvas.drawCircle(c, outer - 0.5, thin..color = bronzeLight);
+    canvas.drawCircle(c, ringR - nodeR * 0.9, thin..color = bronze);
+    final tickTurn = turn * 2 * math.pi;
+    const ticks = 56;
+    for (var i = 0; i < ticks; i++) {
+      final a = tickTurn + i * 2 * math.pi / ticks;
+      final long = i % 7 == 0;
+      final inner = outer - (long ? nodeR * 0.75 : nodeR * 0.4);
+      canvas.drawLine(
+        at(a, inner),
+        at(a, outer - 1.5),
+        Paint()
+          ..strokeWidth = long ? 1.2 : 0.7
+          ..color = long ? bronzeLight : bronze,
+      );
     }
 
-    Path polygon(Map<String, int> data) {
+    // ---- Glyph band: seeded rune strokes on a dashed ring, turning the
+    // other way.
+    final bandR = r * 1.06;
+    final glyphTurn = -turn * 2 * math.pi * 0.6;
+    const glyphs = 28;
+    final glyphPaint =
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 0.9
+          ..strokeCap = StrokeCap.round
+          ..color = AppColors.bronzeLight.withValues(alpha: 0.75 * reveal);
+    for (var i = 0; i < glyphs; i++) {
+      final a = glyphTurn + i * 2 * math.pi / glyphs;
+      final rnd = math.Random(i * 7919);
+      canvas.save();
+      canvas.translate(at(a, bandR).dx, at(a, bandR).dy);
+      canvas.rotate(a + math.pi / 2);
+      final h = nodeR * 0.55;
+      final path = Path()..moveTo(-h * 0.3, -h / 2);
+      for (var k = 0; k < 2 + rnd.nextInt(2); k++) {
+        path.lineTo(
+          (rnd.nextDouble() - 0.5) * h * 0.8,
+          -h / 2 + rnd.nextDouble() * h,
+        );
+      }
+      canvas.drawPath(path, glyphPaint);
+      canvas.restore();
+    }
+    // Dashed ring under the glyphs.
+    for (var i = 0; i < 84; i++) {
+      final a = glyphTurn + i * 2 * math.pi / 84;
+      canvas.drawArc(
+        Rect.fromCircle(center: c, radius: bandR + nodeR * 0.45),
+        a,
+        math.pi / 84,
+        false,
+        thin..color = bronze,
+      );
+    }
+
+    // ---- Inner circles and spokes.
+    for (var ring = 1; ring <= 4; ring++) {
+      canvas.drawCircle(
+        c,
+        r * ring / 4,
+        thin..color = AppColors.bronze.withValues(alpha: 0.35 * reveal),
+      );
+    }
+    for (var i = 0; i < n; i++) {
+      canvas.drawLine(c, point(i, 1), thin..color = bronze);
+    }
+
+    // ---- Heptagram binding the axes, in faint amethyst.
+    final star =
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 0.9
+          ..color = AppColors.amethystBright.withValues(alpha: 0.5 * reveal);
+    final step = n == 7 ? 3 : (n ~/ 2);
+    final starPath = Path();
+    var idx = 0;
+    for (var k = 0; k <= n; k++) {
+      final p = point(idx, 1);
+      if (k == 0) {
+        starPath.moveTo(p.dx, p.dy);
+      } else {
+        starPath.lineTo(p.dx, p.dy);
+      }
+      idx = (idx + step) % n;
+    }
+    canvas.drawPath(starPath, star);
+
+    // ---- Attribute shapes.
+    Path shape(Map<String, int> data) {
       final path = Path();
       var i = 0;
       for (final key in values.keys) {
         final v = (data[key] ?? 0).clamp(0, maxValue) / maxValue;
-        final p = point(i, v * t);
+        final p = point(i, v * reveal);
         if (i == 0) {
           path.moveTo(p.dx, p.dy);
         } else {
@@ -807,22 +953,37 @@ class _RadarPainter extends CustomPainter {
     }
 
     if (compare != null) {
-      final cmp = polygon(compare!);
+      final cmp = shape(compare!);
       canvas.drawPath(
         cmp,
-        Paint()..color = AppColors.bronzeLight.withValues(alpha: 0.18),
+        Paint()..color = AppColors.bronzeLight.withValues(alpha: 0.14),
       );
       canvas.drawPath(
         cmp,
         Paint()
           ..style = PaintingStyle.stroke
           ..strokeWidth = 1
-          ..color = AppColors.bronzeLight.withValues(alpha: 0.8),
+          ..color = AppColors.bronzeLight.withValues(alpha: 0.85),
       );
     }
 
-    final poly = polygon(values);
-    canvas.drawPath(poly, Paint()..color = color.withValues(alpha: 0.28));
+    final poly = shape(values);
+    canvas.drawPath(
+      poly,
+      Paint()
+        ..color = color.withValues(alpha: 0.45)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.outer, 6),
+    );
+    canvas.drawPath(
+      poly,
+      Paint()
+        ..shader = RadialGradient(
+          colors: [
+            color.withValues(alpha: 0.12),
+            color.withValues(alpha: 0.42),
+          ],
+        ).createShader(Rect.fromCircle(center: c, radius: r)),
+    );
     canvas.drawPath(
       poly,
       Paint()
@@ -833,19 +994,65 @@ class _RadarPainter extends CustomPainter {
     var i = 0;
     for (final key in values.keys) {
       final v = (values[key] ?? 0).clamp(0, maxValue) / maxValue;
-      final p = point(i, v * t);
+      final p = point(i, v * reveal);
+      canvas.drawCircle(
+        p,
+        5,
+        Paint()
+          ..color = AppColors.gold.withValues(alpha: 0.6)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3),
+      );
       canvas.drawCircle(p, 3, Paint()..color = AppColors.gold);
+      canvas.drawCircle(
+        p.translate(-0.8, -0.8),
+        1,
+        Paint()..color = Colors.white.withValues(alpha: 0.8),
+      );
       i++;
     }
 
-    // Labels.
+    // ---- Centre gem.
+    canvas.drawCircle(
+      c,
+      3.5,
+      Paint()
+        ..color = color.withValues(alpha: 0.7)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3),
+    );
+    canvas.drawCircle(c, 2, Paint()..color = AppColors.ink);
+
+    // ---- Seal nodes on the outer ring with the attribute abbreviations.
     i = 0;
     for (final key in values.keys) {
-      final p = point(i, 1.16);
+      final p = at(axis(i), ringR);
+      canvas.drawCircle(
+        p,
+        nodeR,
+        Paint()..color = AppColors.obsidian.withValues(alpha: 0.95),
+      );
+      canvas.drawCircle(
+        p,
+        nodeR,
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.1
+          ..color = bronzeLight,
+      );
+      canvas.drawCircle(
+        p,
+        nodeR - 2.5,
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 0.6
+          ..color = bronze,
+      );
       final tp = TextPainter(
         text: TextSpan(
           text: _abbrev(key),
-          style: AppFonts.label(size: 10, color: AppColors.gold),
+          style: AppFonts.label(
+            size: nodeR * 0.62,
+            color: AppColors.gold.withValues(alpha: reveal),
+          ),
         ),
         textDirection: TextDirection.ltr,
       )..layout();
@@ -866,8 +1073,12 @@ class _RadarPainter extends CustomPainter {
   };
 
   @override
-  bool shouldRepaint(_RadarPainter old) =>
-      old.t != t || old.values != values || old.compare != compare;
+  bool shouldRepaint(_SigilPainter old) =>
+      old.t != t ||
+      old.turn != turn ||
+      old.values != values ||
+      old.compare != compare ||
+      old.color != color;
 }
 
 // ---------------------------------------------------------------- bars

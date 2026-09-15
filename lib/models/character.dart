@@ -5,6 +5,7 @@ import 'package:quest_key/models/character_achievement.dart';
 import 'package:quest_key/models/character_background.dart';
 import 'package:quest_key/models/character_skill.dart';
 import 'package:quest_key/models/classes.dart';
+import 'package:quest_key/models/familiar.dart';
 import 'package:quest_key/models/level_up.dart';
 import 'package:quest_key/models/quest.dart';
 import 'package:quest_key/models/spells.dart';
@@ -116,6 +117,9 @@ class HeroCharacter {
   /// Names of every [QuestCategory] the hero has completed a quest in.
   final List<String> categoriesCompleted;
 
+  /// The companion adopted at the hearth, if any.
+  final Familiar? familiar;
+
   HeroCharacter({
     required this.name,
     required this.motto,
@@ -152,6 +156,7 @@ class HeroCharacter {
     this.bossesSlain = 0,
     this.onTimeCompletions = 0,
     List<String>? categoriesCompleted,
+    this.familiar,
   }) : learnedSkills = List.unmodifiable(learnedSkills ?? const []),
        categoriesCompleted = List.unmodifiable(categoriesCompleted ?? const []),
        unlockedAchievements = List.unmodifiable(
@@ -235,6 +240,7 @@ class HeroCharacter {
       'bossesSlain': bossesSlain,
       'onTimeCompletions': onTimeCompletions,
       'categoriesCompleted': categoriesCompleted,
+      'familiar': familiar?.toJson(),
     };
   }
 
@@ -316,6 +322,12 @@ class HeroCharacter {
         for (final c in (json['categoriesCompleted'] as List?) ?? const [])
           if (c is String) c,
       ],
+      familiar:
+          json['familiar'] is Map
+              ? Familiar.fromJson(
+                Map<String, dynamic>.from(json['familiar'] as Map),
+              )
+              : null,
     );
   }
 
@@ -413,6 +425,7 @@ class HeroCharacter {
       lastQuestCompletedOn: today,
       onTimeCompletions: onTime ? onTimeCompletions + 1 : onTimeCompletions,
       categoriesCompleted: categories,
+      familiar: familiar?.copyWith(bond: familiar!.bond + 1),
     );
   }
 
@@ -735,6 +748,8 @@ class HeroCharacter {
     int? bossesSlain,
     int? onTimeCompletions,
     List<String>? categoriesCompleted,
+    Familiar? familiar,
+    bool clearFamiliar = false,
   }) {
     return HeroCharacter(
       name: name ?? this.name,
@@ -773,6 +788,7 @@ class HeroCharacter {
       bossesSlain: bossesSlain ?? this.bossesSlain,
       onTimeCompletions: onTimeCompletions ?? this.onTimeCompletions,
       categoriesCompleted: categoriesCompleted ?? this.categoriesCompleted,
+      familiar: clearFamiliar ? null : (familiar ?? this.familiar),
     );
   }
 }

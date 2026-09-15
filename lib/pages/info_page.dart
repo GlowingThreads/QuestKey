@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:quest_key/constants/app_colors.dart';
 import 'package:quest_key/constants/app_dimens.dart';
@@ -241,6 +242,46 @@ class InfoPage extends StatelessWidget {
               ),
               const SizedBox(height: AppPadding.md),
               FadeSlideIn(
+                delay: const Duration(milliseconds: 450),
+                child: ArcanePanel(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SectionHeader(
+                        icon: Icons.menu_book_rounded,
+                        title: 'Save Codex',
+                        subtitle:
+                            'Your hero and quests are saved on this device after every change and kept in Android backup. Copy them out to move devices or keep your own copy.',
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: QuestButton(
+                              label: 'Copy save',
+                              icon: Icons.copy_all_rounded,
+                              compact: true,
+                              onPressed: () => _exportSave(context),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: QuestButton(
+                              label: 'Restore save',
+                              icon: Icons.restore_rounded,
+                              compact: true,
+                              style: QuestButtonStyle.ghost,
+                              onPressed: () => _importSave(context),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: AppPadding.md),
+              FadeSlideIn(
                 delay: const Duration(milliseconds: 480),
                 child: ArcanePanel(
                   accent: AppColors.ruby,
@@ -325,6 +366,90 @@ class InfoPage extends StatelessWidget {
     }
     await navigator.push(
       MaterialPageRoute<void>(builder: (_) => const HeroCreationPage()),
+    );
+  }
+
+  Future<void> _exportSave(BuildContext context) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final text = await SaveCodex(StorageService.instance).export();
+    await Clipboard.setData(ClipboardData(text: text));
+    messenger.showSnackBar(
+      const SnackBar(
+        content: Text(
+          'Save copied to the clipboard. Paste it somewhere safe, or into '
+          '"Restore save" on another device.',
+        ),
+      ),
+    );
+  }
+
+  Future<void> _importSave(BuildContext context) async {
+    final appState = context.read<AppState>();
+    final questProvider = context.read<QuestListProvider>();
+    final encounters = context.read<EncounterProvider>();
+    final messenger = ScaffoldMessenger.of(context);
+    final clipboard = await Clipboard.getData(Clipboard.kTextPlain);
+    if (!context.mounted) return;
+
+    final controller = TextEditingController(text: clipboard?.text ?? '');
+    final text = await showDialog<String>(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Restore a save'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Paste a save copied from Quest Key. It replaces the hero '
+                  'and quests on this device.',
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: controller,
+                  maxLines: 6,
+                  style: AppFonts.body(size: 11),
+                  decoration: const InputDecoration(
+                    hintText: '{ "format": "questkey-save", ... }',
+                  ),
+                ),
+              ],
+            ),
+            actionsAlignment: MainAxisAlignment.center,
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, controller.text),
+                child: const Text('Restore'),
+              ),
+            ],
+          ),
+    );
+    controller.dispose();
+    if (text == null || text.trim().isEmpty) return;
+
+    try {
+      await SaveCodex(StorageService.instance).import(text);
+    } on FormatException catch (e) {
+      messenger.showSnackBar(SnackBar(content: Text(e.message)));
+      return;
+    }
+    await appState.loadHeroFromStorage();
+    await appState.processNewDay();
+    await questProvider.loadQuestsFromStorage();
+    await encounters.reload();
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(
+          appState.hero == null
+              ? 'Save restored.'
+              : 'Save restored. Welcome back, ${appState.hero!.name}.',
+        ),
+      ),
     );
   }
 

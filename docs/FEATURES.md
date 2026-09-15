@@ -1,5 +1,48 @@
 # Quest Key: gameplay and UX features
 
+## Familiars and the Save Codex (Phase 11)
+
+**Familiars** (`lib/models/familiar.dart`, `lib/widgets/familiar/`). The
+hearth on the Home tab shows a stray until one is adopted: a shadow cat,
+hound or owl with a name. It is drawn procedurally (`FamiliarSprite`) with
+an idle loop (breathing, blinks, tail swish or wag, ear twitch, head tilt),
+a hop on tap and on every quest completion, and a mood read from the hero
+each time it is drawn: sleepy when the torch is low, watchful before the
+first quest of the day, content after one, joyful on a strong streak with a
+full torch. Each mood has a line per species. Every completed quest deepens
+the bond: Stray → Companion (10) → Bonded (30) → Soulbound (60), lending
++2/4/6% XP on every quest with the familiar's name on the reward line. Two
+honours: Hearth Friend (adopt) and Kindred Spirit (Soulbound). A sprite
+strip at `assets/images/familiars/<species>.png` replaces the painter (see
+`assets/REQUIRED_ASSETS.md`). Stored inside the hero JSON as `familiar`;
+older saves load without one.
+
+**Save safety** (`lib/services/storage.dart`). Every change is still written
+immediately to `shared_preferences`, and now:
+
+- each write keeps the previous good copy under `hero.backup` /
+  `quests.backup`, and a primary that no longer parses is skipped in favour
+  of the backup (the bad copy is preserved under `.corrupt`, never
+  overwritten);
+- parsing catches every error, not only `FormatException`, so a wrong-typed
+  field can no longer crash the app before its first frame;
+- a bad primary never displaces a good backup on the next save;
+- `android:allowBackup="true"` is explicit, so the save rides Android Auto
+  Backup across reinstalls on the same account.
+
+**Attribute sigil.** `StatRadar` is now a magic circle: bronze rings with
+runic ticks and a band of seeded glyph script that turn slowly against each
+other on the Hero page, a faint heptagram binding the seven axes, seal
+nodes on the outer ring carrying the attribute abbreviations, and the
+hero's values as a glowing gradient shape with gem nodes over the class
+baseline in bronze.
+
+**Save Codex** (Guide tab). *Copy save* puts the whole save (hero, quests,
+encounter) on the clipboard as one JSON document; *Restore save* pastes one
+back after validating it in full. Nothing is written unless the document
+parses. `test/storage_test.dart` covers rotation, fallback, corrupt and
+wrong-typed data, and the codex round trip.
+
 ## The wider grimoire (Phase 10)
 
 **Nineteen skills** (`lib/models/character_skill.dart`), grouped into four

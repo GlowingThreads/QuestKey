@@ -144,6 +144,10 @@ RewardBreakdown computeReward(
   if (quest.isBoss) {
     lines.add(const RewardLine('Boss quest', bossPercent));
   }
+  final familiar = hero.familiar;
+  if (familiar != null && familiar.bonusPercent > 0) {
+    lines.add(RewardLine(familiar.name, familiar.bonusPercent));
+  }
   if (extraPercent > 0) {
     lines.add(RewardLine(extraLabel ?? 'Bonus', extraPercent));
   }

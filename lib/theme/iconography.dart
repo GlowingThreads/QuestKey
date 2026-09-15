@@ -103,6 +103,8 @@ IconData achievementIcon(String id) => switch (id) {
   'encounter_victor' => Icons.map_rounded,
   'wayfarer' => Icons.explore_rounded,
   'well_rounded' => Icons.public_rounded,
+  'hearth_friend' => Icons.pets_rounded,
+  'kindred' => Icons.nights_stay_rounded,
   _ => Icons.star_rounded,
 };
 
