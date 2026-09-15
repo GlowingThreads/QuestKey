@@ -6,107 +6,123 @@ import 'package:quest_key/models/character.dart';
 import 'package:quest_key/models/quest.dart';
 import 'package:quest_key/state/app_state.dart';
 import 'package:quest_key/state/quest_list_provider.dart';
+import 'package:quest_key/widgets/common/ui_kit.dart';
 import 'package:quest_key/widgets/hero_info.dart';
 import 'package:quest_key/widgets/quest_list.dart';
 import 'package:quest_key/widgets/xp_bar.dart';
 
-/// Home tab: hero card, today's progress, in-progress quests and XP bar.
-///
-/// Hero and quests are loaded once in `main()` before the app starts, so
-/// this page does not reload them (the old reload-on-every-visit caused a
-/// spinner flash each time the tab was opened).
+/// Home tab: greeting, hero card, today's progress, in-progress quests and
+/// the XP bar. Hero and quests are loaded once in `main()`.
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
+
+  static String greetingFor(DateTime now) {
+    final hour = now.hour;
+    if (hour < 5) return 'Burning the midnight oil';
+    if (hour < 12) return 'Good morning';
+    if (hour < 17) return 'Good afternoon';
+    if (hour < 22) return 'Good evening';
+    return 'Still questing';
+  }
 
   @override
   Widget build(BuildContext context) {
     final hero = context.watch<AppState>().hero;
     final quests = context.watch<QuestListProvider>();
+    final inProgress = quests.inProgressQuests.length;
 
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          image: DecorationImage(
-            image: AssetImage('assets/images/app_assets/home_bkg.png'),
-            fit: BoxFit.cover,
-          ),
-        ),
+      body: PageBackground(
+        asset: 'assets/images/app_assets/home_bkg.png',
         child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(24.0),
-            child: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (hero != null)
-                    HeroProfileCard(hero: hero)
-                  else
-                    _NoHeroCard(
-                      onCreate: () => context.read<AppState>().setIndex(4),
-                    ),
-                  const SizedBox(height: 20),
-                  if (hero != null) ...[
-                    _DailyProgressRow(hero: hero, quests: quests),
-                    const SizedBox(height: 20),
-                  ],
-                  const QuestList(filterStatus: QuestStatus.inProgress),
-                  const SizedBox(height: 20),
-                  if (hero != null)
-                    XpBar(
-                      currentXp: hero.levelUp.exp,
-                      maxXp: hero.levelUp.maxExp,
-                    ),
-                ],
-              ),
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(
+              AppPadding.xxl,
+              AppPadding.lg,
+              AppPadding.xxl,
+              110,
             ),
+            children: [
+              FadeSlideIn(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '${greetingFor(DateTime.now())},',
+                            style: const TextStyle(
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                          Text(
+                            hero?.name ?? 'adventurer',
+                            style: Theme.of(context).textTheme.headlineSmall,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
+                    Text(
+                      inProgress == 0
+                          ? 'All clear ✨'
+                          : '$inProgress open ${inProgress == 1 ? 'quest' : 'quests'}',
+                      style: const TextStyle(
+                        color: AppColors.accentGold,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: AppPadding.lg),
+              if (hero != null) ...[
+                FadeSlideIn(
+                  delay: const Duration(milliseconds: 80),
+                  child: HeroProfileCard(hero: hero),
+                ),
+                const SizedBox(height: AppPadding.lg),
+                FadeSlideIn(
+                  delay: const Duration(milliseconds: 160),
+                  child: _DailyProgressRow(hero: hero, quests: quests),
+                ),
+                const SizedBox(height: AppPadding.lg),
+              ],
+              FadeSlideIn(
+                delay: const Duration(milliseconds: 240),
+                child: SectionHeader(
+                  icon: Icons.explore_outlined,
+                  title: 'Active quests',
+                  subtitle:
+                      inProgress == 0
+                          ? 'Nothing pending. Forge a new one!'
+                          : 'Swipe right or tap ✓ to complete',
+                  trailing: TextButton(
+                    onPressed: () => context.read<AppState>().setIndex(1),
+                    child: const Text('See all'),
+                  ),
+                ),
+              ),
+              const SizedBox(height: AppPadding.sm),
+              const FadeSlideIn(
+                delay: Duration(milliseconds: 300),
+                child: QuestList(filterStatus: QuestStatus.inProgress),
+              ),
+              const SizedBox(height: AppPadding.lg),
+              if (hero != null)
+                FadeSlideIn(
+                  delay: const Duration(milliseconds: 360),
+                  child: XpBar(
+                    currentXp: hero.levelUp.exp,
+                    maxXp: hero.levelUp.maxExp,
+                  ),
+                ),
+            ],
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _NoHeroCard extends StatelessWidget {
-  const _NoHeroCard({required this.onCreate});
-
-  final VoidCallback onCreate;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(AppPadding.xl),
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: AppColors.bgDark,
-        borderRadius: BorderRadius.circular(AppRadius.xl),
-        border: Border.all(color: AppColors.borderLight),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'No hero yet',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: AppFontSizes.lg,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: AppPadding.sm),
-          const Text(
-            'Create a hero to start earning XP from your quests.',
-            style: TextStyle(color: AppColors.textSecondary),
-          ),
-          const SizedBox(height: AppPadding.md),
-          FilledButton.icon(
-            onPressed: onCreate,
-            style: FilledButton.styleFrom(
-              backgroundColor: AppColors.accentPurple,
-            ),
-            icon: const Icon(Icons.person_add),
-            label: const Text('Create Hero'),
-          ),
-        ],
       ),
     );
   }
@@ -132,8 +148,8 @@ class _DailyProgressRow extends StatelessWidget {
         Expanded(
           child: _StatTile(
             icon: '🔥',
-            value: '$streak',
-            label: streak == 1 ? 'day streak' : 'day streak',
+            value: streak,
+            label: 'day streak',
             highlight: streak > 0,
             tooltip:
                 streak > 0
@@ -145,9 +161,10 @@ class _DailyProgressRow extends StatelessWidget {
         Expanded(
           child: _StatTile(
             icon: '✅',
-            value: '$doneToday',
+            value: doneToday,
             label: 'done today',
             highlight: doneToday > 0,
+            color: AppColors.accentGreen,
           ),
         ),
         const SizedBox(width: AppPadding.sm),
@@ -156,14 +173,14 @@ class _DailyProgressRow extends StatelessWidget {
               overdue > 0
                   ? _StatTile(
                     icon: '⏰',
-                    value: '$overdue',
+                    value: overdue,
                     label: 'overdue',
                     highlight: true,
                     color: Colors.redAccent,
                   )
                   : _StatTile(
                     icon: '⬆️',
-                    value: '${hero.levelUp.expToNextLevel}',
+                    value: hero.levelUp.expToNextLevel,
                     label: 'XP to Lv. ${hero.levelUp.level + 1}',
                   ),
         ),
@@ -183,7 +200,7 @@ class _StatTile extends StatelessWidget {
   });
 
   final String icon;
-  final String value;
+  final int value;
   final String label;
   final bool highlight;
   final Color? color;
@@ -192,26 +209,22 @@ class _StatTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final accent = color ?? AppColors.accentGold;
-    final tile = Container(
+    final tile = GlassPanel(
       padding: const EdgeInsets.symmetric(
         vertical: AppPadding.md,
         horizontal: AppPadding.sm,
       ),
-      decoration: BoxDecoration(
-        color: AppColors.bgDark,
-        borderRadius: BorderRadius.circular(AppRadius.md),
-        border: Border.all(
-          color:
-              highlight ? accent.withValues(alpha: 0.8) : AppColors.borderLight,
-          width: highlight ? AppBorders.medium : AppBorders.thin,
-        ),
-      ),
+      radius: AppRadius.md,
+      borderColor:
+          highlight ? accent.withValues(alpha: 0.8) : AppColors.borderLight,
+      borderWidth: highlight ? AppBorders.medium : AppBorders.thin,
+      glowColor: highlight ? accent : null,
       child: Column(
         children: [
           Text(icon, style: const TextStyle(fontSize: 20)),
           const SizedBox(height: AppPadding.xs),
-          Text(
-            value,
+          AnimatedCount(
+            value: value,
             style: TextStyle(
               color: highlight ? accent : AppColors.textPrimary,
               fontSize: AppFontSizes.xl,

@@ -10,6 +10,13 @@ throw at runtime until the files exist.
 Generated from `grep -rn "assets/images/" lib/` (see the "Referenced in"
 column). Regenerate this list after adding new images.
 
+> **After the Phase 7 UI upgrade** every image has a built-in fallback
+> (icons, emoji or a gradient), so the app renders without these files. They
+> are still worth adding for the intended look. Currently displayed:
+> the five `*_bkg` backgrounds, the five nav-bar icons, `finished.png` (done
+> quests) and `character_images/hero_*.png`. Not displayed any more:
+> `todo.png`, `all.png` and `class_images/*` (class cards now use emoji).
+
 ## `assets/images/app_assets/`
 
 | File | Referenced in |

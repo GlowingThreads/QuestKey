@@ -1,4 +1,34 @@
-# Quest Key: gameplay and UX features (Phase 6)
+# Quest Key: gameplay and UX features
+
+## UI upgrade (Phase 7)
+
+- **Shared theme** (`lib/theme/app_theme.dart`): one dark-fantasy palette,
+  input/chip/button/snackbar styling and page transitions for the whole app.
+  `lib/widgets/common/ui_kit.dart` holds the building blocks: `GlassPanel`
+  (frosted cards), `FadeSlideIn` (staggered entrance), `PulseGlow`,
+  `AnimatedBar`, `AnimatedCount`, `QuestButton` (press-to-shrink gradient
+  CTA) and `PageBackground` (asset with gradient fallback).
+- **Hero creation is its own page** (`lib/pages/hero_creation_page.dart`):
+  a five-step wizard (Identity → Class → Origin → Avatar → Summon) with a
+  step bar, slide transitions, class cards with animated stat bars, the
+  previously unused **origins** (`backgroundsList`) applying their stat
+  bonuses, a portrait grid, a summon preview and confetti. It is shown
+  automatically as onboarding when no hero exists and from the Guide tab to
+  replace a hero.
+- **Quest forge** (`lib/pages/create_quest.dart`): sectioned form with
+  quick-start templates, category chips, a five-star difficulty picker with
+  live XP label, a due-date card with "Today 6 pm / Tomorrow 9 am / In a
+  week" chips, a reminder switch and a **live preview** of the quest tile.
+- **Home**: time-of-day greeting, open-quest count, animated counters and
+  staggered entrance. **Quest Log**: completion bar, sliding segmented
+  filter with counts, full-height list and a "New quest" FAB. **Hero**:
+  glowing portrait, class/origin/level tags, animated HP/MP/Stamina bars and
+  a stat-points banner. **Guide**: illustrated how-to cards, hero
+  management and a danger zone.
+- Nav bar: sliding highlight, scale and haptic feedback, icon fallbacks when
+  the PNGs are missing. Level-up popup bounces in with a glow.
+
+## Gameplay loop (Phase 6)
 
 Everything below is local-only, needs no new image assets, and is covered by
 unit/widget tests under `test/`.

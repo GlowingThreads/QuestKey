@@ -81,6 +81,18 @@ const int xpPerDifficulty = 50;
 /// Default image shown for a quest that is still in progress.
 const String defaultQuestImage = 'assets/images/app_assets/todo.png';
 
+/// Player-facing name for a difficulty level.
+String difficultyLabel(int difficulty) => switch (difficulty.clamp(
+  minDifficulty,
+  maxDifficulty,
+)) {
+  1 => 'Trivial',
+  2 => 'Easy',
+  3 => 'Normal',
+  4 => 'Hard',
+  _ => 'Epic',
+};
+
 /// Single source of truth for how much XP a quest of difficulty [difficulty]
 /// is worth.
 int xpForDifficulty(int difficulty) =>
