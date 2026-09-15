@@ -6,6 +6,7 @@ import 'package:quest_key/models/character_background.dart';
 import 'package:quest_key/models/character_skill.dart';
 import 'package:quest_key/models/classes.dart';
 import 'package:quest_key/models/level_up.dart';
+import 'package:quest_key/models/quest.dart';
 import 'package:quest_key/models/spells.dart';
 
 /// Names of the seven allocatable stats, in display order.
@@ -109,6 +110,12 @@ class HeroCharacter {
   final int encountersResolved;
   final int bossesSlain;
 
+  /// Quests completed before their due date.
+  final int onTimeCompletions;
+
+  /// Names of every [QuestCategory] the hero has completed a quest in.
+  final List<String> categoriesCompleted;
+
   HeroCharacter({
     required this.name,
     required this.motto,
@@ -143,7 +150,10 @@ class HeroCharacter {
     this.criticalHits = 0,
     this.encountersResolved = 0,
     this.bossesSlain = 0,
+    this.onTimeCompletions = 0,
+    List<String>? categoriesCompleted,
   }) : learnedSkills = List.unmodifiable(learnedSkills ?? const []),
+       categoriesCompleted = List.unmodifiable(categoriesCompleted ?? const []),
        unlockedAchievements = List.unmodifiable(
          unlockedAchievements ?? const [],
        ),
@@ -223,6 +233,8 @@ class HeroCharacter {
       'criticalHits': criticalHits,
       'encountersResolved': encountersResolved,
       'bossesSlain': bossesSlain,
+      'onTimeCompletions': onTimeCompletions,
+      'categoriesCompleted': categoriesCompleted,
     };
   }
 
@@ -299,6 +311,11 @@ class HeroCharacter {
       criticalHits: _int(json['criticalHits']),
       encountersResolved: _int(json['encountersResolved']),
       bossesSlain: _int(json['bossesSlain']),
+      onTimeCompletions: _int(json['onTimeCompletions']),
+      categoriesCompleted: [
+        for (final c in (json['categoriesCompleted'] as List?) ?? const [])
+          if (c is String) c,
+      ],
     );
   }
 
@@ -357,12 +374,18 @@ class HeroCharacter {
   // ---------------------------------------------------------------- streak & torch
 
   /// Records a quest completed at [now]: bumps [questsCompleted], updates the
-  /// daily streak and restores a little of every pool.
+  /// daily streak, restores a little of every pool and, when [quest] is
+  /// given, tracks punctuality and the categories seen.
   ///
   /// A gap of more than one day normally resets the streak, unless the torch
   /// survived the missed days (see [rest]), in which case it keeps burning.
-  HeroCharacter recordQuestCompletion(DateTime now) {
+  HeroCharacter recordQuestCompletion(DateTime now, {Quest? quest}) {
     final today = _dayOf(now);
+    final onTime = quest != null && !now.isAfter(quest.dueDate);
+    final categories =
+        quest == null || categoriesCompleted.contains(quest.category.name)
+            ? categoriesCompleted
+            : [...categoriesCompleted, quest.category.name];
     final last = lastQuestCompletedOn;
 
     int streak;
@@ -388,11 +411,20 @@ class HeroCharacter {
       currentStreak: streak,
       longestStreak: streak > longestStreak ? streak : longestStreak,
       lastQuestCompletedOn: today,
+      onTimeCompletions: onTime ? onTimeCompletions + 1 : onTimeCompletions,
+      categoriesCompleted: categories,
     );
   }
 
   /// Whether the streak is currently burning.
   bool isStreakAliveAt(DateTime now) => currentStreak > 0 && health > 0;
+
+  /// Fraction of max HP one unshielded missed day costs: 25%, or 15% with
+  /// the Iron Will passive.
+  double get torchDamageFraction =>
+      hasSkill('iron_will')
+          ? ironWillDamagePerMissedDay
+          : torchDamagePerMissedDay;
 
   /// Processes the days that passed since [lastRestedOn]:
   ///
@@ -453,7 +485,7 @@ class HeroCharacter {
 
     final shieldsSpent = math.min(missed, shieldCharges);
     final unshielded = missed - shieldsSpent;
-    var damage = (maxHealth * torchDamagePerMissedDay * unshielded).round();
+    var damage = (maxHealth * torchDamageFraction * unshielded).round();
     var newHealth = health - damage;
     var streak = currentStreak;
     var flameOut = false;
@@ -657,6 +689,10 @@ class HeroCharacter {
   bool hasSkill(String skillId) =>
       learnedSkills.any((s) => s.skill.id == skillId);
 
+  /// Learned passive skills.
+  List<LearnedSkill> get passives =>
+      learnedSkills.where((s) => s.skill.isPassive).toList();
+
   bool hasAchievement(String achievementId) =>
       unlockedAchievements.any((a) => a.achievement.id == achievementId);
 
@@ -697,6 +733,8 @@ class HeroCharacter {
     int? criticalHits,
     int? encountersResolved,
     int? bossesSlain,
+    int? onTimeCompletions,
+    List<String>? categoriesCompleted,
   }) {
     return HeroCharacter(
       name: name ?? this.name,
@@ -733,6 +771,8 @@ class HeroCharacter {
       criticalHits: criticalHits ?? this.criticalHits,
       encountersResolved: encountersResolved ?? this.encountersResolved,
       bossesSlain: bossesSlain ?? this.bossesSlain,
+      onTimeCompletions: onTimeCompletions ?? this.onTimeCompletions,
+      categoriesCompleted: categoriesCompleted ?? this.categoriesCompleted,
     );
   }
 }

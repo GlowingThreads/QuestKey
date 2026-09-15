@@ -42,7 +42,8 @@ class InfoPage extends StatelessWidget {
       title: 'Keep the flame',
       body:
           'Complete at least one quest a day to build a streak. Streaks, '
-          'quest counts and attributes earn honours; some are hidden.',
+          'quest counts, punctuality and attributes press honours in wax; '
+          'some are hidden. Tap one to wear it as your title.',
     ),
     (
       icon: Icons.auto_fix_high_rounded,
@@ -50,8 +51,9 @@ class InfoPage extends StatelessWidget {
       body:
           'Learned skills are spells. They cost mana or stamina, which refill '
           'each dawn and a little with every quest. Long-press a quest or tap '
-          'its wand to mend, snooze or burn it; cast buffs and shields from '
-          'the grimoire.',
+          'its wand to mend, snooze, enchant, shift or burn it; cast buffs, '
+          'shields and prayers from the grimoire. Disciplines are passive and '
+          'always on.',
     ),
     (
       icon: Icons.whatshot_rounded,
@@ -281,8 +283,18 @@ class InfoPage extends StatelessWidget {
     );
   }
 
-  static String _roman(int n) =>
-      const ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII'][n - 1];
+  static String _roman(int n) {
+    const numerals = [(10, 'X'), (9, 'IX'), (5, 'V'), (4, 'IV'), (1, 'I')];
+    var value = n;
+    final buffer = StringBuffer();
+    for (final (arabic, roman) in numerals) {
+      while (value >= arabic) {
+        buffer.write(roman);
+        value -= arabic;
+      }
+    }
+    return buffer.toString();
+  }
 
   /// Opens the hero creator; asks first if it would replace an existing hero.
   Future<void> _openCreateHero(BuildContext context) async {

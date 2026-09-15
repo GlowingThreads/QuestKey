@@ -1,9 +1,10 @@
 /// Spells: what a learned skill actually does in the game.
 ///
-/// Every entry in `allSkills` maps to one [Spell]. Casting costs mana
-/// (magic) or stamina (combat / utility) and either targets a quest or
-/// buffs the hero. The rules live in `lib/state/spellbook.dart`; this file
-/// is the pure description.
+/// Every *active* entry in `allSkills` maps to one [Spell]. Casting costs
+/// mana (magic) or stamina (combat / utility) and either targets a quest or
+/// changes the hero. Passive skills have no spell; their effects live in the
+/// rules they modify (see the `passive*` helpers at the bottom). The casting
+/// rules live in `lib/state/spellbook.dart`; this file is the description.
 library;
 
 import 'package:quest_key/models/character_skill.dart';
@@ -39,11 +40,23 @@ enum BuffType {
   empowered('Empowered', '+50% XP on the next Hard or Epic quest'),
 
   /// Next quest completed before it expires pays +25% XP.
-  haste('Haste', '+25% XP on the next quest completed in time');
+  haste('Haste', '+25% XP on the next quest completed in time'),
+
+  /// Every quest completed until midnight pays +15% XP. Not consumed.
+  rallied('Rallied', '+15% XP on every quest until midnight'),
+
+  /// The next completion is a guaranteed critical.
+  foresight('Foresight', 'The next quest you finish is a critical'),
+
+  /// Next Epic quest completed pays +100% XP.
+  berserk('Berserk', '+100% XP on the next Epic quest');
 
   const BuffType(this.label, this.description);
   final String label;
   final String description;
+
+  /// Buffs that stay after a completion instead of being used up.
+  bool get persists => this == BuffType.rallied;
 
   static BuffType? fromName(String? name) {
     for (final b in BuffType.values) {
@@ -90,6 +103,7 @@ class Spell {
     required this.target,
     required this.effect,
     required this.verb,
+    this.incantation = '',
   });
 
   final String skillId;
@@ -101,6 +115,9 @@ class Spell {
 
   /// Button label, e.g. "Mend".
   final String verb;
+
+  /// Short flavour line shown while the spell is being cast.
+  final String incantation;
 
   CharacterSkill get skill => allSkills.firstWhere((s) => s.id == skillId);
 
@@ -128,6 +145,7 @@ class Spell {
       target: SpellTarget.self,
       effect: 'Your next Hard or Epic quest pays +50% XP (until midnight).',
       verb: 'Empower',
+      incantation: 'Steel remembers.',
     ),
     'swift_strike': Spell(
       skillId: 'swift_strike',
@@ -135,6 +153,7 @@ class Spell {
       target: SpellTarget.self,
       effect: 'Haste: the next quest you finish within an hour pays +25% XP.',
       verb: 'Hasten',
+      incantation: 'Before the candle gutters.',
     ),
     'fireball': Spell(
       skillId: 'fireball',
@@ -143,6 +162,7 @@ class Spell {
       effect:
           'Burn a quest you will never do. It is removed and you keep a third of its XP.',
       verb: 'Burn',
+      incantation: 'Ash keeps no debts.',
     ),
     'heal': Spell(
       skillId: 'heal',
@@ -151,6 +171,7 @@ class Spell {
       effect:
           'Mend an overdue quest: it becomes due tomorrow, and your torch recovers 30% HP.',
       verb: 'Mend',
+      incantation: 'What is broken, knit.',
     ),
     'stealth': Spell(
       skillId: 'stealth',
@@ -159,6 +180,7 @@ class Spell {
       effect:
           'Slip a quest one day into the future and hide it from Home until tomorrow.',
       verb: 'Snooze',
+      incantation: 'Unseen, unhurried.',
     ),
     'shield_bash': Spell(
       skillId: 'shield_bash',
@@ -167,6 +189,7 @@ class Spell {
       effect:
           'Raise one shield charge. A charge absorbs one missed day of torch damage.',
       verb: 'Bulwark',
+      incantation: 'Hold the line.',
     ),
     'mana_shield': Spell(
       skillId: 'mana_shield',
@@ -174,6 +197,7 @@ class Spell {
       target: SpellTarget.self,
       effect: 'Raise two shield charges (up to three) against missed days.',
       verb: 'Ward',
+      incantation: 'A wall of quiet light.',
     ),
     'whirlwind': Spell(
       skillId: 'whirlwind',
@@ -181,9 +205,93 @@ class Spell {
       target: SpellTarget.trivialQuests,
       effect: 'Finish every Trivial quest in one sweep for full XP plus 10%.',
       verb: 'Sweep',
+      incantation: 'All at once, then rest.',
+    ),
+    'meditate': Spell(
+      skillId: 'meditate',
+      resource: SpellResource.stamina,
+      target: SpellTarget.self,
+      effect: 'Trade stamina for focus: restore 35% of your mana.',
+      verb: 'Meditate',
+      incantation: 'Breathe in; the well refills.',
+    ),
+    'second_wind': Spell(
+      skillId: 'second_wind',
+      resource: SpellResource.mana,
+      target: SpellTarget.self,
+      effect: 'Trade mana for vigour: restore 40% of your stamina.',
+      verb: 'Rally',
+      incantation: 'Not done yet.',
+    ),
+    'enchant': Spell(
+      skillId: 'enchant',
+      resource: SpellResource.mana,
+      target: SpellTarget.quest,
+      effect: 'Enchant a quest so it pays +25% XP when completed.',
+      verb: 'Enchant',
+      incantation: 'Gild the ordinary.',
+    ),
+    'battle_cry': Spell(
+      skillId: 'battle_cry',
+      resource: SpellResource.stamina,
+      target: SpellTarget.self,
+      effect: 'Rallied: every quest you finish until midnight pays +15% XP.',
+      verb: 'Roar',
+      incantation: 'Let them hear you.',
+    ),
+    'chronoshift': Spell(
+      skillId: 'chronoshift',
+      resource: SpellResource.mana,
+      target: SpellTarget.quest,
+      effect: 'Move a quest\'s due date two days later. It stays in view.',
+      verb: 'Shift',
+      incantation: 'The sand runs backward.',
+    ),
+    'foresight': Spell(
+      skillId: 'foresight',
+      resource: SpellResource.mana,
+      target: SpellTarget.self,
+      effect: 'The next quest you finish is a guaranteed critical (×2 XP).',
+      verb: 'Foresee',
+      incantation: 'The dice already fell.',
+    ),
+    'berserk': Spell(
+      skillId: 'berserk',
+      resource: SpellResource.stamina,
+      target: SpellTarget.self,
+      effect:
+          'Your next Epic quest today pays +100% XP, but the torch loses 10% HP now.',
+      verb: 'Rage',
+      incantation: 'Pain is a ledger. Pay it.',
+    ),
+    'divine_favour': Spell(
+      skillId: 'divine_favour',
+      resource: SpellResource.mana,
+      target: SpellTarget.self,
+      effect: 'The torch is restored to full and one shield charge is raised.',
+      verb: 'Pray',
+      incantation: 'Answered.',
     ),
   };
 }
 
 /// Proficiency level for a learned skill: one level per five casts, max 3.
 int proficiencyFor(int timesUsed) => (1 + timesUsed ~/ 5).clamp(1, 3);
+
+// ---------------------------------------------------------------- tuning
+
+const int ralliedPercent = 15;
+const int berserkPercent = 100;
+const int enchantPercent = 25;
+const double meditateFraction = 0.35;
+const double secondWindFraction = 0.40;
+const double berserkSelfDamage = 0.10;
+
+/// Passive: Scholar's Focus bonus on Study and Creative quests.
+const int scholarsFocusPercent = 10;
+
+/// Passive: Iron Will torch damage per missed day (replaces 25%).
+const double ironWillDamagePerMissedDay = 0.15;
+
+/// Passive: Keen Edge critical-chance bonus.
+const double keenEdgeCritBonus = 0.05;

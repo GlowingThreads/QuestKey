@@ -11,6 +11,7 @@ import 'package:quest_key/state/app_state.dart';
 import 'package:quest_key/state/encounter_provider.dart';
 import 'package:quest_key/state/quest_list_provider.dart';
 import 'package:quest_key/theme/app_theme.dart';
+import 'package:quest_key/theme/iconography.dart';
 import 'package:quest_key/widgets/nav_bar.dart';
 
 void main() async {
@@ -84,10 +85,50 @@ class MainScreen extends StatefulWidget {
 }
 
 class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
+  static const List<String> _artToPrecache = [
+    Art.homeBackground,
+    Art.questsBackground,
+    Art.createBackground,
+    Art.heroBackground,
+    Art.infoBackground,
+    Art.createHeroBackground,
+    Art.home,
+    Art.questLog,
+    Art.create,
+    Art.hero,
+    Art.info,
+    Art.todo,
+    Art.all,
+    Art.finished,
+    Art.progressBadge,
+    Art.levelUp,
+    Art.appIcon,
+  ];
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    // Allow more decoded images to stay resident (default is 100 MB).
+    PaintingBinding.instance.imageCache.maximumSizeBytes = 256 << 20;
+    WidgetsBinding.instance.addPostFrameCallback((_) => _precacheArt());
+  }
+
+  Future<void> _precacheArt() async {
+    for (final asset in _artToPrecache) {
+      if (!mounted) return;
+      final isBackground = asset.contains('_bkg');
+      try {
+        await precacheImage(
+          isBackground
+              ? ResizeImage(AssetImage(asset), width: 1080)
+              : AssetImage(asset),
+          context,
+        );
+      } catch (_) {
+        // Missing art is tolerated; widgets have fallbacks.
+      }
+    }
   }
 
   @override

@@ -511,6 +511,11 @@ class PageBackground extends StatelessWidget {
           asset,
           fit: BoxFit.cover,
           alignment: Alignment.topCenter,
+          // The illustrations are up to 7 MB PNGs; decoding them at phone
+          // width keeps memory low so they stay cached between tab switches
+          // instead of flashing while they re-decode.
+          cacheWidth: 1080,
+          gaplessPlayback: true,
           errorBuilder: (_, _, _) => const SizedBox.shrink(),
         ),
         DecoratedBox(

@@ -98,6 +98,7 @@ class AppState extends ChangeNotifier {
     Quest? justCompleted,
     int completedToday = 0,
     bool survivedMissedDay = false,
+    bool flameWentOut = false,
   }) async {
     final current = hero;
     if (current == null) return const [];
@@ -108,6 +109,7 @@ class AppState extends ChangeNotifier {
       completedToday: completedToday,
       justCompleted: justCompleted,
       survivedMissedDay: survivedMissedDay,
+      flameWentOut: flameWentOut,
     );
     updated = updated.unlockAchievements(unlocked);
     await saveHero(updated);
@@ -125,7 +127,11 @@ class AppState extends ChangeNotifier {
       if (current.lastRestedOn != null) return null;
     }
     final survived = report.missedDays > 0 && !report.flameWentOut;
-    await updateHero((_) => report.hero, survivedMissedDay: survived);
+    await updateHero(
+      (_) => report.hero,
+      survivedMissedDay: survived,
+      flameWentOut: report.flameWentOut,
+    );
     lastRest = report.daysPassed > 0 ? report : null;
     notifyListeners();
     return report;
@@ -177,7 +183,7 @@ class AppState extends ChangeNotifier {
     }
 
     final gained = working.gainExperience(gainedXp);
-    var updated = gained.hero.recordQuestCompletion(now);
+    var updated = gained.hero.recordQuestCompletion(now, quest: quest);
     final unlocked = evaluateAchievements(
       updated,
       now: now,
@@ -214,25 +220,27 @@ class AppState extends ChangeNotifier {
     int points = 1,
   }) => updateHero((h) => h.assignStatPoints(stat, points));
 
-  /// Learns [skill] if the hero meets its requirements. Returns whether it
-  /// was learned.
-  Future<bool> learnSkill(CharacterSkill skill) async {
+  /// Learns [skill] if the hero meets its requirements. Returns the honours
+  /// unlocked by learning it, or `null` when it could not be learned.
+  Future<List<CharacterAchievement>?> learnSkill(CharacterSkill skill) async {
     final updated = hero?.learnSkill(skill);
-    if (updated == null) return false;
-    await saveHero(updated);
-    return true;
+    if (updated == null) return null;
+    return updateHero((_) => updated);
   }
 
   /// Wears the honour [achievementId] as a title (must be unlocked), or
-  /// removes the title when `null`.
-  Future<void> setTitle(String? achievementId) async {
+  /// removes the title when `null`. Returns any honours unlocked by doing so.
+  Future<List<CharacterAchievement>> setTitle(String? achievementId) async {
     final current = hero;
-    if (current == null) return;
-    if (achievementId != null && !current.hasAchievement(achievementId)) return;
-    await saveHero(
-      achievementId == null
-          ? current.copyWith(clearTitle: true)
-          : current.copyWith(titleAchievementId: achievementId),
+    if (current == null) return const [];
+    if (achievementId != null && !current.hasAchievement(achievementId)) {
+      return const [];
+    }
+    return updateHero(
+      (h) =>
+          achievementId == null
+              ? h.copyWith(clearTitle: true)
+              : h.copyWith(titleAchievementId: achievementId),
     );
   }
 

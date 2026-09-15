@@ -1,6 +1,7 @@
 /// XP reward calculation: base by difficulty, multiplied by the hero's
-/// attribute affinity for the quest's category, active buffs, encounter
-/// bonuses, and a Luck-based chance of a critical completion.
+/// attribute affinity for the quest's category, active buffs, passive
+/// skills, encounter and enchantment bonuses, and a Luck-based chance of a
+/// critical completion.
 library;
 
 import 'package:quest_key/models/character.dart';
@@ -34,13 +35,18 @@ int affinityPercent(HeroCharacter hero, QuestCategory category) {
       : (over * affinityStepPercent).clamp(0, affinityCapPercent);
 }
 
-/// Chance (0–1) of a critical completion from Luck.
-double criticalChance(HeroCharacter hero) =>
-    (hero.luck * 0.025).clamp(0.0, 0.35);
+/// Chance (0–1) of a critical completion from Luck, plus the Keen Edge
+/// passive when learned.
+double criticalChance(HeroCharacter hero) {
+  final fromLuck = (hero.luck * 0.025).clamp(0.0, 0.35);
+  final edge = hero.hasSkill('keen_edge') ? keenEdgeCritBonus : 0.0;
+  return (fromLuck + edge).clamp(0.0, 0.5);
+}
 
 const int empoweredPercent = 50;
 const int hastePercent = 25;
 const int whirlwindPercent = 10;
+const int bossPercent = 25;
 
 /// One line of the reward explanation.
 class RewardLine {
@@ -57,6 +63,7 @@ class RewardBreakdown {
     required this.critical,
     required this.total,
     required this.consumedBuffs,
+    this.foreseen = false,
   });
 
   final int base;
@@ -67,6 +74,9 @@ class RewardBreakdown {
   /// Buffs that were used up by this completion.
   final List<BuffType> consumedBuffs;
 
+  /// The critical came from Foresight rather than the dice.
+  final bool foreseen;
+
   int get bonusPercent => lines.fold(0, (sum, l) => sum + l.percent);
 
   /// Short human summary, e.g. "200 XP · Intelligence +9% · Empowered +50% · CRITICAL ×2".
@@ -75,7 +85,7 @@ class RewardBreakdown {
     for (final line in lines) {
       parts.add('${line.label} +${line.percent}%');
     }
-    if (critical) parts.add('CRITICAL ×2');
+    if (critical) parts.add(foreseen ? 'FORESEEN ×2' : 'CRITICAL ×2');
     return parts.join(' · ');
   }
 }
@@ -103,25 +113,44 @@ RewardBreakdown computeReward(
     );
   }
 
+  if (hero.hasSkill('scholars_focus') &&
+      (quest.category == QuestCategory.study ||
+          quest.category == QuestCategory.creative)) {
+    lines.add(const RewardLine("Scholar's Focus", scholarsFocusPercent));
+  }
+
   if (hero.hasBuff(BuffType.empowered, now) && quest.difficulty >= 4) {
     lines.add(const RewardLine('Empowered', empoweredPercent));
     consumed.add(BuffType.empowered);
+  }
+  if (hero.hasBuff(BuffType.berserk, now) && quest.difficulty >= 5) {
+    lines.add(const RewardLine('Berserk', berserkPercent));
+    consumed.add(BuffType.berserk);
   }
   if (hero.hasBuff(BuffType.haste, now)) {
     lines.add(const RewardLine('Haste', hastePercent));
     consumed.add(BuffType.haste);
   }
+  if (hero.hasBuff(BuffType.rallied, now)) {
+    lines.add(const RewardLine('Rallied', ralliedPercent));
+    // Rallied persists until midnight; it is not consumed.
+  }
   if (quest.xpBonusPercent > 0) {
     lines.add(RewardLine('Encounter', quest.xpBonusPercent));
   }
+  if (quest.enchantPercent > 0) {
+    lines.add(RewardLine('Enchanted', quest.enchantPercent));
+  }
   if (quest.isBoss) {
-    lines.add(const RewardLine('Boss quest', 25));
+    lines.add(const RewardLine('Boss quest', bossPercent));
   }
   if (extraPercent > 0) {
     lines.add(RewardLine(extraLabel ?? 'Bonus', extraPercent));
   }
 
-  final critical = roll < criticalChance(hero);
+  final foreseen = hero.hasBuff(BuffType.foresight, now);
+  if (foreseen) consumed.add(BuffType.foresight);
+  final critical = foreseen || roll < criticalChance(hero);
   final percent = lines.fold(0, (sum, l) => sum + l.percent);
   var total = (base * (1 + percent / 100)).round();
   if (critical) total *= 2;
@@ -132,6 +161,7 @@ RewardBreakdown computeReward(
     critical: critical,
     total: total,
     consumedBuffs: consumed,
+    foreseen: foreseen,
   );
 }
 

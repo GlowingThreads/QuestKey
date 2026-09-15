@@ -153,6 +153,9 @@ class Quest {
   /// Extra XP percentage granted on completion (encounter rewards).
   final int xpBonusPercent;
 
+  /// Extra XP percentage from an Enchant spell (0 when not enchanted).
+  final int enchantPercent;
+
   Quest({
     required this.id,
     required this.title,
@@ -167,6 +170,7 @@ class Quest {
     List<QuestStep>? steps,
     this.snoozedUntil,
     this.xpBonusPercent = 0,
+    this.enchantPercent = 0,
   }) : steps = List.unmodifiable(steps ?? const []),
        difficulty = difficulty.clamp(minDifficulty, maxDifficulty);
 
@@ -174,6 +178,8 @@ class Quest {
   int get xpReward => xpForDifficulty(difficulty);
 
   bool get isCompleted => status == QuestStatus.completed;
+
+  bool get isEnchanted => enchantPercent > 0;
 
   /// A boss quest has steps; it can only be completed once every step is.
   bool get isBoss => steps.isNotEmpty;
@@ -260,6 +266,7 @@ class Quest {
       'steps': steps.map((s) => s.toJson()).toList(),
       'snoozedUntil': snoozedUntil?.toIso8601String(),
       'xpBonusPercent': xpBonusPercent,
+      'enchantPercent': enchantPercent,
     };
   }
 
@@ -295,6 +302,7 @@ class Quest {
       ],
       snoozedUntil: _parseDate(json['snoozedUntil']),
       xpBonusPercent: (json['xpBonusPercent'] as num?)?.toInt() ?? 0,
+      enchantPercent: (json['enchantPercent'] as num?)?.toInt() ?? 0,
     );
   }
 
@@ -332,6 +340,7 @@ class Quest {
     DateTime? snoozedUntil,
     bool clearSnooze = false,
     int? xpBonusPercent,
+    int? enchantPercent,
   }) {
     return Quest(
       id: id ?? this.id,
@@ -347,6 +356,7 @@ class Quest {
       steps: steps ?? this.steps,
       snoozedUntil: clearSnooze ? null : (snoozedUntil ?? this.snoozedUntil),
       xpBonusPercent: xpBonusPercent ?? this.xpBonusPercent,
+      enchantPercent: enchantPercent ?? this.enchantPercent,
     );
   }
 
@@ -365,7 +375,8 @@ class Quest {
         other.completedAt == completedAt &&
         _listEquals(other.steps, steps) &&
         other.snoozedUntil == snoozedUntil &&
-        other.xpBonusPercent == xpBonusPercent;
+        other.xpBonusPercent == xpBonusPercent &&
+        other.enchantPercent == enchantPercent;
   }
 
   @override
@@ -383,6 +394,7 @@ class Quest {
     Object.hashAll(steps),
     snoozedUntil,
     xpBonusPercent,
+    enchantPercent,
   );
 
   static bool _listEquals(List<QuestStep> a, List<QuestStep> b) {

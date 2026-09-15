@@ -93,7 +93,7 @@ class HeroPage extends StatelessWidget {
                       FadeSlideIn(
                         delay: const Duration(milliseconds: 320),
                         child: SizedBox(
-                          height: 380,
+                          height: 520,
                           child: CharacterSkillsAchievements(hero: hero),
                         ),
                       ),

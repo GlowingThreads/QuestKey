@@ -154,7 +154,7 @@ class _FilterBar extends StatelessWidget {
               onTap: () => onSelected(filter.status),
               child: AnimatedContainer(
                 duration: AppDurations.medium,
-                curve: Curves.easeOutBack,
+                curve: Curves.easeOutCubic,
                 margin: const EdgeInsets.symmetric(horizontal: 4),
                 padding: const EdgeInsets.symmetric(vertical: 8),
                 decoration: BoxDecoration(
