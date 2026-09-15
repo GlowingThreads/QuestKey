@@ -30,7 +30,7 @@ void main() {
     storage = InMemoryQuestStorage();
     scheduler = FakeReminderScheduler();
     questProvider = QuestListProvider(storage: storage, scheduler: scheduler);
-    appState = AppState(storage: storage);
+    appState = AppState(storage: storage, roll: () => 0.99);
     await appState.saveHero(
       HeroCharacter(
         name: 'Hero',

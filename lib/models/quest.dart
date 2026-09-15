@@ -69,6 +69,31 @@ enum QuestCategory {
   }
 }
 
+/// One step of a boss quest.
+class QuestStep {
+  const QuestStep({required this.title, this.done = false});
+
+  final String title;
+  final bool done;
+
+  QuestStep copyWith({String? title, bool? done}) =>
+      QuestStep(title: title ?? this.title, done: done ?? this.done);
+
+  Map<String, dynamic> toJson() => {'title': title, 'done': done};
+
+  factory QuestStep.fromJson(Map<String, dynamic> json) => QuestStep(
+    title: json['title'] as String? ?? '',
+    done: json['done'] == true,
+  );
+
+  @override
+  bool operator ==(Object other) =>
+      other is QuestStep && other.title == title && other.done == done;
+
+  @override
+  int get hashCode => Object.hash(title, done);
+}
+
 /// Lowest selectable difficulty.
 const int minDifficulty = 1;
 
@@ -119,6 +144,15 @@ class Quest {
   /// When the quest was completed; `null` while in progress.
   final DateTime? completedAt;
 
+  /// Boss quests: sub-steps that must all be done before completion.
+  final List<QuestStep> steps;
+
+  /// Hidden from the Home list until this time (Stealth spell).
+  final DateTime? snoozedUntil;
+
+  /// Extra XP percentage granted on completion (encounter rewards).
+  final int xpBonusPercent;
+
   Quest({
     required this.id,
     required this.title,
@@ -130,12 +164,26 @@ class Quest {
     this.remindMe = false,
     this.category = QuestCategory.other,
     this.completedAt,
-  }) : difficulty = difficulty.clamp(minDifficulty, maxDifficulty);
+    List<QuestStep>? steps,
+    this.snoozedUntil,
+    this.xpBonusPercent = 0,
+  }) : steps = List.unmodifiable(steps ?? const []),
+       difficulty = difficulty.clamp(minDifficulty, maxDifficulty);
 
   /// XP awarded on completion. Always derived from [difficulty].
   int get xpReward => xpForDifficulty(difficulty);
 
   bool get isCompleted => status == QuestStatus.completed;
+
+  /// A boss quest has steps; it can only be completed once every step is.
+  bool get isBoss => steps.isNotEmpty;
+  int get stepsDone => steps.where((s) => s.done).length;
+  bool get allStepsDone => steps.every((s) => s.done);
+
+  bool isSnoozedAt(DateTime now) {
+    final until = snoozedUntil;
+    return until != null && now.isBefore(until);
+  }
 
   /// Time left until [dueDate], measured from the wall clock.
   Duration get timeUntilDue => timeUntilDueAt(DateTime.now());
@@ -209,6 +257,9 @@ class Quest {
       'remindMe': remindMe,
       'category': category.name,
       'completedAt': completedAt?.toIso8601String(),
+      'steps': steps.map((s) => s.toJson()).toList(),
+      'snoozedUntil': snoozedUntil?.toIso8601String(),
+      'xpBonusPercent': xpBonusPercent,
     };
   }
 
@@ -238,6 +289,12 @@ class Quest {
       remindMe: json['remindMe'] == true,
       category: QuestCategory.fromJson(json['category']),
       completedAt: _parseDate(json['completedAt']),
+      steps: [
+        for (final s in (json['steps'] as List?) ?? const [])
+          if (s is Map) QuestStep.fromJson(Map<String, dynamic>.from(s)),
+      ],
+      snoozedUntil: _parseDate(json['snoozedUntil']),
+      xpBonusPercent: (json['xpBonusPercent'] as num?)?.toInt() ?? 0,
     );
   }
 
@@ -271,6 +328,10 @@ class Quest {
     QuestCategory? category,
     DateTime? completedAt,
     bool clearCompletedAt = false,
+    List<QuestStep>? steps,
+    DateTime? snoozedUntil,
+    bool clearSnooze = false,
+    int? xpBonusPercent,
   }) {
     return Quest(
       id: id ?? this.id,
@@ -283,6 +344,9 @@ class Quest {
       remindMe: remindMe ?? this.remindMe,
       category: category ?? this.category,
       completedAt: clearCompletedAt ? null : (completedAt ?? this.completedAt),
+      steps: steps ?? this.steps,
+      snoozedUntil: clearSnooze ? null : (snoozedUntil ?? this.snoozedUntil),
+      xpBonusPercent: xpBonusPercent ?? this.xpBonusPercent,
     );
   }
 
@@ -298,7 +362,10 @@ class Quest {
         other.questImageUrl == questImageUrl &&
         other.remindMe == remindMe &&
         other.category == category &&
-        other.completedAt == completedAt;
+        other.completedAt == completedAt &&
+        _listEquals(other.steps, steps) &&
+        other.snoozedUntil == snoozedUntil &&
+        other.xpBonusPercent == xpBonusPercent;
   }
 
   @override
@@ -313,7 +380,18 @@ class Quest {
     remindMe,
     category,
     completedAt,
+    Object.hashAll(steps),
+    snoozedUntil,
+    xpBonusPercent,
   );
+
+  static bool _listEquals(List<QuestStep> a, List<QuestStep> b) {
+    if (a.length != b.length) return false;
+    for (var i = 0; i < a.length; i++) {
+      if (a[i] != b[i]) return false;
+    }
+    return true;
+  }
 
   @override
   String toString() =>

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:quest_key/constants/app_colors.dart';
 import 'package:quest_key/models/character.dart';
+import 'package:quest_key/models/quest.dart';
+import 'package:quest_key/models/rewards.dart';
 import 'package:quest_key/theme/app_theme.dart';
 import 'package:quest_key/theme/iconography.dart';
 import 'package:quest_key/widgets/common/ui_kit.dart';
@@ -70,6 +72,48 @@ class CharacterStatsAnalysis extends StatelessWidget {
                 label: 'HONOURS',
               ),
             ],
+          ),
+          const SizedBox(height: 12),
+          const RuneDivider(),
+          const SizedBox(height: 10),
+          Text(
+            'AFFINITIES',
+            style: AppFonts.label(size: 9, color: AppColors.gold),
+          ),
+          const SizedBox(height: 6),
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: [
+              for (final category in QuestCategory.values)
+                if (affinityStatFor(category) != null)
+                  RuneTag(
+                    text:
+                        '${category.label.toUpperCase()} +${affinityPercent(hero, category)}%',
+                    color:
+                        affinityPercent(hero, category) > 0
+                            ? categoryColor(category)
+                            : AppColors.bronze,
+                    icon: categoryIcon(category),
+                    filled: affinityPercent(hero, category) > 0,
+                  ),
+              RuneTag(
+                text: 'CRITICAL ${(criticalChance(hero) * 100).round()}%',
+                color: AppColors.magenta,
+                icon: Icons.bolt_rounded,
+                filled: criticalChance(hero) > 0,
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Each attribute point above $affinityBaseline adds $affinityStepPercent% XP to its '
+            'category. Luck sets the critical chance (double XP).',
+            style: AppFonts.body(
+              size: 12,
+              color: AppColors.inkMuted,
+              style: FontStyle.italic,
+            ),
           ),
           if (background != null) ...[
             const SizedBox(height: 12),

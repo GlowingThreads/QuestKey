@@ -191,6 +191,11 @@ void main() {
       currentStreak: 10,
       allStats: 10,
       levelUp: const LevelUp(level: 10, statPoints: 0),
+    ).copyWith(
+      spellsCast: 25,
+      criticalHits: 1,
+      encountersResolved: 1,
+      bossesSlain: 1,
     );
     final quest = Quest(id: 1, title: 't', description: 'd', dueDate: noon);
     final unlocked = evaluateAchievements(
@@ -198,6 +203,7 @@ void main() {
       now: DateTime(2030, 1, 1, 1),
       completedToday: 5,
       justCompleted: quest,
+      survivedMissedDay: true,
     );
     expect(_ids(unlocked).toSet(), allAchievements.map((a) => a.id).toSet());
   });

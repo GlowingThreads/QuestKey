@@ -11,6 +11,7 @@ import 'package:quest_key/services/storage.dart';
 class InMemoryQuestStorage implements QuestStorage {
   String? _questsJson;
   String? _heroJson;
+  String? _encounterJson;
 
   /// Number of times [saveQuests] has been called (useful in tests).
   int questSaveCount = 0;
@@ -56,8 +57,21 @@ class InMemoryQuestStorage implements QuestStorage {
   }
 
   @override
+  Future<Map<String, dynamic>?> loadEncounter() async {
+    final json = _encounterJson;
+    if (json == null) return null;
+    return Map<String, dynamic>.from(jsonDecode(json) as Map);
+  }
+
+  @override
+  Future<void> saveEncounter(Map<String, dynamic>? json) async {
+    _encounterJson = json == null ? null : jsonEncode(json);
+  }
+
+  @override
   Future<void> clearAllData() async {
     _questsJson = null;
     _heroJson = null;
+    _encounterJson = null;
   }
 }

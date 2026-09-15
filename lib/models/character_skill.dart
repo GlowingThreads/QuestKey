@@ -134,9 +134,11 @@ final List<CharacterSkill> allSkills = [
 /// Track learned skills per character
 class LearnedSkill {
   final CharacterSkill skill;
-  int level; // skill proficiency level
-  DateTime learnedDate;
-  int timesUsed;
+
+  /// Proficiency level (1–3). Derived from [timesUsed]; stored for display.
+  final int level;
+  final DateTime learnedDate;
+  final int timesUsed;
 
   LearnedSkill({
     required this.skill,
@@ -144,6 +146,15 @@ class LearnedSkill {
     DateTime? learnedDate,
     this.timesUsed = 0,
   }) : learnedDate = learnedDate ?? DateTime.now();
+
+  LearnedSkill copyWith({int? level, DateTime? learnedDate, int? timesUsed}) {
+    return LearnedSkill(
+      skill: skill,
+      level: level ?? this.level,
+      learnedDate: learnedDate ?? this.learnedDate,
+      timesUsed: timesUsed ?? this.timesUsed,
+    );
+  }
 
   Map<String, dynamic> toJson() {
     return {
@@ -162,9 +173,11 @@ class LearnedSkill {
     );
     return LearnedSkill(
       skill: skill,
-      level: json['level'],
-      learnedDate: DateTime.parse(json['learnedDate']),
-      timesUsed: json['timesUsed'],
+      level: (json['level'] as num?)?.toInt() ?? 1,
+      learnedDate:
+          DateTime.tryParse(json['learnedDate'] as String? ?? '') ??
+          DateTime.now(),
+      timesUsed: (json['timesUsed'] as num?)?.toInt() ?? 0,
     );
   }
 }

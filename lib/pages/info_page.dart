@@ -5,6 +5,7 @@ import 'package:quest_key/constants/app_dimens.dart';
 import 'package:quest_key/pages/hero_creation_page.dart';
 import 'package:quest_key/services/storage.dart';
 import 'package:quest_key/state/app_state.dart';
+import 'package:quest_key/state/encounter_provider.dart';
 import 'package:quest_key/state/quest_list_provider.dart';
 import 'package:quest_key/theme/app_theme.dart';
 import 'package:quest_key/theme/iconography.dart';
@@ -42,6 +43,31 @@ class InfoPage extends StatelessWidget {
       body:
           'Complete at least one quest a day to build a streak. Streaks, '
           'quest counts and attributes earn honours; some are hidden.',
+    ),
+    (
+      icon: Icons.auto_fix_high_rounded,
+      title: 'Cast spells',
+      body:
+          'Learned skills are spells. They cost mana or stamina, which refill '
+          'each dawn and a little with every quest. Long-press a quest or tap '
+          'its wand to mend, snooze or burn it; cast buffs and shields from '
+          'the grimoire.',
+    ),
+    (
+      icon: Icons.whatshot_rounded,
+      title: 'Guard the torch',
+      body:
+          'A day without a completed quest burns a quarter of your torch. '
+          'Shield charges absorb missed days. If the flame goes out the '
+          'streak resets, but the torch relights and you carry on.',
+    ),
+    (
+      icon: Icons.explore_rounded,
+      title: 'Answer encounters',
+      body:
+          'Most days a stranger, a rumour or a threat appears on Home. Accept '
+          'it for a bonus quest, walk on, or use Stealth or Fireball to '
+          'resolve it on the spot.',
     ),
     (
       icon: Icons.notifications_active_outlined,
@@ -293,6 +319,7 @@ class InfoPage extends StatelessWidget {
   Future<void> _confirmClear(BuildContext context) async {
     final appState = context.read<AppState>();
     final questProvider = context.read<QuestListProvider>();
+    final encounters = context.read<EncounterProvider>();
     final messenger = ScaffoldMessenger.of(context);
 
     final confirm = await showDialog<bool>(
@@ -324,6 +351,7 @@ class InfoPage extends StatelessWidget {
     await StorageService.clearAllData();
     appState.clearHero();
     await questProvider.loadQuestsFromStorage();
+    await encounters.clear();
     messenger.showSnackBar(
       const SnackBar(content: Text('Hero and quests erased')),
     );

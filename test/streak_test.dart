@@ -39,11 +39,24 @@ void main() {
     expect(hero.longestStreak, 4);
   });
 
-  test('a missed day resets the streak but keeps the longest', () {
+  test('a missed day keeps the streak while the torch still burns', () {
     var hero = _hero();
     for (var i = 0; i < 3; i++) {
       hero = hero.recordQuestCompletion(day1.add(Duration(days: i)));
     }
+    // The torch (see rest()) decides whether a gap breaks the streak; a
+    // completion after a gap with the flame still lit extends it.
+    hero = hero.recordQuestCompletion(day1.add(const Duration(days: 5)));
+    expect(hero.currentStreak, 4);
+    expect(hero.longestStreak, 4);
+  });
+
+  test('a gap after the flame went out starts a new streak', () {
+    var hero = _hero();
+    for (var i = 0; i < 3; i++) {
+      hero = hero.recordQuestCompletion(day1.add(Duration(days: i)));
+    }
+    hero = hero.copyWith(currentStreak: 0); // what rest() does when HP hits 0
     hero = hero.recordQuestCompletion(day1.add(const Duration(days: 5)));
     expect(hero.currentStreak, 1);
     expect(hero.longestStreak, 3);
@@ -55,11 +68,11 @@ void main() {
     expect(hero.currentStreak, 2);
   });
 
-  test('isStreakAliveAt', () {
+  test('isStreakAliveAt depends on the streak and the torch', () {
     final hero = _hero().recordQuestCompletion(day1);
     expect(hero.isStreakAliveAt(day1), isTrue);
-    expect(hero.isStreakAliveAt(day1.add(const Duration(days: 1))), isTrue);
-    expect(hero.isStreakAliveAt(day1.add(const Duration(days: 2))), isFalse);
+    expect(hero.copyWith(health: 0).isStreakAliveAt(day1), isFalse);
+    expect(hero.copyWith(currentStreak: 0).isStreakAliveAt(day1), isFalse);
     expect(_hero().isStreakAliveAt(day1), isFalse);
   });
 

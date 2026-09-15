@@ -4,10 +4,12 @@ import 'package:quest_key/constants/app_colors.dart';
 import 'package:quest_key/models/character.dart';
 import 'package:quest_key/models/character_achievement.dart';
 import 'package:quest_key/models/character_skill.dart';
+import 'package:quest_key/models/spells.dart';
 import 'package:quest_key/state/app_state.dart';
 import 'package:quest_key/theme/app_theme.dart';
 import 'package:quest_key/theme/iconography.dart';
 import 'package:quest_key/widgets/common/ui_kit.dart';
+import 'package:quest_key/widgets/spell_sheet.dart';
 
 /// Grimoire (skills to learn) and Hall of Honours (achievements).
 class CharacterSkillsAchievements extends StatefulWidget {
@@ -88,6 +90,10 @@ class _CharacterSkillsAchievementsState
         final learned = hero.hasSkill(skill.id);
         final canLearn = !learned && hero.canLearnSkill(skill);
         final color = skillCategoryColor(skill.category);
+        final spell = Spell.forSkill(skill.id);
+        final learnedSkill = hero.learnedSkill(skill.id);
+        final cost = spell?.costFor(learnedSkill) ?? skill.costPerUse;
+        final resource = spell?.resource.label ?? 'MP';
 
         return Opacity(
           opacity: learned || canLearn ? 1 : 0.55,
@@ -130,17 +136,47 @@ class _CharacterSkillsAchievementsState
                       ),
                       const SizedBox(height: 3),
                       Text(
-                        skill.description,
+                        spell?.effect ?? skill.description,
                         style: AppFonts.body(
                           size: 12,
                           color: AppColors.inkMuted,
                         ),
                       ),
+                      const SizedBox(height: 4),
+                      Wrap(
+                        spacing: 6,
+                        runSpacing: 4,
+                        children: [
+                          RuneTag(
+                            text: '$cost $resource',
+                            color: AppColors.arcaneBlue,
+                          ),
+                          if (learnedSkill != null)
+                            RuneTag(
+                              text:
+                                  'PROF ${learnedSkill.level} · ${learnedSkill.timesUsed} CASTS',
+                              color: AppColors.teal,
+                            ),
+                          if (spell != null && spell.targetsQuest)
+                            const RuneTag(
+                              text: 'CAST FROM A QUEST',
+                              color: AppColors.bronzeLight,
+                            ),
+                        ],
+                      ),
                     ],
                   ),
                 ),
                 const SizedBox(width: 8),
-                if (learned)
+                if (learned && spell != null && !spell.targetsQuest)
+                  QuestButton(
+                    label: spell.verb,
+                    compact: true,
+                    expand: false,
+                    style: QuestButtonStyle.gold,
+                    onPressed: () => showSpellSheet(context),
+                  )
+                else if (learned)
                   RuneTag(text: 'LEARNED', color: color, filled: true)
                 else
                   QuestButton(
@@ -178,6 +214,26 @@ class _CharacterSkillsAchievementsState
     messenger.showSnackBar(SnackBar(content: Text('Learned ${skill.name}.')));
   }
 
+  Future<void> _wearTitle(
+    BuildContext context,
+    CharacterAchievement achievement,
+    bool alreadyWorn,
+  ) async {
+    final messenger = ScaffoldMessenger.of(context);
+    await context.read<AppState>().setTitle(
+      alreadyWorn ? null : achievement.id,
+    );
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(
+          alreadyWorn
+              ? 'Title removed.'
+              : 'You are now known as the ${achievement.name}.',
+        ),
+      ),
+    );
+  }
+
   Widget _buildAchievementsTab(HeroCharacter hero) {
     return GridView.builder(
       padding: const EdgeInsets.all(14),
@@ -192,6 +248,7 @@ class _CharacterSkillsAchievementsState
         final achievement = allAchievements[index];
         final unlocked = hero.hasAchievement(achievement.id);
         final secret = achievement.hidden && !unlocked;
+        final worn = hero.titleAchievementId == achievement.id;
         final color =
             unlocked ? rarityColor(achievement.rarityScore) : AppColors.bronze;
 
@@ -199,43 +256,63 @@ class _CharacterSkillsAchievementsState
           message:
               secret
                   ? 'A hidden honour. Keep questing.'
+                  : unlocked
+                  ? '${achievement.description} Tap to wear as your title.'
                   : achievement.description,
-          triggerMode: TooltipTriggerMode.tap,
-          child: Opacity(
-            opacity: unlocked ? 1 : 0.5,
-            child: Column(
-              children: [
-                unlocked
-                    ? PulseGlow(
-                      color: color,
-                      radius: 10,
-                      child: GemRing(
-                        icon: achievementIcon(achievement.id),
+          triggerMode:
+              unlocked ? TooltipTriggerMode.longPress : TooltipTriggerMode.tap,
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap:
+                unlocked ? () => _wearTitle(context, achievement, worn) : null,
+            child: Opacity(
+              opacity: unlocked ? 1 : 0.5,
+              child: Column(
+                children: [
+                  unlocked
+                      ? PulseGlow(
                         color: color,
+                        radius: 10,
+                        enabled: worn,
+                        child: GemRing(
+                          icon: achievementIcon(achievement.id),
+                          color: color,
+                          size: 50,
+                          selected: worn,
+                        ),
+                      )
+                      : GemRing(
+                        icon:
+                            secret
+                                ? Icons.question_mark_rounded
+                                : Icons.lock_outline_rounded,
+                        color: AppColors.midnight,
                         size: 50,
+                        dimmed: true,
                       ),
-                    )
-                    : GemRing(
-                      icon:
-                          secret
-                              ? Icons.question_mark_rounded
-                              : Icons.lock_outline_rounded,
-                      color: AppColors.midnight,
-                      size: 50,
-                      dimmed: true,
+                  const SizedBox(height: 6),
+                  Text(
+                    secret ? '???' : achievement.name,
+                    textAlign: TextAlign.center,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppFonts.label(
+                      size: 8,
+                      color:
+                          worn
+                              ? AppColors.gold
+                              : unlocked
+                              ? AppColors.ink
+                              : AppColors.inkMuted,
                     ),
-                const SizedBox(height: 6),
-                Text(
-                  secret ? '???' : achievement.name,
-                  textAlign: TextAlign.center,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppFonts.label(
-                    size: 8,
-                    color: unlocked ? AppColors.ink : AppColors.inkMuted,
                   ),
-                ),
-              ],
+                  if (worn)
+                    Text(
+                      'WORN',
+                      style: AppFonts.label(size: 7, color: AppColors.gold),
+                    ),
+                ],
+              ),
             ),
           ),
         );

@@ -8,6 +8,7 @@ import 'package:quest_key/pages/info_page.dart';
 import 'package:quest_key/pages/quests_page.dart';
 import 'package:quest_key/services/notification_services.dart';
 import 'package:quest_key/state/app_state.dart';
+import 'package:quest_key/state/encounter_provider.dart';
 import 'package:quest_key/state/quest_list_provider.dart';
 import 'package:quest_key/theme/app_theme.dart';
 import 'package:quest_key/widgets/nav_bar.dart';
@@ -19,15 +20,23 @@ void main() async {
 
   final appState = AppState();
   await appState.loadHeroFromStorage();
+  await appState.processNewDay();
 
   final questProvider = QuestListProvider();
   await questProvider.loadQuestsFromStorage();
+
+  final encounters = EncounterProvider(
+    appState: appState,
+    quests: questProvider,
+  );
+  await encounters.refresh();
 
   runApp(
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (context) => appState),
         ChangeNotifierProvider(create: (context) => questProvider),
+        ChangeNotifierProvider(create: (context) => encounters),
       ],
       child: const MyApp(),
     ),
@@ -57,17 +66,44 @@ class MyApp extends StatelessWidget {
 }
 
 /// Root of the app: the hero-creation wizard until a hero exists, then the
-/// five tabs behind the custom navigation bar.
-class MainScreen extends StatelessWidget {
+/// five tabs behind the custom navigation bar. Re-runs the daily rest and
+/// rolls the day's encounter whenever the app returns to the foreground.
+class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
 
-  static const List<Widget> _pages = [
+  static const List<Widget> pages = [
     HomePage(),
     QuestsPage(),
     CreateQuestPage(),
     HeroPage(),
     InfoPage(),
   ];
+
+  @override
+  State<MainScreen> createState() => _MainScreenState();
+}
+
+class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      final appState = context.read<AppState>();
+      final encounters = context.read<EncounterProvider>();
+      appState.processNewDay().then((_) => encounters.refresh());
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -102,7 +138,7 @@ class _Tabs extends StatelessWidget {
         },
         child: KeyedSubtree(
           key: ValueKey<int>(index),
-          child: MainScreen._pages[index],
+          child: MainScreen.pages[index],
         ),
       ),
       bottomNavigationBar: CustomNavBar(

@@ -1,5 +1,60 @@
 # Quest Key: gameplay and UX features
 
+## Game mechanics (Phase 9): skills and honours now do things
+
+**Resources.** HP, MP and Stamina are pools, not decorations. Maximums grow
+with level (`maxHealthFor` etc. in `character.dart`). MP and Stamina refill
+every dawn; every completed quest restores 10% of each pool.
+
+**Spells** (`lib/models/spells.dart`, executed by `lib/state/spellbook.dart`).
+Each of the eight skills maps to a spell with a cost, a target and an effect.
+Cast from a quest tile (wand icon or long press) or from the grimoire:
+
+| Skill | Cost | Effect |
+| --- | --- | --- |
+| Power Strike (Empower) | 15 STA | Next Hard/Epic quest today pays +50% XP |
+| Swift Strike (Hasten) | 10 STA | Next quest finished within an hour pays +25% |
+| Fireball (Burn) | 25 MP | Removes a quest, keeps a third of its XP |
+| Heal (Mend) | 20 MP | Overdue quest becomes due tomorrow; torch +30% HP |
+| Stealth (Snooze) | 10 STA | Quest moves a day later and hides from Home until tomorrow |
+| Shield Bash (Bulwark) | 12 STA | +1 shield charge (max 3) |
+| Mana Shield (Ward) | 30 MP | +2 shield charges |
+| Whirlwind (Sweep) | 35 STA | Completes every Trivial quest at once, +10% |
+
+Proficiency rises one level per five casts (max 3) and cuts the cost 15% per
+level.
+
+**Rewards** (`lib/models/rewards.dart`). XP = base × (1 + affinity + buffs +
+encounter bonus + boss bonus), doubled on a critical. Affinity: each point of
+the category's attribute above 4 adds 3% (Strength→Health, Dexterity→Work,
+Intelligence→Study, Wisdom→Creative, Charisma→Social, Constitution→Home,
+Luck→Adventure), capped at 45%. Critical chance = Luck × 2.5% (max 35%).
+The completion toast shows the breakdown.
+
+**The torch** (`HeroCharacter.rest`). On each new day, every day since the
+last rest with no completed quest burns 25% of max HP; shield charges absorb
+one day each. If HP reaches zero the flame goes out (streak resets, torch
+relights at a quarter). A streak now survives a missed day as long as the
+torch is lit. The Home tab reports what happened while you were away.
+
+**Encounters** (`lib/models/encounter.dart`, `EncounterProvider`). Most days a
+short story appears on Home, chosen deterministically from the date, hero
+level and class. Accept it for a bonus quest (+50–80% XP), walk on, slip
+past with Stealth (+25 XP) or confront it with Fireball (Luck roll: +120 XP
+or torch damage).
+
+**Boss quests.** Any quest can carry steps (added on the forge). Steps are
+ticked on the tile; the quest completes only when all are done and pays
++25%.
+
+**Titles.** Tap an unlocked honour on the Hero tab to wear it: "Isolde Vane,
+the Night Owl". Six new honours: Spellweaver, Archmage, Fortune's Favourite,
+Trailblazer, Giant Slayer, Torch Bearer.
+
+All of this is local; existing saves load unchanged (new fields default and
+the rest clock starts on first launch without damage).
+
+
 ## Art-directed UI (Phase 8)
 
 Built on the committed artwork instead of emoji and stock Material chips:

@@ -23,7 +23,7 @@ void main() {
 
   test('Creating and saving hero should update AppState', () async {
     final storage = InMemoryQuestStorage();
-    final appState = AppState(storage: storage);
+    final appState = AppState(storage: storage, roll: () => 0.99);
 
     await appState.saveHero(makeHero());
 
@@ -38,7 +38,7 @@ void main() {
     'completeQuestForHero awards XP, counts the quest, unlocks and persists',
     () async {
       final storage = InMemoryQuestStorage();
-      final appState = AppState(storage: storage);
+      final appState = AppState(storage: storage, roll: () => 0.99);
       await appState.saveHero(
         makeHero(levelUp: const LevelUp(level: 1, exp: 10, maxExp: 100)),
       );
@@ -60,7 +60,10 @@ void main() {
   );
 
   test('completeQuestForHero reports a level up', () async {
-    final appState = AppState(storage: InMemoryQuestStorage());
+    final appState = AppState(
+      storage: InMemoryQuestStorage(),
+      roll: () => 0.99,
+    );
     await appState.saveHero(
       makeHero(levelUp: const LevelUp(level: 1, exp: 90, maxExp: 100)),
     );
@@ -78,7 +81,10 @@ void main() {
   });
 
   test('completeQuestForHero without a hero is a no-op', () async {
-    final appState = AppState(storage: InMemoryQuestStorage());
+    final appState = AppState(
+      storage: InMemoryQuestStorage(),
+      roll: () => 0.99,
+    );
     final result = await appState.completeQuestForHero(50);
     expect(result.leveledUp, isFalse);
     expect(result.unlockedAchievements, isEmpty);
@@ -86,7 +92,10 @@ void main() {
   });
 
   test('assignStatPoint spends a point and can unlock achievements', () async {
-    final appState = AppState(storage: InMemoryQuestStorage());
+    final appState = AppState(
+      storage: InMemoryQuestStorage(),
+      roll: () => 0.99,
+    );
     await appState.saveHero(
       makeHero(levelUp: const LevelUp(level: 2, statPoints: 1)),
     );
@@ -103,7 +112,10 @@ void main() {
   });
 
   test('clearHero forgets the hero', () async {
-    final appState = AppState(storage: InMemoryQuestStorage());
+    final appState = AppState(
+      storage: InMemoryQuestStorage(),
+      roll: () => 0.99,
+    );
     await appState.saveHero(makeHero());
     appState.clearHero();
     expect(appState.hero, isNull);

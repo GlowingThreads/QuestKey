@@ -15,6 +15,10 @@ abstract class QuestStorage {
   Future<void> deleteQuest(Quest quest);
   Future<void> saveHero(HeroCharacter hero);
   Future<HeroCharacter?> loadHero();
+
+  /// Today's encounter state as a JSON map (`null` when none is stored).
+  Future<Map<String, dynamic>?> loadEncounter();
+  Future<void> saveEncounter(Map<String, dynamic>? json);
   Future<void> clearAllData();
 }
 
@@ -23,6 +27,7 @@ class SharedPrefsQuestStorage implements QuestStorage {
   static const String questsKey = 'quests';
   static const String heroKey = 'hero';
   static const String heroExistsKey = 'heroExists';
+  static const String encounterKey = 'encounter';
 
   @override
   Future<void> saveQuests(List<Quest> quests) async {
@@ -81,10 +86,34 @@ class SharedPrefsQuestStorage implements QuestStorage {
   }
 
   @override
+  Future<Map<String, dynamic>?> loadEncounter() async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString(encounterKey);
+    if (raw == null) return null;
+    try {
+      final decoded = jsonDecode(raw);
+      return decoded is Map ? Map<String, dynamic>.from(decoded) : null;
+    } on FormatException {
+      return null;
+    }
+  }
+
+  @override
+  Future<void> saveEncounter(Map<String, dynamic>? json) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (json == null) {
+      await prefs.remove(encounterKey);
+    } else {
+      await prefs.setString(encounterKey, jsonEncode(json));
+    }
+  }
+
+  @override
   Future<void> clearAllData() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(heroKey);
     await prefs.remove(questsKey);
+    await prefs.remove(encounterKey);
     await prefs.setBool(heroExistsKey, false);
   }
 }
