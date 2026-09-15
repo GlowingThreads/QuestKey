@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:quest_key/constants/app_colors.dart';
 import 'package:quest_key/constants/app_dimens.dart';
 import 'package:quest_key/models/character.dart';
+import 'package:quest_key/models/spells.dart';
 import 'package:quest_key/theme/app_theme.dart';
 import 'package:quest_key/widgets/common/ui_kit.dart';
 
@@ -16,6 +17,9 @@ class HeroProfileCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final hasPoints = hero.levelUp.statPoints > 0;
     final background = hero.background;
+    final title = hero.title;
+    final now = DateTime.now();
+    final buffs = hero.activeBuffsAt(now);
 
     return ArcanePanel(
       glow: hasPoints ? AppColors.gold : null,
@@ -41,6 +45,15 @@ class HeroProfileCard extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       style: AppFonts.heading(size: 19, letterSpacing: 0.8),
                     ),
+                    if (title != null)
+                      Text(
+                        'the ${title.name}',
+                        style: AppFonts.body(
+                          size: 12,
+                          color: AppColors.gold,
+                          style: FontStyle.italic,
+                        ),
+                      ),
                     const SizedBox(height: 2),
                     Text(
                       background == null
@@ -86,6 +99,32 @@ class HeroProfileCard extends StatelessWidget {
               ),
             ],
           ),
+          if (buffs.isNotEmpty || hero.shieldCharges > 0) ...[
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 6,
+              runSpacing: 4,
+              children: [
+                for (final buff in buffs)
+                  RuneTag(
+                    text:
+                        buff.type == BuffType.haste
+                            ? 'HASTE · ${buff.expiresAt.difference(now).inMinutes}M'
+                            : buff.type.label.toUpperCase(),
+                    color: AppColors.magenta,
+                    icon: Icons.bolt_rounded,
+                    filled: true,
+                  ),
+                if (hero.shieldCharges > 0)
+                  RuneTag(
+                    text: 'SHIELD ×${hero.shieldCharges}',
+                    color: AppColors.arcaneBlue,
+                    icon: Icons.shield_rounded,
+                    filled: true,
+                  ),
+              ],
+            ),
+          ],
           const SizedBox(height: 12),
           const RuneDivider(),
           const SizedBox(height: 10),
@@ -93,9 +132,9 @@ class HeroProfileCard extends StatelessWidget {
             children: [
               Expanded(
                 child: _Resource(
-                  label: 'HP',
+                  label: 'TORCH',
                   value: hero.health,
-                  max: 100 + hero.levelUp.level * 5,
+                  max: hero.maxHealth,
                   colors: const [Color(0xFF7A1E1E), AppColors.ruby],
                 ),
               ),
@@ -104,7 +143,7 @@ class HeroProfileCard extends StatelessWidget {
                 child: _Resource(
                   label: 'MP',
                   value: hero.mana,
-                  max: 50 + hero.levelUp.level * 5,
+                  max: hero.maxMana,
                   colors: const [Color(0xFF1E3A8A), AppColors.arcaneBlue],
                 ),
               ),
@@ -113,7 +152,7 @@ class HeroProfileCard extends StatelessWidget {
                 child: _Resource(
                   label: 'STA',
                   value: hero.stamina,
-                  max: 75 + hero.levelUp.level * 8,
+                  max: hero.maxStamina,
                   colors: const [Color(0xFF7A4A10), AppColors.gold],
                 ),
               ),

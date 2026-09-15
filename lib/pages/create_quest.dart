@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:quest_key/constants/app_colors.dart';
 import 'package:quest_key/constants/app_dimens.dart';
 import 'package:quest_key/models/quest.dart';
+import 'package:quest_key/models/rewards.dart';
 import 'package:quest_key/state/app_state.dart';
 import 'package:quest_key/state/quest_list_provider.dart';
 import 'package:quest_key/theme/app_theme.dart';
@@ -72,6 +73,8 @@ class _CreateQuestPageState extends State<CreateQuestPage> {
   bool _initialized = false;
   bool _submitting = false;
   QuestCategory _category = QuestCategory.other;
+  final List<QuestStep> _steps = [];
+  final _stepController = TextEditingController();
 
   @override
   void initState() {
@@ -86,6 +89,7 @@ class _CreateQuestPageState extends State<CreateQuestPage> {
   void dispose() {
     _titleController.dispose();
     _descriptionController.dispose();
+    _stepController.dispose();
     super.dispose();
   }
 
@@ -103,6 +107,9 @@ class _CreateQuestPageState extends State<CreateQuestPage> {
       _difficulty = selectedQuest.difficulty;
       _remindMe = selectedQuest.remindMe;
       _category = selectedQuest.category;
+      _steps
+        ..clear()
+        ..addAll(selectedQuest.steps);
       _initialized = true;
     }
 
@@ -137,6 +144,11 @@ class _CreateQuestPageState extends State<CreateQuestPage> {
                 FadeSlideIn(
                   delay: const Duration(milliseconds: 240),
                   child: _difficultyPanel(),
+                ),
+                const SizedBox(height: AppPadding.md),
+                FadeSlideIn(
+                  delay: const Duration(milliseconds: 270),
+                  child: _stepsPanel(),
                 ),
                 const SizedBox(height: AppPadding.md),
                 FadeSlideIn(
@@ -362,6 +374,94 @@ class _CreateQuestPageState extends State<CreateQuestPage> {
     );
   }
 
+  Widget _stepsPanel() {
+    return ArcanePanel(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SectionHeader(
+            icon: Icons.shield_moon_rounded,
+            title: 'Boss Quest',
+            subtitle:
+                'Optional. Break a big task into steps; the quest completes '
+                'once every step is done and pays +25% XP.',
+            trailing:
+                _steps.isEmpty
+                    ? null
+                    : RuneTag(
+                      text:
+                          '${_steps.length} ${_steps.length == 1 ? 'STEP' : 'STEPS'}',
+                      color: AppColors.magenta,
+                      filled: true,
+                    ),
+          ),
+          const SizedBox(height: 10),
+          for (var i = 0; i < _steps.length; i++)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 6),
+              child: Row(
+                children: [
+                  Text(
+                    '${i + 1}.',
+                    style: AppFonts.label(size: 10, color: AppColors.gold),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      _steps[i].title,
+                      style: AppFonts.body(size: 14),
+                    ),
+                  ),
+                  IconButton(
+                    tooltip: 'Remove step',
+                    visualDensity: VisualDensity.compact,
+                    onPressed: () => setState(() => _steps.removeAt(i)),
+                    icon: const Icon(
+                      Icons.close_rounded,
+                      size: 18,
+                      color: AppColors.inkMuted,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _stepController,
+                  textCapitalization: TextCapitalization.sentences,
+                  style: AppFonts.body(size: 14),
+                  decoration: const InputDecoration(
+                    hintText: 'Add a step, e.g. "Draft the outline"',
+                    isDense: true,
+                  ),
+                  onSubmitted: (_) => _addStep(),
+                ),
+              ),
+              const SizedBox(width: 8),
+              QuestButton(
+                label: 'Add',
+                compact: true,
+                expand: false,
+                onPressed: _addStep,
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _addStep() {
+    final title = _stepController.text.trim();
+    if (title.isEmpty) return;
+    setState(() {
+      _steps.add(QuestStep(title: title));
+      _stepController.clear();
+    });
+  }
+
   Widget _schedulePanel() {
     final due = _dueDateTime;
     return ArcanePanel(
@@ -464,6 +564,9 @@ class _CreateQuestPageState extends State<CreateQuestPage> {
             : _descriptionController.text.trim();
     final due = _dueDateTime;
     final color = categoryColor(_category);
+    final hero = context.watch<AppState>().hero;
+    final affinity = hero == null ? 0 : affinityPercent(hero, _category);
+    final affinityStat = affinityStatFor(_category);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -522,6 +625,18 @@ class _CreateQuestPageState extends State<CreateQuestPage> {
                               '${difficultyLabel(_difficulty).toUpperCase()} · ${xpForDifficulty(_difficulty)} XP',
                           color: AppColors.gold,
                         ),
+                        if (affinity > 0 && affinityStat != null)
+                          RuneTag(
+                            text: '${affinityStat.toUpperCase()} +$affinity%',
+                            color: AppColors.teal,
+                            filled: true,
+                          ),
+                        if (_steps.isNotEmpty)
+                          RuneTag(
+                            text: 'BOSS · ${_steps.length} STEPS · +25%',
+                            color: AppColors.magenta,
+                            filled: true,
+                          ),
                       ],
                     ),
                   ],
@@ -567,6 +682,8 @@ class _CreateQuestPageState extends State<CreateQuestPage> {
       _difficulty = minDifficulty;
       _remindMe = false;
       _category = QuestCategory.other;
+      _steps.clear();
+      _stepController.clear();
       _submitting = false;
     });
   }
@@ -597,6 +714,9 @@ class _CreateQuestPageState extends State<CreateQuestPage> {
       remindMe: _remindMe,
       category: _category,
       completedAt: _editingQuest?.completedAt,
+      steps: _steps,
+      snoozedUntil: _editingQuest?.snoozedUntil,
+      xpBonusPercent: _editingQuest?.xpBonusPercent ?? 0,
     );
 
     final wasEditing = _isEditing;

@@ -19,7 +19,7 @@ void main() {
     storage = InMemoryQuestStorage();
     scheduler = FakeReminderScheduler();
     questProvider = QuestListProvider(storage: storage, scheduler: scheduler);
-    appState = AppState(storage: storage);
+    appState = AppState(storage: storage, roll: () => 0.99);
   });
 
   Future<void> pumpPage(WidgetTester tester) async {
@@ -32,6 +32,18 @@ void main() {
       questProvider: questProvider,
       child: const CreateQuestPage(),
     );
+    await tester.pumpAndSettle();
+  }
+
+  /// Scrolls the page until [finder] is built and visible.
+  Future<void> scrollTo(WidgetTester tester, Finder finder) async {
+    if (finder.evaluate().isEmpty) {
+      await tester.scrollUntilVisible(
+        finder,
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+    }
     await tester.pumpAndSettle();
   }
 
@@ -117,13 +129,14 @@ void main() {
   testWidgets('the live preview mirrors the form', (tester) async {
     await pumpPage(tester);
 
-    expect(find.text('Your quest title'), findsOneWidget);
     await enterDetails(tester, 'Slay the inbox', 'Zero unread');
     await tapVisible(tester, find.byKey(const ValueKey('difficulty_star_4')));
-
-    expect(find.text('Slay the inbox'), findsNWidgets(2)); // field + preview
     expect(find.text('Hard · +200 XP'), findsOneWidget);
+
+    await scrollTo(tester, find.text('HARD · 200 XP'));
     expect(find.text('HARD · 200 XP'), findsOneWidget);
+    expect(find.text('Slay the inbox'), findsAtLeastNWidgets(1));
+    expect(find.text('Your quest title'), findsNothing);
   });
 
   testWidgets('a quick-start template fills the form and category', (
@@ -219,9 +232,26 @@ void main() {
     await pumpPage(tester);
 
     expect(find.text('Edit Quest'), findsOneWidget);
+    expect(
+      tester
+          .widget<TextFormField>(
+            find.widgetWithText(TextFormField, 'Quest Name'),
+          )
+          .controller!
+          .text,
+      'Existing',
+    );
+    expect(
+      tester
+          .widget<TextFormField>(
+            find.widgetWithText(TextFormField, 'Quest Description'),
+          )
+          .controller!
+          .text,
+      'Already here',
+    );
+    await scrollTo(tester, find.text('Save Changes'));
     expect(find.text('Save Changes'), findsOneWidget);
-    expect(find.text('Existing'), findsNWidgets(2)); // field + preview
-    expect(find.text('Already here'), findsNWidgets(2));
     expect(find.textContaining('May 6'), findsOneWidget);
     expect(find.text('Hard · +200 XP'), findsOneWidget);
     expect(

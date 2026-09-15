@@ -5,6 +5,8 @@ import 'package:quest_key/constants/app_dimens.dart';
 import 'package:quest_key/models/character.dart';
 import 'package:quest_key/models/quest.dart';
 import 'package:quest_key/state/app_state.dart';
+import 'package:quest_key/state/encounter_provider.dart';
+import 'package:quest_key/widgets/encounter_card.dart';
 import 'package:quest_key/state/quest_list_provider.dart';
 import 'package:quest_key/theme/app_theme.dart';
 import 'package:quest_key/theme/iconography.dart';
@@ -27,8 +29,11 @@ class HomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final hero = context.watch<AppState>().hero;
+    final appState = context.watch<AppState>();
+    final hero = appState.hero;
     final quests = context.watch<QuestListProvider>();
+    final encounter = context.watch<EncounterProvider>().open;
+    final rest = appState.lastRest;
     final inProgress = quests.inProgressQuests.length;
 
     return Scaffold(
@@ -88,6 +93,23 @@ class HomePage extends StatelessWidget {
                   delay: const Duration(milliseconds: 160),
                   child: _Ledger(hero: hero, quests: quests),
                 ),
+                if (rest != null && rest.missedDays > 0) ...[
+                  const SizedBox(height: AppPadding.md),
+                  FadeSlideIn(
+                    delay: const Duration(milliseconds: 200),
+                    child: _RestBanner(
+                      report: rest,
+                      onDismiss: appState.dismissRestReport,
+                    ),
+                  ),
+                ],
+                if (encounter != null) ...[
+                  const SizedBox(height: AppPadding.md),
+                  FadeSlideIn(
+                    delay: const Duration(milliseconds: 220),
+                    child: EncounterCard(encounter: encounter),
+                  ),
+                ],
                 const SizedBox(height: AppPadding.lg),
               ],
               FadeSlideIn(
@@ -118,11 +140,65 @@ class HomePage extends StatelessWidget {
               const SizedBox(height: 4),
               const FadeSlideIn(
                 delay: Duration(milliseconds: 300),
-                child: QuestList(filterStatus: QuestStatus.inProgress),
+                child: QuestList(
+                  filterStatus: QuestStatus.inProgress,
+                  hideSnoozed: true,
+                ),
               ),
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// What happened to the torch while the app was closed.
+class _RestBanner extends StatelessWidget {
+  const _RestBanner({required this.report, required this.onDismiss});
+
+  final RestReport report;
+  final VoidCallback onDismiss;
+
+  @override
+  Widget build(BuildContext context) {
+    final out = report.flameWentOut;
+    final text =
+        out
+            ? 'The flame went out after ${report.missedDays} missed '
+                '${report.missedDays == 1 ? 'day' : 'days'}. Your streak resets; the torch relights at a quarter.'
+            : report.shieldsSpent > 0 && report.torchDamage == 0
+            ? '${report.shieldsSpent} shield ${report.shieldsSpent == 1 ? 'charge' : 'charges'} absorbed '
+                '${report.missedDays} missed ${report.missedDays == 1 ? 'day' : 'days'}. The flame held.'
+            : 'The torch burned ${report.torchDamage} HP over ${report.missedDays} missed '
+                '${report.missedDays == 1 ? 'day' : 'days'}'
+                '${report.shieldsSpent > 0 ? ' (${report.shieldsSpent} absorbed by shields)' : ''}. '
+                'Complete a quest to recover.';
+    return ArcanePanel(
+      ornate: false,
+      radius: 10,
+      accent: out ? AppColors.ruby : AppColors.gold,
+      padding: const EdgeInsets.all(12),
+      child: Row(
+        children: [
+          Icon(
+            out
+                ? Icons.local_fire_department_outlined
+                : Icons.local_fire_department_rounded,
+            color: out ? AppColors.ruby : AppColors.gold,
+          ),
+          const SizedBox(width: 10),
+          Expanded(child: Text(text, style: AppFonts.body(size: 13))),
+          IconButton(
+            onPressed: onDismiss,
+            icon: const Icon(
+              Icons.close_rounded,
+              size: 18,
+              color: AppColors.inkMuted,
+            ),
+            visualDensity: VisualDensity.compact,
+          ),
+        ],
       ),
     );
   }

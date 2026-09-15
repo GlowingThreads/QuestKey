@@ -5,12 +5,14 @@ import 'package:quest_key/constants/app_dimens.dart';
 import 'package:quest_key/models/quest.dart';
 import 'package:quest_key/state/app_state.dart';
 import 'package:quest_key/state/quest_list_provider.dart';
+import 'package:quest_key/state/spellbook.dart';
 import 'package:quest_key/theme/app_theme.dart';
 import 'package:quest_key/theme/iconography.dart';
 import 'package:quest_key/widgets/achievement_unlocked_dialog.dart';
 import 'package:quest_key/widgets/celebration_overlay.dart';
 import 'package:quest_key/widgets/common/ui_kit.dart';
 import 'package:quest_key/widgets/lvl_notifcation.dart';
+import 'package:quest_key/widgets/spell_sheet.dart';
 
 class QuestList extends StatefulWidget {
   /// Show only quests with this status; `null` shows every quest.
@@ -19,7 +21,15 @@ class QuestList extends StatefulWidget {
   /// When true the list fills its parent instead of capping its height.
   final bool expand;
 
-  const QuestList({super.key, this.filterStatus, this.expand = false});
+  /// Hide quests a Stealth spell has snoozed (Home tab).
+  final bool hideSnoozed;
+
+  const QuestList({
+    super.key,
+    this.filterStatus,
+    this.expand = false,
+    this.hideSnoozed = false,
+  });
 
   @override
   State<QuestList> createState() => _QuestListState();
@@ -29,7 +39,15 @@ class _QuestListState extends State<QuestList> {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<QuestListProvider>();
-    final quests = provider.getFilteredQuests(widget.filterStatus);
+    final quests = provider.getFilteredQuests(
+      widget.filterStatus,
+      hideSnoozed: widget.hideSnoozed,
+    );
+    final hasQuestSpells =
+        Spellbook(
+          appState: context.watch<AppState>(),
+          quests: provider,
+        ).castableOn(quests.isEmpty ? null : quests.first).isNotEmpty;
 
     final list =
         quests.isEmpty
@@ -69,6 +87,14 @@ class _QuestListState extends State<QuestList> {
                       onEdit: quest.isCompleted ? null : () => _edit(quest),
                       onComplete:
                           quest.isCompleted ? null : () => _complete(quest),
+                      onCast:
+                          quest.isCompleted || !hasQuestSpells
+                              ? null
+                              : () => showSpellSheet(context, target: quest),
+                      onToggleStep:
+                          quest.isCompleted
+                              ? null
+                              : (i) => provider.toggleStep(quest.id, i),
                     ),
                   ),
                 );
@@ -184,6 +210,19 @@ class _QuestListState extends State<QuestList> {
     final appState = context.read<AppState>();
     final messenger = ScaffoldMessenger.of(context);
 
+    final current = provider.questById(quest.id) ?? quest;
+    if (current.isBoss && !current.allStepsDone) {
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(
+            'Boss quest: ${current.stepsDone}/${current.steps.length} steps done. '
+            'Finish every step first.',
+          ),
+        ),
+      );
+      return;
+    }
+
     await provider.markQuestCompleted(quest);
     final result = await appState.completeQuestForHero(
       quest.xpReward,
@@ -192,20 +231,40 @@ class _QuestListState extends State<QuestList> {
     );
     if (!mounted) return;
 
-    showCelebration(context);
+    showCelebration(
+      context,
+      duration: result.critical ? const Duration(milliseconds: 2600) : null,
+    );
+    final breakdown = result.breakdown;
     messenger.showSnackBar(
       SnackBar(
+        duration: Duration(seconds: result.critical ? 5 : 4),
         content: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Icon(
-              Icons.auto_awesome_rounded,
-              color: AppColors.gold,
+            Icon(
+              result.critical ? Icons.bolt_rounded : Icons.auto_awesome_rounded,
+              color: result.critical ? AppColors.magenta : AppColors.gold,
               size: 18,
             ),
             const SizedBox(width: 8),
             Expanded(
-              child: Text(
-                'Completed "${quest.title}"  ·  +${quest.xpReward} XP',
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    result.critical
+                        ? 'CRITICAL! "${quest.title}"  ·  +${result.xpGained} XP'
+                        : 'Completed "${quest.title}"  ·  +${result.xpGained} XP',
+                  ),
+                  if (breakdown != null &&
+                      breakdown.summary != '${breakdown.base} XP')
+                    Text(
+                      breakdown.summary,
+                      style: AppFonts.label(size: 9, color: AppColors.inkMuted),
+                    ),
+                ],
               ),
             ),
           ],
@@ -296,11 +355,15 @@ class _QuestTile extends StatelessWidget {
     required this.quest,
     required this.onEdit,
     required this.onComplete,
+    this.onCast,
+    this.onToggleStep,
   });
 
   final Quest quest;
   final VoidCallback? onEdit;
   final VoidCallback? onComplete;
+  final VoidCallback? onCast;
+  final ValueChanged<int>? onToggleStep;
 
   @override
   Widget build(BuildContext context) {
@@ -309,6 +372,7 @@ class _QuestTile extends StatelessWidget {
     final now = DateTime.now();
     final overdue = quest.isOverdueAt(now);
     final dueToday = !overdue && !isCompleted && quest.isDueOn(now);
+    final snoozed = quest.isSnoozedAt(now);
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 5),
@@ -316,6 +380,7 @@ class _QuestTile extends StatelessWidget {
         color: Colors.transparent,
         child: InkWell(
           onTap: onEdit,
+          onLongPress: onCast,
           borderRadius: BorderRadius.circular(10),
           child: ArcanePanel(
             radius: 10,
@@ -328,111 +393,199 @@ class _QuestTile extends StatelessWidget {
                     ? AppColors.bronze
                     : AppColors.bronzeLight,
             padding: const EdgeInsets.fromLTRB(12, 10, 8, 10),
-            child: Row(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                if (isCompleted)
-                  SizedBox(
-                    width: 46,
-                    height: 46,
-                    child: Image.asset(
-                      Art.finished,
-                      errorBuilder:
-                          (_, _, _) => const GemRing(
-                            icon: Icons.check_rounded,
-                            color: AppColors.teal,
-                            size: 46,
-                          ),
-                    ),
-                  )
-                else
-                  GemRing(
-                    icon: categoryIcon(quest.category),
-                    color: color,
-                    size: 46,
-                  ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        quest.title,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: AppFonts.body(
-                          size: 16,
-                          weight: FontWeight.w600,
-                          color:
-                              isCompleted ? AppColors.inkMuted : AppColors.ink,
-                        ).copyWith(
-                          decoration:
-                              isCompleted ? TextDecoration.lineThrough : null,
-                          decorationColor: AppColors.bronzeLight,
+                Row(
+                  children: [
+                    if (isCompleted)
+                      SizedBox(
+                        width: 46,
+                        height: 46,
+                        child: Image.asset(
+                          Art.finished,
+                          errorBuilder:
+                              (_, _, _) => const GemRing(
+                                icon: Icons.check_rounded,
+                                color: AppColors.teal,
+                                size: 46,
+                              ),
                         ),
+                      )
+                    else
+                      GemRing(
+                        icon: categoryIcon(quest.category),
+                        color: color,
+                        size: 46,
                       ),
-                      Text(
-                        quest.description,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: AppFonts.body(
-                          size: 13,
-                          color: AppColors.inkMuted,
-                          style: FontStyle.italic,
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      Wrap(
-                        spacing: 6,
-                        runSpacing: 4,
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          if (isCompleted)
-                            const RuneTag(
-                              text: 'DONE',
-                              color: AppColors.teal,
-                              icon: Icons.check_rounded,
-                            )
-                          else
-                            RuneTag(
-                              text:
-                                  overdue
-                                      ? 'OVERDUE'
-                                      : dueToday
-                                      ? 'TODAY · ${quest.timeRemainingLabelAt(now)}'
-                                      : quest
-                                          .timeRemainingLabelAt(now)
-                                          .toUpperCase(),
+                          Text(
+                            quest.title,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppFonts.body(
+                              size: 16,
+                              weight: FontWeight.w600,
                               color:
-                                  overdue
-                                      ? AppColors.ruby
-                                      : dueToday
-                                      ? AppColors.gold
-                                      : AppColors.bronzeLight,
-                              icon: Icons.hourglass_bottom_rounded,
-                              filled: overdue || dueToday,
+                                  isCompleted
+                                      ? AppColors.inkMuted
+                                      : AppColors.ink,
+                            ).copyWith(
+                              decoration:
+                                  isCompleted
+                                      ? TextDecoration.lineThrough
+                                      : null,
+                              decorationColor: AppColors.bronzeLight,
                             ),
-                          RuneTag(
-                            text:
-                                '${difficultyLabel(quest.difficulty).toUpperCase()} · ${quest.xpReward} XP',
-                            color: AppColors.gold,
                           ),
-                          RuneTag(
-                            text: quest.category.label.toUpperCase(),
-                            color: color,
+                          Text(
+                            quest.description,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppFonts.body(
+                              size: 13,
+                              color: AppColors.inkMuted,
+                              style: FontStyle.italic,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Wrap(
+                            spacing: 6,
+                            runSpacing: 4,
+                            children: [
+                              if (isCompleted)
+                                const RuneTag(
+                                  text: 'DONE',
+                                  color: AppColors.teal,
+                                  icon: Icons.check_rounded,
+                                )
+                              else
+                                RuneTag(
+                                  text:
+                                      overdue
+                                          ? 'OVERDUE'
+                                          : dueToday
+                                          ? 'TODAY · ${quest.timeRemainingLabelAt(now)}'
+                                          : quest
+                                              .timeRemainingLabelAt(now)
+                                              .toUpperCase(),
+                                  color:
+                                      overdue
+                                          ? AppColors.ruby
+                                          : dueToday
+                                          ? AppColors.gold
+                                          : AppColors.bronzeLight,
+                                  icon: Icons.hourglass_bottom_rounded,
+                                  filled: overdue || dueToday,
+                                ),
+                              RuneTag(
+                                text:
+                                    '${difficultyLabel(quest.difficulty).toUpperCase()} · ${quest.xpReward} XP',
+                                color: AppColors.gold,
+                              ),
+                              RuneTag(
+                                text: quest.category.label.toUpperCase(),
+                                color: color,
+                              ),
+                              if (quest.isBoss)
+                                RuneTag(
+                                  text:
+                                      'BOSS ${quest.stepsDone}/${quest.steps.length}',
+                                  color: AppColors.magenta,
+                                  icon: Icons.shield_moon_rounded,
+                                  filled: true,
+                                ),
+                              if (snoozed)
+                                const RuneTag(
+                                  text: 'SNOOZED',
+                                  color: AppColors.arcaneBlue,
+                                  icon: Icons.visibility_off_rounded,
+                                ),
+                              if (quest.xpBonusPercent > 0 && !isCompleted)
+                                RuneTag(
+                                  text: 'ENCOUNTER +${quest.xpBonusPercent}%',
+                                  color: AppColors.magenta,
+                                ),
+                            ],
                           ),
                         ],
                       ),
-                    ],
-                  ),
-                ),
-                if (!isCompleted)
-                  IconButton(
-                    tooltip: 'Complete quest',
-                    onPressed: onComplete,
-                    icon: const Icon(
-                      Icons.check_circle_outline_rounded,
-                      color: AppColors.bronzeLight,
                     ),
-                  ),
+                    if (!isCompleted)
+                      Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            tooltip: 'Complete quest',
+                            onPressed: onComplete,
+                            visualDensity: VisualDensity.compact,
+                            icon: const Icon(
+                              Icons.check_circle_outline_rounded,
+                              color: AppColors.bronzeLight,
+                            ),
+                          ),
+                          if (onCast != null)
+                            IconButton(
+                              tooltip: 'Cast a spell',
+                              onPressed: onCast,
+                              visualDensity: VisualDensity.compact,
+                              icon: const Icon(
+                                Icons.auto_fix_high_rounded,
+                                color: AppColors.arcaneBlue,
+                                size: 20,
+                              ),
+                            ),
+                        ],
+                      ),
+                  ],
+                ),
+                if (quest.isBoss && !isCompleted) ...[
+                  const SizedBox(height: 6),
+                  for (var i = 0; i < quest.steps.length; i++)
+                    InkWell(
+                      onTap:
+                          onToggleStep == null ? null : () => onToggleStep!(i),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 3),
+                        child: Row(
+                          children: [
+                            Icon(
+                              quest.steps[i].done
+                                  ? Icons.check_box_rounded
+                                  : Icons.check_box_outline_blank_rounded,
+                              size: 18,
+                              color:
+                                  quest.steps[i].done
+                                      ? AppColors.teal
+                                      : AppColors.bronzeLight,
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                quest.steps[i].title,
+                                style: AppFonts.body(
+                                  size: 13,
+                                  color:
+                                      quest.steps[i].done
+                                          ? AppColors.inkMuted
+                                          : AppColors.ink,
+                                ).copyWith(
+                                  decoration:
+                                      quest.steps[i].done
+                                          ? TextDecoration.lineThrough
+                                          : null,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                ],
               ],
             ),
           ),

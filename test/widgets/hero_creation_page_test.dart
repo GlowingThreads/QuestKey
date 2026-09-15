@@ -18,7 +18,7 @@ void main() {
 
   setUp(() {
     storage = InMemoryQuestStorage();
-    appState = AppState(storage: storage);
+    appState = AppState(storage: storage, roll: () => 0.99);
     questProvider = QuestListProvider(
       storage: storage,
       scheduler: FakeReminderScheduler(),

@@ -186,21 +186,51 @@ class QuestListProvider with ChangeNotifier {
   Future<void> markQuestCompleted(Quest quest) =>
       updateQuestStatus(quest.id, QuestStatus.completed);
 
+  /// In-progress quests of Trivial difficulty (Whirlwind targets).
+  List<Quest> get trivialInProgress =>
+      _quests
+          .where((q) => !q.isCompleted && q.difficulty == minDifficulty)
+          .toList()
+        ..sort(_byDueDate);
+
+  /// Ticks or unticks one step of a boss quest.
+  Future<void> toggleStep(int questId, int stepIndex) async {
+    final index = _quests.indexWhere((q) => q.id == questId);
+    if (index == -1) return;
+    final quest = _quests[index];
+    if (stepIndex < 0 || stepIndex >= quest.steps.length) return;
+    final steps = [...quest.steps];
+    steps[stepIndex] = steps[stepIndex].copyWith(done: !steps[stepIndex].done);
+    _quests[index] = quest.copyWith(steps: steps);
+    notifyListeners();
+    await saveQuestsToStorage();
+  }
+
   /// Quests with [filterStatus], or all quests when it is `null`.
   ///
   /// In-progress quests are sorted by due date (soonest first) and completed
   /// quests by completion time (latest first). The "all" view lists
-  /// in-progress quests before completed ones.
-  List<Quest> getFilteredQuests(QuestStatus? filterStatus) {
+  /// in-progress quests before completed ones. [hideSnoozed] drops quests a
+  /// Stealth spell has hidden until later.
+  List<Quest> getFilteredQuests(
+    QuestStatus? filterStatus, {
+    bool hideSnoozed = false,
+  }) {
+    final now = _now();
+    bool visible(Quest q) => !hideSnoozed || !q.isSnoozedAt(now);
     switch (filterStatus) {
       case QuestStatus.inProgress:
-        return _quests.where((q) => !q.isCompleted).toList()..sort(_byDueDate);
+        return _quests.where((q) => !q.isCompleted && visible(q)).toList()
+          ..sort(_byDueDate);
       case QuestStatus.completed:
         return _quests.where((q) => q.isCompleted).toList()
           ..sort(_byCompletedDesc);
       case null:
         return [
-          ...getFilteredQuests(QuestStatus.inProgress),
+          ...getFilteredQuests(
+            QuestStatus.inProgress,
+            hideSnoozed: hideSnoozed,
+          ),
           ...getFilteredQuests(QuestStatus.completed),
         ];
     }

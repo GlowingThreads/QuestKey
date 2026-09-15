@@ -19,11 +19,14 @@ const int perfectionistStreak = 10;
 /// * [completedToday] is the number of quests completed on the day of [now]
 ///   including the one just completed (0 when not completing a quest).
 /// * [justCompleted] is the quest that was just completed, if any.
+/// * [survivedMissedDay] is true when the daily rest burned the torch but
+///   the flame stayed lit.
 List<CharacterAchievement> evaluateAchievements(
   HeroCharacter hero, {
   required DateTime now,
   int completedToday = 0,
   Quest? justCompleted,
+  bool survivedMissedDay = false,
 }) {
   final level = hero.levelUp.level;
   final stats = heroStatNames.map(hero.statValue).toList();
@@ -51,6 +54,18 @@ List<CharacterAchievement> evaluateAchievements(
         return stats.any((value) => value >= 10);
       case 'secret_hidden':
         return justCompleted != null && now.hour < 4;
+      case 'spell_caster':
+        return hero.spellsCast >= 1;
+      case 'spell_master':
+        return hero.spellsCast >= 25;
+      case 'lucky_strike':
+        return hero.criticalHits >= 1;
+      case 'encounter_victor':
+        return hero.encountersResolved >= 1;
+      case 'boss_slayer':
+        return hero.bossesSlain >= 1;
+      case 'torch_bearer':
+        return survivedMissedDay;
       default:
         return false;
     }
