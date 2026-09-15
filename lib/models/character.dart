@@ -236,6 +236,29 @@ class HeroCharacter {
     );
   }
 
+  /// Returns a hero with [bonuses] (stat name → points) added to its stats.
+  HeroCharacter addStats(Map<String, int> bonuses) {
+    var hero = this;
+    for (final entry in bonuses.entries) {
+      final v = entry.value;
+      hero = switch (entry.key) {
+        'strength' => hero.copyWith(strength: hero.strength + v),
+        'dexterity' => hero.copyWith(dexterity: hero.dexterity + v),
+        'intelligence' => hero.copyWith(intelligence: hero.intelligence + v),
+        'wisdom' => hero.copyWith(wisdom: hero.wisdom + v),
+        'charisma' => hero.copyWith(charisma: hero.charisma + v),
+        'constitution' => hero.copyWith(constitution: hero.constitution + v),
+        'luck' => hero.copyWith(luck: hero.luck + v),
+        _ => hero,
+      };
+    }
+    return hero;
+  }
+
+  /// Returns a hero with [background] set and its stat bonuses applied.
+  HeroCharacter withBackground(CharacterBackground background) =>
+      addStats(background.statBonus).copyWith(background: background);
+
   /// Records a quest completed at [now]: bumps [questsCompleted] and updates
   /// the daily streak (same day keeps it, the next day extends it, a gap
   /// resets it to 1).

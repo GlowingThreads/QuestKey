@@ -7,13 +7,17 @@ import 'package:quest_key/state/app_state.dart';
 import 'package:quest_key/state/quest_list_provider.dart';
 import 'package:quest_key/widgets/achievement_unlocked_dialog.dart';
 import 'package:quest_key/widgets/celebration_overlay.dart';
+import 'package:quest_key/widgets/common/ui_kit.dart';
 import 'package:quest_key/widgets/lvl_notifcation.dart';
 
 class QuestList extends StatefulWidget {
   /// Show only quests with this status; `null` shows every quest.
   final QuestStatus? filterStatus;
 
-  const QuestList({super.key, this.filterStatus});
+  /// When true the list fills its parent instead of capping its height.
+  final bool expand;
+
+  const QuestList({super.key, this.filterStatus, this.expand = false});
 
   @override
   State<QuestList> createState() => _QuestListState();
@@ -35,7 +39,10 @@ class _QuestListState extends State<QuestList> {
           width: AppBorders.thick,
         ),
       ),
-      constraints: const BoxConstraints(maxHeight: AppHeights.questContainer),
+      constraints:
+          widget.expand
+              ? const BoxConstraints.expand()
+              : const BoxConstraints(maxHeight: AppHeights.questContainer),
       child:
           quests.isEmpty
               ? _EmptyState(filterStatus: widget.filterStatus)
@@ -44,30 +51,36 @@ class _QuestListState extends State<QuestList> {
                 itemBuilder: (context, index) {
                   final quest = quests[index];
 
-                  return Dismissible(
-                    key: Key(quest.id.toString()),
-                    direction:
-                        quest.isCompleted
-                            ? DismissDirection.endToStart
-                            : DismissDirection.horizontal,
-                    background: _swipeBackground(
-                      color: AppColors.completeGreen,
-                      icon: Icons.check_circle_rounded,
-                      alignment: Alignment.centerLeft,
-                    ),
-                    secondaryBackground: _swipeBackground(
-                      color: AppColors.deleteRed,
-                      icon: Icons.delete_sweep,
-                      alignment: Alignment.centerRight,
-                    ),
-                    confirmDismiss:
-                        (direction) => _confirmDismiss(direction, quest),
-                    onDismissed: (direction) => _onDismissed(direction, quest),
-                    child: _QuestTile(
-                      quest: quest,
-                      onEdit: quest.isCompleted ? null : () => _edit(quest),
-                      onComplete:
-                          quest.isCompleted ? null : () => _complete(quest),
+                  return FadeSlideIn(
+                    key: ValueKey('fade_${quest.id}'),
+                    delay: Duration(milliseconds: 40 * (index < 8 ? index : 8)),
+                    offset: const Offset(-0.05, 0),
+                    child: Dismissible(
+                      key: Key(quest.id.toString()),
+                      direction:
+                          quest.isCompleted
+                              ? DismissDirection.endToStart
+                              : DismissDirection.horizontal,
+                      background: _swipeBackground(
+                        color: AppColors.completeGreen,
+                        icon: Icons.check_circle_rounded,
+                        alignment: Alignment.centerLeft,
+                      ),
+                      secondaryBackground: _swipeBackground(
+                        color: AppColors.deleteRed,
+                        icon: Icons.delete_sweep,
+                        alignment: Alignment.centerRight,
+                      ),
+                      confirmDismiss:
+                          (direction) => _confirmDismiss(direction, quest),
+                      onDismissed:
+                          (direction) => _onDismissed(direction, quest),
+                      child: _QuestTile(
+                        quest: quest,
+                        onEdit: quest.isCompleted ? null : () => _edit(quest),
+                        onComplete:
+                            quest.isCompleted ? null : () => _complete(quest),
+                      ),
                     ),
                   );
                 },

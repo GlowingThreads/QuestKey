@@ -1,228 +1,276 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:quest_key/state/app_state.dart';
+import 'package:quest_key/constants/app_colors.dart';
+import 'package:quest_key/constants/app_dimens.dart';
+import 'package:quest_key/pages/hero_creation_page.dart';
 import 'package:quest_key/services/storage.dart';
+import 'package:quest_key/state/app_state.dart';
 import 'package:quest_key/state/quest_list_provider.dart';
-import 'package:quest_key/pages/create_hero_page.dart';
+import 'package:quest_key/widgets/common/ui_kit.dart';
 
+/// Adventurer's guide: how the game works, hero management and the danger
+/// zone for clearing data.
 class InfoPage extends StatelessWidget {
   const InfoPage({super.key});
 
+  static const List<({IconData icon, String title, String body})> _howTo = [
+    (
+      icon: Icons.auto_fix_high,
+      title: 'Forge quests',
+      body:
+          'Turn any task into a quest on the Create tab. Pick a category, a '
+          'difficulty (more stars = more XP) and a due time.',
+    ),
+    (
+      icon: Icons.swipe_right_alt,
+      title: 'Complete them',
+      body:
+          'Swipe a quest right or tap its ✓ to finish it and earn XP. Swipe '
+          'left to delete (you will be asked to confirm). Tap to edit.',
+    ),
+    (
+      icon: Icons.trending_up,
+      title: 'Level up',
+      body:
+          'Fill the XP bar to level up. Every level grants 3 stat points to '
+          'spend on the Hero tab, and unlocks new skills to learn.',
+    ),
+    (
+      icon: Icons.local_fire_department,
+      title: 'Keep the streak',
+      body:
+          'Complete at least one quest a day to build a streak. Streaks, '
+          'quest counts and stats unlock achievements, some of them hidden.',
+    ),
+    (
+      icon: Icons.notifications_active_outlined,
+      title: 'Reminders',
+      body:
+          'Turn on "Remind me" for a quest and Quest Key notifies you 30 '
+          'minutes before it is due, even after a reboot.',
+    ),
+  ];
+
   @override
   Widget build(BuildContext context) {
+    final hasHero = context.watch<AppState>().hasHero;
+
     return Scaffold(
-      body: Container(
-        width: double.infinity,
-        height: double.infinity,
-        decoration: const BoxDecoration(
-          image: DecorationImage(
-            image: AssetImage('assets/images/app_assets/info_bkg.png'),
-            fit: BoxFit.cover,
-          ),
-        ),
+      body: PageBackground(
+        asset: 'assets/images/app_assets/info_bkg.png',
         child: SafeArea(
-          child: SingleChildScrollView(
-            child: Center(
-              child: Container(
-                padding: const EdgeInsets.all(16.0),
-                margin: const EdgeInsets.symmetric(
-                  horizontal: 16.0,
-                  vertical: 20.0,
-                ),
-                decoration: BoxDecoration(
-                  color: const Color.fromARGB(128, 26, 8, 28),
-                  borderRadius: BorderRadius.circular(16.0),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.7),
-                      blurRadius: 10.0,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(24.0),
-                      decoration: BoxDecoration(
-                        color: const Color.fromARGB(255, 29, 17, 62),
-                        borderRadius: BorderRadius.circular(16.0),
-                        border: Border.all(color: Colors.white, width: 2.0),
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(
+              AppPadding.xxl,
+              AppPadding.lg,
+              AppPadding.xxl,
+              110,
+            ),
+            children: [
+              FadeSlideIn(
+                child: GlassPanel(
+                  glowColor: AppColors.accentPurple,
+                  child: Column(
+                    children: [
+                      const Text('🗝️', style: TextStyle(fontSize: 40)),
+                      const SizedBox(height: AppPadding.sm),
+                      Text(
+                        'Quest Key',
+                        style: Theme.of(context).textTheme.headlineSmall,
                       ),
-                      child: const Text(
-                        'Welcome to Quest Key!\n\nAn RPG To-Do List Application.',
+                      const Text(
+                        'An RPG to-do list. Your tasks are quests; finishing '
+                        'them makes your hero stronger.',
                         textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 22.0,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                          height: 1.2,
-                        ),
+                        style: TextStyle(color: AppColors.textSecondary),
                       ),
-                    ),
-                    const SizedBox(height: 20),
-                    const Text(
-                      _infoText,
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white,
-                        height: 1.4,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 30),
-                    ElevatedButton(
-                      onPressed: () => _openCreateHero(context),
-                      style: ElevatedButton.styleFrom(
-                        elevation: 4,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 32,
-                          vertical: 16,
-                        ),
-                        foregroundColor: Colors.white,
-                        backgroundColor: const Color.fromARGB(255, 13, 5, 35),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8.0),
-                          side: const BorderSide(
-                            color: Color.fromARGB(255, 214, 115, 241),
-                            width: 2.0,
-                          ),
-                        ),
-                        textStyle: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(Icons.person_add, size: 20),
-                          const SizedBox(width: 8),
-                          Text(
-                            context.watch<AppState>().hasHero
-                                ? 'Create New Hero'
-                                : 'Create Hero',
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 40),
-                    ElevatedButton(
-                      onPressed: () async {
-                        final appState = context.read<AppState>();
-                        final questProvider = context.read<QuestListProvider>();
-                        final messenger = ScaffoldMessenger.of(context);
-                        final navigator = Navigator.of(context);
-
-                        final confirm = await showDialog<bool>(
-                          context: context,
-                          builder:
-                              (context) => AlertDialog(
-                                backgroundColor: const Color.fromARGB(
-                                  230,
-                                  24,
-                                  6,
-                                  6,
-                                ),
-                                title: const Text(
-                                  'Adventurer, are you certain?',
-                                  style: TextStyle(color: Colors.white),
-                                  textAlign: TextAlign.center,
-                                ),
-                                content: const Text(
-                                  'This will permanently delete your hero and all related quests and progress.',
-                                  style: TextStyle(
-                                    color: Color.fromARGB(179, 210, 207, 207),
-                                  ),
-                                  textAlign: TextAlign.center,
-                                ),
-                                actionsAlignment: MainAxisAlignment.center,
-                                actions: [
-                                  TextButton(
-                                    onPressed:
-                                        () => Navigator.pop(context, false),
-                                    child: const Text(
-                                      'Cancel',
-                                      style: TextStyle(color: Colors.white),
-                                    ),
-                                  ),
-                                  TextButton(
-                                    onPressed:
-                                        () => Navigator.pop(context, true),
-                                    child: const Text(
-                                      'Yes, delete',
-                                      style: TextStyle(
-                                        color: Color.fromARGB(255, 255, 204, 0),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                        );
-
-                        if (confirm != true) return;
-
-                        await StorageService.clearAllData();
-                        appState.clearHero();
-                        await questProvider.loadQuestsFromStorage();
-
-                        messenger.showSnackBar(
-                          const SnackBar(
-                            content: Text('Hero and quests cleared'),
-                          ),
-                        );
-
-                        navigator.popUntil((route) => route.isFirst);
-                      },
-                      style: ElevatedButton.styleFrom(
-                        elevation: 4,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 20,
-                          vertical: 16,
-                        ),
-                        backgroundColor: const Color.fromARGB(255, 240, 15, 15),
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8.0),
-                          side: const BorderSide(
-                            color: Color.fromARGB(255, 248, 214, 21),
-                            width: 2,
-                          ),
-                        ),
-                        textStyle: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      child: const Text('Clear Hero Data'),
-                    ),
-                    const SizedBox(height: 20),
-                  ],
+                    ],
+                  ),
                 ),
               ),
-            ),
+              const SizedBox(height: AppPadding.lg),
+              const FadeSlideIn(
+                delay: Duration(milliseconds: 80),
+                child: SectionHeader(
+                  icon: Icons.menu_book_outlined,
+                  title: "Adventurer's guide",
+                ),
+              ),
+              const SizedBox(height: AppPadding.sm),
+              for (var i = 0; i < _howTo.length; i++)
+                FadeSlideIn(
+                  delay: Duration(milliseconds: 120 + 50 * i),
+                  child: GlassPanel(
+                    margin: const EdgeInsets.only(bottom: AppPadding.sm),
+                    padding: const EdgeInsets.all(AppPadding.md),
+                    radius: AppRadius.md,
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(AppPadding.sm),
+                          decoration: BoxDecoration(
+                            color: AppColors.accentPurple.withValues(
+                              alpha: 0.5,
+                            ),
+                            borderRadius: BorderRadius.circular(AppRadius.sm),
+                          ),
+                          child: Icon(
+                            _howTo[i].icon,
+                            color: AppColors.accentGold,
+                            size: 20,
+                          ),
+                        ),
+                        const SizedBox(width: AppPadding.md),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                _howTo[i].title,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                _howTo[i].body,
+                                style: const TextStyle(
+                                  color: AppColors.textSecondary,
+                                  fontSize: AppFontSizes.xs,
+                                  height: 1.35,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              const SizedBox(height: AppPadding.lg),
+              FadeSlideIn(
+                delay: const Duration(milliseconds: 420),
+                child: GlassPanel(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SectionHeader(
+                        icon: Icons.person_outline,
+                        title: 'Your hero',
+                      ),
+                      const SizedBox(height: AppPadding.md),
+                      QuestButton(
+                        label:
+                            hasHero ? 'Create a new hero' : 'Create your hero',
+                        icon: Icons.person_add_alt_1,
+                        onPressed: () => _openCreateHero(context),
+                      ),
+                      if (hasHero)
+                        const Padding(
+                          padding: EdgeInsets.only(top: AppPadding.sm),
+                          child: Text(
+                            'Replaces your current hero and level. Quests are kept.',
+                            style: TextStyle(
+                              color: AppColors.textSecondary,
+                              fontSize: AppFontSizes.xs,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: AppPadding.lg),
+              FadeSlideIn(
+                delay: const Duration(milliseconds: 480),
+                child: GlassPanel(
+                  borderColor: Colors.redAccent.withValues(alpha: 0.6),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SectionHeader(
+                        icon: Icons.warning_amber_rounded,
+                        title: 'Danger zone',
+                        color: Colors.redAccent,
+                      ),
+                      const SizedBox(height: AppPadding.md),
+                      QuestButton(
+                        label: 'Clear hero and quest data',
+                        icon: Icons.delete_forever_outlined,
+                        colors: const [Color(0xFF7F0000), Color(0xFFD32F2F)],
+                        glow: Colors.redAccent,
+                        onPressed: () => _confirmClear(context),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: AppPadding.lg),
+              const FadeSlideIn(
+                delay: Duration(milliseconds: 540),
+                child: Text(
+                  'Everything is stored on this device only.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: AppColors.textSecondary,
+                    fontSize: AppFontSizes.xs,
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),
     );
   }
-}
 
-/// Opens the hero creator; asks first if it would replace an existing hero.
-Future<void> _openCreateHero(BuildContext context) async {
-  final navigator = Navigator.of(context);
-  if (context.read<AppState>().hasHero) {
-    final replace = await showDialog<bool>(
+  /// Opens the hero creator; asks first if it would replace an existing hero.
+  Future<void> _openCreateHero(BuildContext context) async {
+    final navigator = Navigator.of(context);
+    if (context.read<AppState>().hasHero) {
+      final replace = await showDialog<bool>(
+        context: context,
+        builder:
+            (context) => AlertDialog(
+              title: const Text('Replace your hero?'),
+              content: const Text(
+                'Creating a new hero replaces your current hero, level and '
+                'stats. Your quests are kept.',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  child: const Text('Cancel'),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.pop(context, true),
+                  child: const Text('Replace'),
+                ),
+              ],
+            ),
+      );
+      if (replace != true) return;
+    }
+    await navigator.push(
+      MaterialPageRoute<void>(builder: (_) => const HeroCreationPage()),
+    );
+  }
+
+  Future<void> _confirmClear(BuildContext context) async {
+    final appState = context.read<AppState>();
+    final questProvider = context.read<QuestListProvider>();
+    final messenger = ScaffoldMessenger.of(context);
+
+    final confirm = await showDialog<bool>(
       context: context,
       builder:
           (context) => AlertDialog(
-            title: const Text('Replace your hero?'),
+            title: const Text('Adventurer, are you certain?'),
             content: const Text(
-              'Creating a new hero replaces your current hero, level and '
-              'stats. Your quests are kept.',
+              'This permanently deletes your hero and all quests and progress.',
             ),
+            actionsAlignment: MainAxisAlignment.center,
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context, false),
@@ -230,37 +278,21 @@ Future<void> _openCreateHero(BuildContext context) async {
               ),
               TextButton(
                 onPressed: () => Navigator.pop(context, true),
-                child: const Text('Replace'),
+                child: const Text(
+                  'Yes, delete',
+                  style: TextStyle(color: Colors.redAccent),
+                ),
               ),
             ],
           ),
     );
-    if (replace != true) return;
+    if (confirm != true) return;
+
+    await StorageService.clearAllData();
+    appState.clearHero();
+    await questProvider.loadQuestsFromStorage();
+    messenger.showSnackBar(
+      const SnackBar(content: Text('Hero and quests cleared')),
+    );
   }
-  await navigator.push(
-    MaterialPageRoute<void>(
-      builder: (ctx) => CreateHeroPage(onHeroCreated: (_) {}),
-    ),
-  );
 }
-
-// Info instructions
-const String _infoText = '''
-Create your hero and embark on quests!
-
-• Tap "Create Quest" to add new tasks.
-• Complete quests to earn XP and level up.
-• Leveling lets you assign stat points and improve your hero.
-
-Track your progress on the Hero Page.
-
-In the Quest Log you can:
-✓ View ongoing and completed quests.
-→ Swipe right (or tap ✓) to complete a quest.
-← Swipe left to delete a quest (you'll be asked to confirm).
-✎ Tap a quest to edit it.
-
-Complete quests daily to build a streak, unlock achievements and learn skills on the Hero page.
-
-Tap "Create Hero" to begin your adventure!
-''';

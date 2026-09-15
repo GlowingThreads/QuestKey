@@ -32,12 +32,43 @@ void main() {
       questProvider: questProvider,
       child: const CreateQuestPage(),
     );
+    await tester.pumpAndSettle();
+  }
+
+  /// Scrolls the page until [finder] is built and visible, then taps it.
+  Future<void> tapVisible(WidgetTester tester, Finder finder) async {
+    if (finder.evaluate().isEmpty) {
+      await tester.scrollUntilVisible(
+        finder,
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+    }
+    await tester.ensureVisible(finder);
+    await tester.pumpAndSettle();
+    await tester.tap(finder);
+    await tester.pumpAndSettle();
+  }
+
+  Future<void> enterDetails(
+    WidgetTester tester,
+    String title,
+    String desc,
+  ) async {
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'Quest Name'),
+      title,
+    );
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'Quest Description'),
+      desc,
+    );
+    await tester.pump();
   }
 
   /// Opens the date picker then the time picker and accepts both defaults.
   Future<void> pickDueDate(WidgetTester tester) async {
-    await tester.tap(find.text('Pick Due Date & Time'));
-    await tester.pumpAndSettle();
+    await tapVisible(tester, find.text('Pick date & time'));
     await tester.tap(find.text('OK'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('OK'));
@@ -49,8 +80,7 @@ void main() {
   ) async {
     await pumpPage(tester);
 
-    await tester.tap(find.text('Create Quest'));
-    await tester.pumpAndSettle();
+    await tapVisible(tester, find.text('Forge Quest'));
 
     expect(find.text('Every good quest needs a name!'), findsOneWidget);
     expect(
@@ -63,19 +93,11 @@ void main() {
   testWidgets('a valid submit adds exactly one quest', (tester) async {
     await pumpPage(tester);
 
-    await tester.enterText(
-      find.widgetWithText(TextFormField, 'Quest Name'),
-      'Walk the dog',
-    );
-    await tester.enterText(
-      find.widgetWithText(TextFormField, 'Quest Description'),
-      'Around the block',
-    );
+    await enterDetails(tester, 'Walk the dog', 'Around the block');
     await pickDueDate(tester);
-    expect(find.textContaining('Due:'), findsOneWidget);
+    expect(find.text('Pick date & time'), findsNothing);
 
-    await tester.tap(find.text('Create Quest'));
-    await tester.pumpAndSettle();
+    await tapVisible(tester, find.text('Forge Quest'));
 
     expect(questProvider.quests.length, 1);
     final quest = questProvider.quests.single;
@@ -92,18 +114,26 @@ void main() {
     expect(find.text('Walk the dog'), findsNothing);
   });
 
+  testWidgets('the live preview mirrors the form', (tester) async {
+    await pumpPage(tester);
+
+    expect(find.text('Your quest title'), findsOneWidget);
+    await enterDetails(tester, 'Slay the inbox', 'Zero unread');
+    await tapVisible(tester, find.byKey(const ValueKey('difficulty_star_4')));
+
+    expect(find.text('Slay the inbox'), findsNWidgets(2)); // field + preview
+    expect(find.text('Hard · +200 XP'), findsOneWidget);
+    expect(find.textContaining('★★★★ +200 XP'), findsOneWidget);
+  });
+
   testWidgets('a quick-start template fills the form and category', (
     tester,
   ) async {
     await pumpPage(tester);
 
-    await tester.tap(find.text('💧 Drink water'));
-    await tester.pump();
-    await tester.tap(find.text('Today 6 pm'));
-    await tester.pump();
-    await tester.ensureVisible(find.text('Create Quest'));
-    await tester.tap(find.text('Create Quest'));
-    await tester.pumpAndSettle();
+    await tapVisible(tester, find.text('💧 Drink water'));
+    await tapVisible(tester, find.text('Today 6 pm'));
+    await tapVisible(tester, find.text('Forge Quest'));
 
     final quest = questProvider.quests.single;
     expect(quest.title, 'Drink water');
@@ -112,72 +142,64 @@ void main() {
     expect(quest.dueDate.hour, 18);
   });
 
-  testWidgets('a category can be chosen', (tester) async {
+  testWidgets('a category and difficulty can be chosen', (tester) async {
     await pumpPage(tester);
 
-    await tester.enterText(
-      find.widgetWithText(TextFormField, 'Quest Name'),
-      'Essay',
-    );
-    await tester.enterText(
-      find.widgetWithText(TextFormField, 'Quest Description'),
-      'Write the intro',
-    );
-    await tester.ensureVisible(find.text('📚 Study'));
-    await tester.tap(find.text('📚 Study'));
-    await tester.pump();
-    await tester.ensureVisible(find.text('Tomorrow 9 am'));
-    await tester.tap(find.text('Tomorrow 9 am'));
-    await tester.pump();
-    await tester.ensureVisible(find.text('Create Quest'));
-    await tester.tap(find.text('Create Quest'));
-    await tester.pumpAndSettle();
+    await enterDetails(tester, 'Essay', 'Write the intro');
+    await tapVisible(tester, find.text('📚 Study'));
+    await tapVisible(tester, find.byKey(const ValueKey('difficulty_star_3')));
+    await tapVisible(tester, find.text('Tomorrow 9 am'));
+    await tapVisible(tester, find.text('Forge Quest'));
 
-    expect(questProvider.quests.single.category, QuestCategory.study);
+    final quest = questProvider.quests.single;
+    expect(quest.category, QuestCategory.study);
+    expect(quest.difficulty, 3);
+    expect(quest.xpReward, 150);
   });
 
-  testWidgets('submitting without a due date does nothing', (tester) async {
+  testWidgets('submitting without a due date shows a hint and adds nothing', (
+    tester,
+  ) async {
     await pumpPage(tester);
-    await tester.enterText(
-      find.widgetWithText(TextFormField, 'Quest Name'),
-      'No date',
-    );
-    await tester.enterText(
-      find.widgetWithText(TextFormField, 'Quest Description'),
-      'desc',
-    );
+    await enterDetails(tester, 'No date', 'desc');
 
-    await tester.tap(find.text('Create Quest'));
-    await tester.pumpAndSettle();
+    await tapVisible(tester, find.text('Forge Quest'));
 
     expect(questProvider.quests, isEmpty);
+    expect(find.text('Pick a due date and time first.'), findsOneWidget);
   });
 
-  testWidgets('ticking "Remind me" asks for permission; denial unticks it', (
+  testWidgets(
+    'turning on "Remind me" asks for permission; denial turns it off',
+    (tester) async {
+      scheduler.permissionGranted = false;
+      await pumpPage(tester);
+
+      await tapVisible(tester, find.byType(SwitchListTile));
+
+      expect(scheduler.permissionRequests, 1);
+      expect(
+        tester.widget<SwitchListTile>(find.byType(SwitchListTile)).value,
+        isFalse,
+      );
+      expect(
+        find.textContaining('Notifications are turned off'),
+        findsOneWidget,
+      );
+    },
+  );
+
+  testWidgets('turning on "Remind me" with permission keeps it on', (
     tester,
   ) async {
-    scheduler.permissionGranted = false;
     await pumpPage(tester);
 
-    await tester.tap(find.byType(CheckboxListTile));
-    await tester.pumpAndSettle();
+    await tapVisible(tester, find.byType(SwitchListTile));
 
-    expect(scheduler.permissionRequests, 1);
-    final box = tester.widget<CheckboxListTile>(find.byType(CheckboxListTile));
-    expect(box.value, isFalse);
-    expect(find.textContaining('Notifications are turned off'), findsOneWidget);
-  });
-
-  testWidgets('ticking "Remind me" with permission keeps it ticked', (
-    tester,
-  ) async {
-    await pumpPage(tester);
-
-    await tester.tap(find.byType(CheckboxListTile));
-    await tester.pumpAndSettle();
-
-    final box = tester.widget<CheckboxListTile>(find.byType(CheckboxListTile));
-    expect(box.value, isTrue);
+    expect(
+      tester.widget<SwitchListTile>(find.byType(SwitchListTile)).value,
+      isTrue,
+    );
   });
 
   testWidgets('editing a selected quest pre-fills the form', (tester) async {
@@ -189,6 +211,7 @@ void main() {
         difficulty: 4,
         dueDate: DateTime(2031, 5, 6, 7, 8),
         remindMe: true,
+        category: QuestCategory.work,
       ),
     );
     questProvider.setSelectedQuest(questProvider.questById(7));
@@ -196,14 +219,19 @@ void main() {
     await pumpPage(tester);
 
     expect(find.text('Edit Quest'), findsOneWidget);
-    expect(find.text('Update Quest'), findsOneWidget);
-    expect(find.text('Existing'), findsOneWidget);
-    expect(find.text('Already here'), findsOneWidget);
-    expect(find.textContaining('2031-05-06'), findsOneWidget);
-    expect(tester.widget<Slider>(find.byType(Slider)).value, 4);
+    expect(find.text('Save Changes'), findsOneWidget);
+    expect(find.text('Existing'), findsNWidgets(2)); // field + preview
+    expect(find.text('Already here'), findsNWidgets(2));
+    expect(find.textContaining('May 6'), findsOneWidget);
+    expect(find.text('Hard · +200 XP'), findsOneWidget);
     expect(
-      tester.widget<CheckboxListTile>(find.byType(CheckboxListTile)).value,
+      tester.widget<SwitchListTile>(find.byType(SwitchListTile)).value,
       isTrue,
     );
+    expect(find.text('Quick start'), findsNothing);
+
+    await tapVisible(tester, find.text('Cancel editing'));
+    expect(questProvider.selectedQuest, isNull);
+    expect(appState.currentIndex, 1);
   });
 }
