@@ -1,0 +1,474 @@
+{
+ "canvas": [
+  2048,
+  2048
+ ],
+ "note": "Coordinates in pixels on the canvas. z = draw order (0 = back). left/right = the side of the SCREEN the part sits on.",
+ "parts": [
+  {
+   "z": 0,
+   "name": "tail",
+   "group": "body",
+   "visible_by_default": true,
+   "scale": 0.85,
+   "x": 1270,
+   "y": 1048,
+   "width": 461,
+   "height": 683,
+   "pivot": [
+    1408,
+    1629
+   ]
+  },
+  {
+   "z": 1,
+   "name": "back_paw_left",
+   "group": "legs",
+   "visible_by_default": true,
+   "scale": 0.62,
+   "x": 666,
+   "y": 1662,
+   "width": 189,
+   "height": 257,
+   "pivot": [
+    760,
+    1701
+   ]
+  },
+  {
+   "z": 2,
+   "name": "back_paw_right",
+   "group": "legs",
+   "visible_by_default": true,
+   "scale": 0.62,
+   "x": 1196,
+   "y": 1662,
+   "width": 184,
+   "height": 255,
+   "pivot": [
+    1288,
+    1700
+   ]
+  },
+  {
+   "z": 3,
+   "name": "front_leg_left",
+   "group": "legs",
+   "visible_by_default": true,
+   "scale": 0.7,
+   "x": 813,
+   "y": 1382,
+   "width": 230,
+   "height": 555,
+   "pivot": [
+    928,
+    1438
+   ]
+  },
+  {
+   "z": 4,
+   "name": "front_leg_right",
+   "group": "legs",
+   "visible_by_default": true,
+   "scale": 0.7,
+   "x": 1006,
+   "y": 1382,
+   "width": 227,
+   "height": 555,
+   "pivot": [
+    1120,
+    1438
+   ]
+  },
+  {
+   "z": 5,
+   "name": "neck",
+   "group": "body",
+   "visible_by_default": true,
+   "scale": 1.0,
+   "x": 780,
+   "y": 1172,
+   "width": 487,
+   "height": 157,
+   "pivot": [
+    1024,
+    1250
+   ]
+  },
+  {
+   "z": 6,
+   "name": "body",
+   "group": "body",
+   "visible_by_default": true,
+   "scale": 1.0,
+   "x": 626,
+   "y": 1015,
+   "width": 797,
+   "height": 830,
+   "pivot": [
+    1024,
+    1845
+   ]
+  },
+  {
+   "z": 7,
+   "name": "ear_left",
+   "group": "head",
+   "visible_by_default": true,
+   "scale": 0.95,
+   "x": 547,
+   "y": 446,
+   "width": 336,
+   "height": 419,
+   "pivot": [
+    775,
+    748
+   ]
+  },
+  {
+   "z": 8,
+   "name": "ear_right",
+   "group": "head",
+   "visible_by_default": true,
+   "scale": 0.95,
+   "x": 1159,
+   "y": 439,
+   "width": 348,
+   "height": 432,
+   "pivot": [
+    1270,
+    750
+   ]
+  },
+  {
+   "z": 9,
+   "name": "head",
+   "group": "head",
+   "visible_by_default": true,
+   "scale": 1.0,
+   "x": 566,
+   "y": 490,
+   "width": 915,
+   "height": 840,
+   "pivot": [
+    1024,
+    1196
+   ]
+  },
+  {
+   "z": 10,
+   "name": "iris_left",
+   "group": "face",
+   "visible_by_default": true,
+   "scale": 0.36,
+   "x": 750,
+   "y": 800,
+   "width": 219,
+   "height": 219,
+   "pivot": [
+    860,
+    910
+   ]
+  },
+  {
+   "z": 11,
+   "name": "iris_right",
+   "group": "face",
+   "visible_by_default": true,
+   "scale": 0.36,
+   "x": 1079,
+   "y": 800,
+   "width": 218,
+   "height": 219,
+   "pivot": [
+    1188,
+    910
+   ]
+  },
+  {
+   "z": 12,
+   "name": "pupil_left",
+   "group": "face",
+   "visible_by_default": true,
+   "scale": 0.75,
+   "x": 813,
+   "y": 836,
+   "width": 94,
+   "height": 148,
+   "pivot": [
+    860,
+    910
+   ]
+  },
+  {
+   "z": 13,
+   "name": "pupil_right",
+   "group": "face",
+   "visible_by_default": true,
+   "scale": 0.75,
+   "x": 1144,
+   "y": 834,
+   "width": 89,
+   "height": 151,
+   "pivot": [
+    1188,
+    910
+   ]
+  },
+  {
+   "z": 14,
+   "name": "highlight_left",
+   "group": "face",
+   "visible_by_default": true,
+   "scale": 0.6,
+   "x": 865,
+   "y": 846,
+   "width": 46,
+   "height": 47,
+   "pivot": [
+    888,
+    870
+   ]
+  },
+  {
+   "z": 15,
+   "name": "highlight_right",
+   "group": "face",
+   "visible_by_default": true,
+   "scale": 0.6,
+   "x": 1195,
+   "y": 846,
+   "width": 42,
+   "height": 48,
+   "pivot": [
+    1216,
+    870
+   ]
+  },
+  {
+   "z": 16,
+   "name": "eyelid_left",
+   "group": "face",
+   "visible_by_default": false,
+   "scale": 0.66,
+   "x": 746,
+   "y": 790,
+   "width": 228,
+   "height": 130,
+   "pivot": [
+    860,
+    790
+   ]
+  },
+  {
+   "z": 17,
+   "name": "eyelid_right",
+   "group": "face",
+   "visible_by_default": false,
+   "scale": 0.66,
+   "x": 1074,
+   "y": 789,
+   "width": 228,
+   "height": 132,
+   "pivot": [
+    1188,
+    789
+   ]
+  },
+  {
+   "z": 18,
+   "name": "eyes_closed_left",
+   "group": "face",
+   "visible_by_default": false,
+   "scale": 0.72,
+   "x": 752,
+   "y": 878,
+   "width": 217,
+   "height": 84,
+   "pivot": [
+    860,
+    920
+   ]
+  },
+  {
+   "z": 19,
+   "name": "eyes_closed_right",
+   "group": "face",
+   "visible_by_default": false,
+   "scale": 0.72,
+   "x": 1074,
+   "y": 878,
+   "width": 227,
+   "height": 84,
+   "pivot": [
+    1188,
+    920
+   ]
+  },
+  {
+   "z": 20,
+   "name": "eyes_happy_left",
+   "group": "face",
+   "visible_by_default": false,
+   "scale": 0.72,
+   "x": 756,
+   "y": 862,
+   "width": 208,
+   "height": 97,
+   "pivot": [
+    860,
+    910
+   ]
+  },
+  {
+   "z": 21,
+   "name": "eyes_happy_right",
+   "group": "face",
+   "visible_by_default": false,
+   "scale": 0.72,
+   "x": 1090,
+   "y": 862,
+   "width": 197,
+   "height": 95,
+   "pivot": [
+    1188,
+    910
+   ]
+  },
+  {
+   "z": 22,
+   "name": "whiskers_left",
+   "group": "face",
+   "visible_by_default": true,
+   "scale": 0.95,
+   "x": 646,
+   "y": 1002,
+   "width": 288,
+   "height": 127,
+   "pivot": [
+    920,
+    1059
+   ]
+  },
+  {
+   "z": 23,
+   "name": "whiskers_right",
+   "group": "face",
+   "visible_by_default": true,
+   "scale": 0.95,
+   "x": 1112,
+   "y": 1004,
+   "width": 291,
+   "height": 121,
+   "pivot": [
+    1127,
+    1058
+   ]
+  },
+  {
+   "z": 24,
+   "name": "mouth_neutral",
+   "group": "face",
+   "visible_by_default": true,
+   "scale": 0.75,
+   "x": 958,
+   "y": 1072,
+   "width": 132,
+   "height": 37,
+   "pivot": [
+    1024,
+    1090
+   ]
+  },
+  {
+   "z": 25,
+   "name": "mouth_happy",
+   "group": "face",
+   "visible_by_default": false,
+   "scale": 0.75,
+   "x": 938,
+   "y": 1058,
+   "width": 172,
+   "height": 94,
+   "pivot": [
+    1024,
+    1105
+   ]
+  },
+  {
+   "z": 26,
+   "name": "mouth_excited",
+   "group": "face",
+   "visible_by_default": false,
+   "scale": 0.7,
+   "x": 944,
+   "y": 1054,
+   "width": 159,
+   "height": 152,
+   "pivot": [
+    1024,
+    1130
+   ]
+  },
+  {
+   "z": 27,
+   "name": "mouth_surprised",
+   "group": "face",
+   "visible_by_default": false,
+   "scale": 0.75,
+   "x": 992,
+   "y": 1064,
+   "width": 63,
+   "height": 92,
+   "pivot": [
+    1024,
+    1110
+   ]
+  },
+  {
+   "z": 28,
+   "name": "mouth_yawn",
+   "group": "face",
+   "visible_by_default": false,
+   "scale": 0.55,
+   "x": 940,
+   "y": 1032,
+   "width": 169,
+   "height": 216,
+   "pivot": [
+    1024,
+    1140
+   ]
+  },
+  {
+   "z": 29,
+   "name": "mouth_lick",
+   "group": "face",
+   "visible_by_default": false,
+   "scale": 0.55,
+   "x": 943,
+   "y": 1062,
+   "width": 162,
+   "height": 87,
+   "pivot": [
+    1024,
+    1106
+   ]
+  },
+  {
+   "z": 30,
+   "name": "nose",
+   "group": "face",
+   "visible_by_default": true,
+   "scale": 0.75,
+   "x": 974,
+   "y": 1000,
+   "width": 100,
+   "height": 69,
+   "pivot": [
+    1024,
+    1034
+   ]
+  }
+ ]
+}

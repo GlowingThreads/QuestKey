@@ -148,3 +148,28 @@ app, so the artboard should animate in place. The app uses Rive's pure-Dart
 runtime (package `rive` 0.13), which matches the pinned Flutter version and
 needs no native download; export from the editor without newer-only
 features such as layouts or data binding.
+
+#### Cat rig (Shadow Cat)
+
+The cat's layered source art lives in `art/familiars/cat/` at the repo root
+(`shadow_cat_rig.psd`, `layers_fullcanvas/`, `parts/`, `layout.json`; see its
+`README.md` for pivots and import steps). `art/` is source only: it is not
+declared in `pubspec.yaml` and is never bundled into the app.
+
+Save the finished export as `assets/images/familiars/cat.riv` with a state
+machine named `Familiar`. Wire the inputs to the rig's layers like this:
+
+| Input | Value | Rig layers / motion |
+| --- | --- | --- |
+| `action` | 0 idle | default pose |
+| `action` | 1 walk | bouncy hop-shuffle, animated in place |
+| `action` | 2 sit | default sitting pose |
+| `action` | 3 sleep | `eyes_closed_*` layers + `fx_zzz` |
+| `action` | 4 groom | `mouth_lick` |
+| `action` | 5 stretch | `mouth_yawn` |
+| `mood` | 0 sleepy | `eyelid_*` layers half down |
+| `mood` | 1 watchful | pupils narrowed |
+| `mood` | 2 content | default face |
+| `mood` | 3 joyful | `eyes_happy_*` layers |
+| `hop` | trigger | quick hop + `mouth_excited` |
+| `facingLeft` | — | leave unwired; the den mirrors the artboard |
