@@ -144,10 +144,12 @@ inputs:
 | `hop` | trigger | fired on a tap and on each completed quest |
 
 Only the inputs you wire are used. Movement across the den is done by the
-app, so the artboard should animate in place. The app uses Rive's pure-Dart
-runtime (package `rive` 0.13), which matches the pinned Flutter version and
-needs no native download; export from the editor without newer-only
-features such as layouts or data binding.
+app, so the artboard should animate in place. The app uses the Rive 0.13
+Flutter runtime (package `rive`), which matches the pinned Flutter version;
+its native helper is compiled into the app, so nothing is downloaded at
+runtime. Export from the editor without newer-only features such as layouts
+or data binding. If a file can't be loaded (corrupt, too new, or the runtime
+can't start, as under `flutter test`) the den quietly keeps the painter.
 
 #### Cat rig (Shadow Cat)
 
@@ -156,8 +158,12 @@ The cat's layered source art lives in `art/familiars/cat/` at the repo root
 `README.md` for pivots and import steps). `art/` is source only: it is not
 declared in `pubspec.yaml` and is never bundled into the app.
 
-Save the finished export as `assets/images/familiars/cat.riv` with a state
-machine named `Familiar`. Wire the inputs to the rig's layers like this:
+The shipped `assets/images/familiars/cat.riv` (state machine `Familiar`) is
+generated from those layers by `art/familiars/cat/tools/build_cat_riv.py`
+rather than exported from the Rive editor. Re-run it after changing the rig
+(`python3 art/familiars/cat/tools/build_cat_riv.py`, needs Pillow). An
+editor-made export can replace it at the same path. The inputs map to the
+rig's layers like this:
 
 | Input | Value | Rig layers / motion |
 | --- | --- | --- |
@@ -165,11 +171,13 @@ machine named `Familiar`. Wire the inputs to the rig's layers like this:
 | `action` | 1 walk | bouncy hop-shuffle, animated in place |
 | `action` | 2 sit | default sitting pose |
 | `action` | 3 sleep | `eyes_closed_*` layers + `fx_zzz` |
-| `action` | 4 groom | `mouth_lick` |
-| `action` | 5 stretch | `mouth_yawn` |
+| `action` | 4 groom | `mouth_lick` (with `eyes_happy_*`) |
+| `action` | 5 stretch | `mouth_yawn` (eyes closed during the yawn) |
 | `mood` | 0 sleepy | `eyelid_*` layers half down |
 | `mood` | 1 watchful | pupils narrowed |
 | `mood` | 2 content | default face |
-| `mood` | 3 joyful | `eyes_happy_*` layers |
+| `mood` | 3 joyful | `eyes_happy_*` layers + `mouth_happy` |
 | `hop` | trigger | quick hop + `mouth_excited` |
 | `facingLeft` | — | leave unwired; the den mirrors the artboard |
+
+The content, watchful and sleepy moods also blink every few seconds.
