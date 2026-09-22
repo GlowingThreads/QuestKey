@@ -2,7 +2,8 @@
 ///
 /// Picks a renderer at start-up, in this order:
 /// 1. a sprite sheet (`assets/images/familiars/<species>.png` + `.json`),
-/// 2. a Rive file (`assets/images/familiars/<species>.riv`),
+/// 2. a Rive file (`assets/images/familiars/<species>.riv`), used only when
+///    the Rive runtime can actually load it,
 /// 3. the built-in painter: a shadow creature with glowing eyes.
 ///
 /// The pose comes from [FamiliarBehaviour] via the stage; this widget only
@@ -18,6 +19,7 @@ import 'package:quest_key/models/familiar.dart';
 import 'package:quest_key/widgets/familiar/familiar_behaviour.dart';
 import 'package:quest_key/widgets/familiar/rive_familiar.dart';
 import 'package:quest_key/widgets/familiar/sprite_sheet.dart';
+import 'package:rive/rive.dart' show RiveFile;
 
 enum FamiliarRenderer { painter, sheet, rive }
 
@@ -60,6 +62,36 @@ class FamiliarSprite extends StatefulWidget {
   static String riveAsset(FamiliarSpecies species) =>
       'assets/images/familiars/${species.name}.riv';
 
+  static final Map<FamiliarSpecies, Future<RiveFile?>> _riveFiles = {};
+
+  /// The parsed Rive file for [species], or `null` when there is none or the
+  /// Rive runtime can't load it (for example when its native library is
+  /// missing, as under `flutter test`). Loaded once per species.
+  static Future<RiveFile?> loadRive(FamiliarSpecies species) =>
+      _riveFiles.putIfAbsent(species, () => _loadRive(species));
+
+  static Future<RiveFile?> _loadRive(FamiliarSpecies species) async {
+    final path = riveAsset(species);
+    final ByteData bytes;
+    try {
+      bytes = await rootBundle.load(path);
+    } catch (_) {
+      return null; // No file for this species: use the painter.
+    }
+    try {
+      // Parse before RiveFile.initialize(): without the native runtime,
+      // import throws here (catchable), whereas initialize() fails with an
+      // uncaught async error and never completes. Text, if any, is shaped
+      // on the first frame, after initialize() below has run.
+      final file = RiveFile.import(bytes);
+      await RiveFile.initialize();
+      return file;
+    } catch (e) {
+      debugPrint('Familiar: could not load $path, using the painter ($e)');
+      return null;
+    }
+  }
+
   /// Which way the built-in art faces: side-view species face right.
   static bool painterFacesRight(FamiliarSpecies species) => true;
 
@@ -77,6 +109,7 @@ class _FamiliarSpriteState extends State<FamiliarSprite>
   );
   FamiliarRenderer _renderer = FamiliarRenderer.painter;
   SpriteSheet? _sheet;
+  RiveFile? _riveFile;
   double _seconds = 0;
   double _lastIdle = 0;
 
@@ -107,14 +140,12 @@ class _FamiliarSpriteState extends State<FamiliarSprite>
       });
       return;
     }
-    var hasRive = false;
-    try {
-      await rootBundle.load(FamiliarSprite.riveAsset(species));
-      hasRive = true;
-    } catch (_) {}
+    final riveFile = await FamiliarSprite.loadRive(species);
     if (!mounted || widget.species != species) return;
     setState(() {
-      _renderer = hasRive ? FamiliarRenderer.rive : FamiliarRenderer.painter;
+      _riveFile = riveFile;
+      _renderer =
+          riveFile != null ? FamiliarRenderer.rive : FamiliarRenderer.painter;
     });
   }
 
@@ -123,6 +154,7 @@ class _FamiliarSpriteState extends State<FamiliarSprite>
     super.didUpdateWidget(old);
     if (widget.species != old.species) {
       _sheet = null;
+      _riveFile = null;
       _renderer = FamiliarRenderer.painter;
       _pickRenderer();
     }
@@ -166,7 +198,7 @@ class _FamiliarSpriteState extends State<FamiliarSprite>
               );
             case FamiliarRenderer.rive:
               return RiveFamiliar(
-                asset: FamiliarSprite.riveAsset(widget.species),
+                file: _riveFile!,
                 action: widget.action,
                 mood: widget.mood,
                 facingRight: widget.facingRight,

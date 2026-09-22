@@ -1,7 +1,9 @@
 /// Rive renderer for a familiar.
 ///
 /// Drop `assets/images/familiars/<species>.riv` into the project and the
-/// den uses it instead of the painter. The file should expose a state
+/// den uses it instead of the painter. `FamiliarSprite.loadRive` parses the
+/// file once per species and hands it to this widget; if it can't be loaded
+/// the den keeps the painter. The file should expose a state
 /// machine named `Familiar` (the artboard's first state machine is used as
 /// a fallback) with these inputs, all optional:
 ///
@@ -13,8 +15,9 @@
 ///   handles facing itself
 /// * `hop` (trigger): fired on a tap or a completed quest
 ///
-/// Uses the pure-Dart Rive runtime (0.13), which needs no native download
-/// and matches the Flutter version this project pins.
+/// Uses the Rive 0.13 Flutter runtime, which matches the Flutter version this
+/// project pins. Its small native helper (`rive_common`) is compiled into
+/// the app by the plugin build, so nothing is downloaded at runtime.
 library;
 
 import 'package:flutter/material.dart';
@@ -25,7 +28,7 @@ import 'package:rive/rive.dart';
 class RiveFamiliar extends StatefulWidget {
   const RiveFamiliar({
     super.key,
-    required this.asset,
+    required this.file,
     required this.action,
     required this.mood,
     required this.facingRight,
@@ -33,7 +36,7 @@ class RiveFamiliar extends StatefulWidget {
     this.dimmed = false,
   });
 
-  final String asset;
+  final RiveFile file;
   final FamiliarAction action;
   final FamiliarMood mood;
   final bool facingRight;
@@ -110,8 +113,8 @@ class _RiveFamiliarState extends State<RiveFamiliar> {
   Widget build(BuildContext context) {
     return Opacity(
       opacity: widget.dimmed ? 0.45 : 1,
-      child: RiveAnimation.asset(
-        widget.asset,
+      child: RiveAnimation.direct(
+        widget.file,
         fit: BoxFit.contain,
         onInit: _onInit,
         placeHolder: const SizedBox.expand(),
