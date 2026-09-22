@@ -12,6 +12,7 @@ library;
 
 import 'dart:math' as math;
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:quest_key/constants/app_colors.dart';
@@ -79,10 +80,18 @@ class FamiliarSprite extends StatefulWidget {
       return null; // No file for this species: use the painter.
     }
     try {
-      // Parse before RiveFile.initialize(): without the native runtime,
-      // import throws here (catchable), whereas initialize() fails with an
-      // uncaught async error and never completes. Text, if any, is shaped
-      // on the first frame, after initialize() below has run.
+      if (kIsWeb) {
+        // On web the runtime is a WebAssembly module that initialize()
+        // fetches; import needs it loaded first. If the fetch failed,
+        // import throws and we fall back to the painter.
+        await RiveFile.initialize();
+        return RiveFile.import(bytes);
+      }
+      // On native, parse before initialize(): without the native library
+      // (as under `flutter test`) import throws here (catchable), whereas
+      // initialize() fails with an uncaught async error and never
+      // completes. Text, if any, is shaped on the first frame, after
+      // initialize() below has run.
       final file = RiveFile.import(bytes);
       await RiveFile.initialize();
       return file;
